@@ -1,200 +1,129 @@
-# List Combiner — Technical Spec (Personal Tool)
+# Listio — Product Spec (Personal Tool)
+
+Vocabulary (Source, Combined List, Title, Removed Title, Draft, Catalog) is defined in
+[`CONTEXT.md`](./CONTEXT.md). Key decisions are recorded in [`docs/adr/`](./docs/adr/).
 
 ## 1. Purpose
 
-Combine multiple existing public lists (Trakt, Simkl, MDBList, IMDb, or another addon's
-manifest) on a theme (e.g. "Spy Thrillers"), dedupe them, curate the merged result via a
-web GUI, then serve the final list as my own Stremio/Nuvio catalog addon — deployed on
-Cloudflare so Nuvio can reach it from anywhere, locked down so only I can use it.
+Build curated, themed movie/TV lists (e.g. "Spy Thrillers") by pulling in public lists from
+other sites, de-duplicating them, and removing everything unwanted — then publish the result
+as a Catalog in Nuvio.
 
-Not building: public/multi-user support — single-user tool, just needs to not be wide open.
+Other people's lists are full of things I don't want. Listio is a **curate-once** tool: pull
+in a lot of Titles, strip them down, and keep the result fixed. It is not a sync tool.
 
-## 2. Stack
+Single user (me). Not designed for multi-user; any public version would be a separate project.
 
-**Astro + TypeScript, deployed to Cloudflare Pages/Workers.** Astro was picked over Next.js
-because this app is mostly a static review grid with a thin slice of interactivity (remove
-buttons) — Astro's island architecture ships near-zero JS by default and only hydrates what
-needs it. It has a first-class Cloudflare adapter, so local dev (`astro dev`) and the
-deployed version are the same codebase throughout — no separate "local version" to migrate
-later.
+## 2. Scope
 
-One codebase covers all three pieces:
-- **Fetch/merge/dedupe logic** — plain TypeScript modules, no framework needed
-- **Curation UI** — Astro pages/components, using an island (e.g. a small React or Preact
-  component, or Astro's own client directives) for the interactive review grid
-- **Addon endpoints** — Astro API routes (`src/pages/.../manifest.json.ts`,
-  `src/pages/.../catalog/[type]/[id].json.ts`) — same code path locally and deployed
+**v1 Sources**
+- **Trakt** public lists — `trakt.tv/users/{user}/lists/{slug}` or `trakt.tv/lists/{id}`
+- **MDBList** lists — `mdblist.com/lists/{user}/{slug}`
 
-## 3. High-level flow
+**Next, in order**
+- **IMDb** lists — paste `imdb.com/list/ls…` URL; if fetching fails, prompt for a CSV upload
+  (the CSV exported from IMDb while logged in)
 
-```
-[Add source list URLs] → [Fetch + normalize] → [Merge + dedupe by imdb_id]
-    → [Review grid: delete unwanted items] → [Save curated list to storage]
-    → [Astro API routes serve manifest.json + catalog from that storage]
-    → [Nuvio installs the manifest URL directly, from anywhere]
-```
+**Later (not v1)**
+- Simkl — its API needs a PRO/VIP token and its pages block scripts; revisit via a browser
+  bookmarklet that reads a list page the user is viewing and sends it to Listio
+- Another addon's catalogs as a Source (pick catalogs from a checklist, capped at 500 Titles each)
 
-## 4. Sources & fetching
+**Out of scope**
+- Searching for or adding individual Titles
+- Reordering by hand
+- Syncing/refreshing Sources
+- Multiple users
 
-All sources normalize down to:
+## 3. Core rules
 
-```json
-{
-  "imdb_id": "tt0120815",
-  "title": "Saving Private Ryan",
-  "year": 1998,
-  "type": "movie" | "show",
-  "poster_url": null
-}
-```
+1. **A Combined List is a static snapshot.** A Source is fetched once, when added. It is
+   never re-fetched. (ADR 0001)
+2. **Titles are keyed by IMDb ID.** A Title appearing in several Sources appears once.
+   Source items without an IMDb ID are skipped and reported ("3 skipped — no IMDb ID").
+3. **Removed Titles are remembered per Combined List.** Adding another Source later never
+   brings them back. They can be restored from a "Removed" view.
+4. **Nothing reaches Nuvio until Save.** Added Sources, removals and restores all live in a
+   Draft. Leaving the page with an unsaved Draft triggers the browser's "unsaved changes"
+   warning; the Draft is otherwise discarded.
+5. **Every Combined List has a fixed ID**, derived from its name at creation
+   ("Spy Thrillers" → `spy-thrillers`, then `spy-thrillers-2` on collision). Renaming changes
+   the display name only. Nuvio collections reference this ID, so it never changes.
 
-Posters aren't provided consistently by every source — backfill via TMDB's `find` endpoint
-(`GET /find/{imdb_id}?external_source=imdb_id`), one call per item, free API key.
+## 4. Screens & workflow
 
-### Trakt
-- Public list endpoint: `GET /users/{user}/lists/{list_id}/items`
-- Needs only a Trakt Client ID (no OAuth for public list reads)
-- Each item has `ids.imdb` directly — no extra lookup needed
+### Home — Combined Lists
+- List of Combined Lists (name, Title count), each opens its editor
+- **+ New list** → enter a name → opens the editor
+- Rename and delete per list (delete asks for confirmation)
+- After create / rename / delete: notice "Refresh the Listio addon in Nuvio to see this change"
+  (Nuvio caches the addon's list of Catalogs)
 
-### Simkl
-- Public list endpoint via Simkl API, needs a client ID
-- Items include `imdb_id` in the `ids` block, same pattern as Trakt
+### Editor — adding Sources
+- A URL box; a small **+** adds another URL box; repeat for as many Sources as needed
+- Each URL is recognised by site and fetched in the background, showing status
+  (fetching / N Titles / error)
+- **Review List** opens the review grid with the merged result
 
-### MDBList
-- `GET /lists/{list_id}/items` (or by list slug/URL) — needs API key
-- Items include `imdbid` directly
-- Read-only usage here — not writing anything back to MDBList, so no list-limit exposure
+### Editor — review grid
+- Large grid; each Title shows **poster, title, year, and a one-line description**
+  (TMDB tagline, falling back to the first sentence of the TMDB overview). Nothing else.
+- Each Title has a **trash icon** (removes it from view instantly, into the Draft — no
+  confirmation) and a **checkbox**
+- A single floating **Remove selected (N)** button, fixed bottom-right, appears when any
+  checkbox is ticked
+- Once the Draft has at least one change, a **Save** button appears beside it. Save opens a
+  confirmation ("Save 7 changes to Spy Thrillers?"); confirming saves the whole Draft at once
+- **Show only new** filter — only Titles added by Sources in the current Draft
+- **Sort** per Combined List: newest (default), oldest, A–Z, order added. The same order is
+  used in Nuvio
+- **Removed (N)** view — lists Removed Titles with a restore action (restores go into the Draft)
+- Large lists (1000+ Titles) load progressively while scrolling; no size cap
 
-### IMDb
-- No official API. Use the list's **Export** button (on the list page) → downloads a CSV
-- CSV columns include `Const` (this is the imdb_id, e.g. `tt0120815`), `Title`, `Year`
-- Tool accepts either a pasted IMDb list URL (if fetching the CSV export link
-  automatically) or a manually-downloaded CSV dropped into an `imports/` folder — CSV import
-  is the reliable fallback if IMDb changes their page structure
+## 5. Nuvio addon
 
-### Another addon's manifest (bonus source — cheap to add, same pipeline)
-- Paste any Stremio/Nuvio-compatible manifest URL (including your own, once it's live —
-  lets you remix your own published lists into a new combined one)
-- Fetch `manifest.json`, list its `catalogs`, fetch each `catalog/{type}/{id}.json`, feed
-  the returned `metas` into the same normalizer (metas already carry `id` as imdb_id in
-  the common case, `type`, `name`, `poster`)
+One Stremio-protocol catalog addon, named **Listio**, installed once in Nuvio.
 
-## 5. Merge & dedupe
+- Each Combined List appears as **one Catalog per type**: a list with movies and shows
+  appears as two Catalogs (movie + series), both named after the list. A list with one type
+  appears as one Catalog.
+- Catalog ID = Combined List ID; stable for the life of the list.
+- Each Catalog item carries IMDb ID, type, name and poster; Nuvio fills in full metadata itself.
+- Content changes appear in Nuvio without reinstalling. New / renamed / deleted lists need an
+  addon refresh or reinstall in Nuvio.
+- In Nuvio, Catalogs can be installed as rows or added to collection folders (a folder can
+  hold both the movie and series Catalog of one list).
 
-- Key everything by `imdb_id`
-- If duplicate imdb_id appears from multiple sources, keep first occurrence, ignore rest
-- Known edge case: an old imdb_id occasionally redirects to a newer one on IMDb's side, and
-  not all APIs follow the redirect — acceptable to ignore for a personal tool, note as a
-  known limitation rather than solving it
+## 6. Access
 
-## 6. Access control
+- **Editing UI** — behind Cloudflare Access, allow-listed to my email only.
+- **Addon endpoints** — outside Access (Nuvio can't log in); protected by a long secret slug
+  in the URL. If it leaks, rotate it and reinstall in Nuvio.
 
-Two different surfaces, two different protections:
+## 7. Stack & hosting
 
-### Manifest & catalog endpoints (Nuvio-facing)
-Nuvio just installs a URL — no login flow it can complete. Protection is an unguessable
-secret baked into the URL path itself, same pattern as AIOMetadata's per-user UUID:
+Astro + TypeScript on Cloudflare Workers, Workers KV for storage, Cloudflare Access for login.
+Default `*.workers.dev` address; custom domain optional later. (ADR 0002)
 
-```
-/api/{secret-slug}/manifest.json
-/api/{secret-slug}/catalog/{type}/{id}.json
-```
+External services (all free keys): Trakt client ID, MDBList API key, TMDB API key.
 
-`secret-slug` is a long random string (generate once, store as an env var/binding, not in
-source control). Anyone without the exact URL gets nothing. If it ever leaks, rotate the
-slug and reinstall in Nuvio — same "treat it like a password" posture as your ElfHosted
-manifest URL.
+## 8. Source notes
 
-### Curation UI (browser-facing, only me)
-This route has a real user behind it, so it can have a real login — **Cloudflare Access**
-(Zero Trust, free tier) in front of the deployment, restricted to a single allow-listed
-email. No app code needed: Access intercepts requests before they hit the Worker and only
-lets authenticated requests through. Simplest option here since it's a Cloudflare-native
-feature and this is already a Cloudflare deployment.
+- **Trakt** — `GET https://api.trakt.tv/users/{user}/lists/{slug}/items` (or `/lists/{id}/items`),
+  headers `trakt-api-key: {client_id}`, `trakt-api-version: 2`. No OAuth. Paginated via
+  `X-Pagination-*` headers. Items carry `movie.ids` / `show.ids` incl. `imdb` (occasionally
+  null) and `tmdb`. Ignore season/episode/person items. ~500 GET / 5 min.
+- **MDBList** — `GET https://api.mdblist.com/lists/{user}/{slug}/items?apikey=…`. Items carry
+  `imdb_id` and `mediatype`. Free tier 1,000 requests/day. Exact response shape to be
+  verified with a real key.
+- **IMDb** — CSV export and list pages are blocked for anonymous requests. Try IMDb's
+  undocumented web GraphQL endpoint (`caching.graphql.imdb.com`, list items by `ls…` ID,
+  cursor-paginated); on failure, prompt for CSV upload (`Const` column = IMDb ID).
+- **TMDB** — poster, year, tagline and overview per Title; cached with the Title so it is
+  fetched once.
 
-Keep the manifest/catalog routes **outside** the Access policy (only gate `/admin` or
-wherever the curation UI lives) — Access requires an interactive login, which Nuvio can't do.
+## 9. Known limitations
 
-## 7. Storage
-
-**Cloudflare KV** — one entry per project, holding the same shape as local JSON would:
-
-```
-key: project:spy-thrillers
-value: {
-  sources: [...],   # source URLs/paths added
-  merged: [...],    # last fetched+merged raw set
-  removed: [...]    # imdb_ids explicitly removed (persists across re-fetches)
-}
-```
-
-`removed` is the important one — re-running fetch shouldn't resurrect items already thrown
-out. On merge, filter out anything in `removed` before showing the review grid.
-
-KV is a fine fit for local dev too (Wrangler's local KV emulation), so no separate storage
-layer needed between dev and deployed.
-
-## 8. Addon endpoints
-
-Standard Stremio-protocol catalog addon — two JSON endpoints, generated from KV.
-
-**`GET /api/{secret-slug}/manifest.json`**
-```json
-{
-  "id": "com.paulhaze.listcombiner",
-  "version": "1.0.0",
-  "name": "My Curated Lists",
-  "description": "Personal merged lists from Trakt/Simkl/MDBList/IMDb",
-  "resources": ["catalog"],
-  "types": ["movie", "series"],
-  "catalogs": [
-    { "type": "movie", "id": "spy-thrillers", "name": "Spy Thrillers" },
-    { "type": "movie", "id": "mind-benders", "name": "Mind Benders" }
-  ]
-}
-```
-`catalogs` array is generated dynamically by listing project keys in KV — new themed list
-shows up here automatically, no manual wiring per project.
-
-**`GET /api/{secret-slug}/catalog/{type}/{id}.json`**
-```json
-{
-  "metas": [
-    { "id": "tt0120815", "type": "movie", "name": "Saving Private Ryan", "poster": "https://..." }
-  ]
-}
-```
-`id` must be the imdb_id (Stremio/Nuvio resolve full metadata from it automatically via
-Cinemeta/AIOMetadata — no need to serve full metadata yourself, just id/type/name/poster).
-
-## 9. Installing in Nuvio
-
-Install `https://your-app.pages.dev/api/{secret-slug}/manifest.json` directly in Nuvio as a
-standalone addon, or paste it into Xperience via "Import from another add-on" to drop
-catalogs into a folder inside a collection, same as the AIOMetadata catalogs. Updates are
-live the moment a removal is saved — no separate publish/redeploy step.
-
-## 10. Suggested build order
-
-1. `npm create astro@latest` — TypeScript, minimal template; add the Cloudflare adapter
-   and Wrangler config early so local dev and deploy target are aligned from day one
-2. Fetch functions for each source (Trakt, Simkl, MDBList, IMDb CSV, manifest import) →
-   normalized list, as plain `.ts` modules first (test outside any UI)
-3. Merge/dedupe logic + `removed` filtering
-4. TMDB poster backfill
-5. `manifest.json.ts` and `catalog/[type]/[id].json.ts` routes under the secret-slug path,
-   reading from KV — get this working with one hand-built test project before building any UI
-6. Generate the secret slug, confirm Nuvio can install and read from the deployed URL
-7. Curation page: static render of the merged grid first (no interactivity)
-8. Add the remove-item island component, wired to update KV
-9. Set up Cloudflare Access on the curation route only
-10. Project creation/source-adding UI (a hand-edited KV entry via Wrangler CLI is a fine
-    stopgap while the above is being built, if that's faster to iterate on)
-
-## 11. Open questions / decide later
-
-- Rate limiting: TMDB poster lookups will be the slowest part for large source lists — worth
-  caching poster URLs in the KV entry so re-fetches don't re-hit TMDB for items already seen
-- Show vs movie type mismatches between sources (rare, but Trakt/Simkl distinguish, IMDb CSV
-  sometimes doesn't cleanly) — decide whether to trust source-declared type or verify via TMDB
-- Any future public/multi-user version is a separate project, not this one
+- IMDb IDs that IMDb has since merged/redirected may appear as separate Titles. Ignored.
+- IMDb URL import relies on an undocumented endpoint and may break (CSV upload remains).
+- Nuvio may show a stale list of Catalogs until the addon is refreshed.
