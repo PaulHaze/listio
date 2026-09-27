@@ -158,6 +158,8 @@ view: 'all' | 'new' | 'removed'
 - Secrets (`wrangler secret put`, `.dev.vars` locally, gitignored):
   `ADDON_SECRET`, `TRAKT_CLIENT_ID`, `MDBLIST_API_KEY`, `TMDB_API_KEY` (v4 read token or v3 key).
 - Dev: Access isn't present locally; admin routes are open on localhost only.
+- Nothing deployment-specific (keys, email, KV IDs, hostnames) is hard-coded: the repo will be
+  open-sourced for others to self-host with their own keys (ADR 0003, Sprint 09).
 
 ## 8. Testing
 

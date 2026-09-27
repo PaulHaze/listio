@@ -12,7 +12,8 @@ as a Catalog in Nuvio.
 Other people's lists are full of things I don't want. Listio is a **curate-once** tool: pull
 in a lot of Titles, strip them down, and keep the result fixed. It is not a sync tool.
 
-Single user (me). Not designed for multi-user; any public version would be a separate project.
+Single user (me). Not designed for multi-user. Will eventually be open-sourced for others to
+self-host with their own keys (BYOK); there will be no public hosted version. (ADR 0003)
 
 ## 2. Scope
 

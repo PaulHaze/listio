@@ -13,6 +13,7 @@ sprint's **Status** and tick its tasks as work happens.
 | 06 | [GUI: Review grid](./06_GUI_Review_Grid.md) | not started |
 | 07 | [Cloudflare Access](./07_Cloudflare_Access.md) | not started |
 | 08 | [IMDb Source](./08_IMDb_Source.md) | not started |
+| 09 | [Open-source release (BYOK)](./09_Open_Source_Release.md) | not started |
 
 Design references: [spec](../../list-combiner-spec.md) · [implementation plan](../implementation-plan.md) ·
 [glossary](../../CONTEXT.md) · [ADRs](../adr/)

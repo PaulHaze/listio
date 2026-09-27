@@ -1,0 +1,18 @@
+# pnpm 11+ reads project settings from this file (not .npmrc).
+# Dependencies with install scripts must be explicitly allowed to run them.
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+  sharp: true
+
+peerDependencyRules:
+  allowedVersions:
+    # Works with ESLint 10, but its peer range hasn't been updated yet.
+    eslint-plugin-jsx-a11y>eslint: '10'
+
+# Keeps pnpm-lock.yaml as a single YAML document. pnpm 12's default adds a
+# separate pnpm-version document that GitHub's dependency graph can't parse
+# yet, which silently disables Dependabot security alerts
+# (https://github.com/dependabot/dependabot-core/issues/15904).
+# The pnpm version is still pinned via packageManager (Corepack and CI use it).
+pmOnFail: ignore

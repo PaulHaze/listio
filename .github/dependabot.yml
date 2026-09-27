@@ -1,0 +1,55 @@
+# Dependabot version updates. Minor/patch updates are grouped into a few PRs
+# and auto-merged once CI passes (see .github/workflows/ci.yml); major updates
+# arrive as individual PRs for manual review.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: 'npm' # also covers pnpm
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    # Wait before proposing a new release, so compromised or broken versions
+    # have time to be caught and pulled first.
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: '-'
+    commit-message:
+      prefix: 'chore(deps)'
+    versioning-strategy: increase-if-necessary
+    labels:
+      - 'dependencies'
+    groups:
+      astro:
+        patterns: ['astro', '@astrojs/*', 'astro-icon', '@iconify-json/*']
+        update-types: ['minor', 'patch']
+      tailwind:
+        patterns: ['tailwindcss', '@tailwindcss/*', 'tailwind-merge', 'tw-animate-css']
+        update-types: ['minor', 'patch']
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
+        update-types: ['minor', 'patch']
+      lint-and-format:
+        patterns: ['eslint', 'eslint-*', '@eslint/*', 'typescript-eslint', '@typescript-eslint/*', 'prettier', 'prettier-plugin-*']
+        update-types: ['minor', 'patch']
+    ignore:
+      # TypeScript 7 isn't supported by @astrojs/check or typescript-eslint yet.
+      # Remove this once both list it in their peer dependencies.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - 'dependencies'
+    groups:
+      actions:
+        patterns: ['*']

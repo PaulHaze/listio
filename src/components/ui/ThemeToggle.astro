@@ -1,0 +1,59 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cn } from '@/utils';
+---
+
+<theme-toggle>
+	<button
+		type="button"
+		aria-label="Toggle light and dark theme"
+		class={cn(
+			'flex',
+			'size-9 items-center justify-center rounded-full p-2',
+			'hover:bg-black/5 dark:hover:bg-white/20',
+			'hover:text-black dark:hover:text-white',
+			'transition-colors duration-300 ease-in-out'
+		)}
+	>
+		<Icon
+			name="lucide:sun"
+			class="block size-full dark:hidden"
+			aria-hidden="true"
+		/>
+		<Icon
+			name="lucide:moon"
+			class="hidden size-full dark:block"
+			aria-hidden="true"
+		/>
+	</button>
+</theme-toggle>
+
+<script>
+	// The initial theme is applied by the inline script in Layout.astro.
+	function toggleTheme() {
+		const root = document.documentElement;
+		const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+
+		// Suppress CSS transitions while the theme swaps so colours don't animate.
+		const css = document.createElement('style');
+		css.textContent = '*, *::before, *::after { transition: none !important; }';
+		document.head.appendChild(css);
+
+		root.dataset.theme = theme;
+		localStorage.setItem('theme', theme);
+
+		// Force a style recalc so the new theme lands before transitions return.
+		void window.getComputedStyle(css).opacity;
+		css.remove();
+	}
+
+	// A custom element wires itself up wherever it's rendered, including after
+	// <ClientRouter /> navigations, without needing ids or lifecycle events.
+	class ThemeToggle extends HTMLElement {
+		connectedCallback() {
+			this.querySelector('button')?.addEventListener('click', toggleTheme);
+		}
+	}
+
+	customElements.define('theme-toggle', ThemeToggle);
+</script>

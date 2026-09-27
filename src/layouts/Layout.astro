@@ -1,0 +1,73 @@
+---
+import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
+import '@/styles/main.css';
+import ThemeToggle from '@/components/ui/ThemeToggle.astro';
+
+interface Props {
+	title: string;
+	description?: string;
+	/** Social share image: a path under public/ or an absolute URL. */
+	image?: string;
+}
+
+const { title, description = 'Astro description', image } = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const imageURL = image ? new URL(image, Astro.site) : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="generator" content={Astro.generator} />
+
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonicalURL} />
+
+		<!-- Open Graph / social sharing -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonicalURL} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		{imageURL && <meta property="og:image" content={imageURL} />}
+		<meta
+			name="twitter:card"
+			content={imageURL ? 'summary_large_image' : 'summary'}
+		/>
+
+		<Font cssVariable="--font-noto-sans" preload />
+		<Font cssVariable="--font-anton" />
+
+		<ClientRouter />
+
+		<script is:inline>
+			// Runs before first paint so the page never flashes the wrong theme.
+			function applyTheme() {
+				const stored = localStorage.getItem('theme');
+				const theme =
+					stored === 'light' || stored === 'dark'
+						? stored
+						: window.matchMedia('(prefers-color-scheme: dark)').matches
+							? 'dark'
+							: 'light';
+				document.documentElement.dataset.theme = theme;
+			}
+			applyTheme();
+			// <ClientRouter /> swaps in the new page's <html> attributes on each
+			// navigation, so re-apply the theme before it renders.
+			document.addEventListener('astro:after-swap', applyTheme);
+		</script>
+	</head>
+	<body class="relative">
+		<div class="absolute top-1 right-1 z-99">
+			<ThemeToggle />
+		</div>
+		<slot />
+	</body>
+</html>
