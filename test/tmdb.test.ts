@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { blurbFromTmdb, enrichTitle } from '../src/tmdb/enrich.ts';
+import {
+	blurbFromTmdb,
+	enrichTitle,
+	enrichTitles,
+} from '../src/tmdb/enrich.ts';
 import type { Title } from '../src/domain/types.ts';
 
 function fixture(name: string): unknown {
@@ -48,7 +52,7 @@ describe('TMDB enrichment', () => {
 		expect(enriched.blurb).toBe('Why are they here?');
 	});
 
-	it('uses the IMDb find endpoint when a Title has no TMDB id', async () => {
+	it('resolves an IMDb id with /find, then reads details for the tagline', async () => {
 		const calls: string[] = [];
 		const enriched = await enrichTitle(
 			{ ...baseTitle, tmdbId: null },
@@ -57,16 +61,85 @@ describe('TMDB enrichment', () => {
 				baseUrl: 'https://api.example.test/3',
 				fetch: async (input) => {
 					calls.push(String(input));
-					return response(fixture('tmdb-find.json'));
+					return String(input).includes('/find/')
+						? response(fixture('tmdb-find.json'))
+						: response(fixture('tmdb-movie.json'));
 				},
 			}
 		);
 
+		expect(calls).toHaveLength(2);
 		expect(calls[0]).toContain('/find/tt2543164');
 		expect(calls[0]).toContain('external_source=imdb_id');
+		expect(calls[1]).toContain('/movie/329865');
 		expect(enriched.tmdbId).toBe(329865);
 		expect(enriched.year).toBe(2016);
+		expect(enriched.blurb).toBe('Why are they here?');
+	});
+
+	it('falls back to the /find result when the details request fails', async () => {
+		const enriched = await enrichTitle(
+			{ ...baseTitle, tmdbId: null },
+			{
+				apiKey: 'v3-key',
+				fetch: async (input) =>
+					String(input).includes('/find/')
+						? response(fixture('tmdb-find.json'))
+						: new Response('unavailable', { status: 503 }),
+			}
+		);
+		expect(enriched.tmdbId).toBe(329865);
 		expect(enriched.blurb).toBe('A linguist works with the military.');
+	});
+
+	it('sends a v4 read token as a bearer header, not a query parameter', async () => {
+		let requested = '';
+		let authorization: string | null = null;
+		await enrichTitle(baseTitle, {
+			apiKey: 'eyJv4-token',
+			fetch: async (input, init) => {
+				requested = String(input);
+				authorization = new Headers(init?.headers).get('authorization');
+				return response(fixture('tmdb-movie.json'));
+			},
+		});
+		expect(authorization).toBe('Bearer eyJv4-token');
+		expect(requested).not.toContain('api_key');
+	});
+
+	it('raises an invalid key instead of silently leaving Titles unenriched', async () => {
+		await expect(
+			enrichTitle(baseTitle, {
+				apiKey: 'bad-key',
+				fetch: async () => new Response('invalid key', { status: 401 }),
+			})
+		).rejects.toThrow(/401/);
+	});
+
+	it('limits concurrent requests and keeps input order', async () => {
+		let inFlight = 0;
+		let peak = 0;
+		const titles = Array.from({ length: 20 }, (_, index) => ({
+			...baseTitle,
+			tmdbId: index + 1,
+			addedSeq: index,
+		}));
+		const enriched = await enrichTitles(titles, {
+			apiKey: 'v3-key',
+			concurrency: 3,
+			fetch: async (input) => {
+				inFlight += 1;
+				peak = Math.max(peak, inFlight);
+				await new Promise((resolve) => setTimeout(resolve, 1));
+				inFlight -= 1;
+				const id = Number(/\/movie\/(\d+)/.exec(String(input))?.[1]);
+				return response({ id, title: `Movie ${id}` });
+			},
+		});
+		expect(peak).toBe(3);
+		expect(enriched.map((title) => title.tmdbId)).toEqual(
+			titles.map((title) => title.tmdbId)
+		);
 	});
 
 	it('prefers a tagline and returns null for empty metadata', () => {

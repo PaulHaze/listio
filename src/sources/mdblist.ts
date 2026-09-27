@@ -1,13 +1,30 @@
 import type { SourceTitle, TitleType } from '../domain/types.ts';
 import { detectSource, type MdbListDetectedSource } from './detect.ts';
+import {
+	imdbValue,
+	nonEmptyString,
+	positiveInt,
+	record,
+	yearValue,
+	type JsonRecord,
+} from './parse.ts';
 
 const MDBLIST_API_URL = 'https://api.mdblist.com';
 const DEFAULT_PAGE_SIZE = 100;
-const DEFAULT_MAX_ITEMS = 1000;
+const SERIES_TYPES = [
+	'show',
+	'series',
+	'tv',
+	'tvshow',
+	'tv_series',
+	'tvseries',
+];
 
 export type MdbListFetchResult = {
 	titles: SourceTitle[];
 	skippedNoImdb: number;
+	/** Items that had an IMDb id but were otherwise unusable (e.g. no name). */
+	skippedInvalid: number;
 	pages: number;
 	totalItems: number;
 	source: MdbListDetectedSource;
@@ -18,123 +35,101 @@ export type MdbListFetchOptions = {
 	fetch?: typeof globalThis.fetch;
 	baseUrl?: string;
 	pageSize?: number;
+	/** Optional cap on accepted Titles. Lists have no size cap by default. */
 	maxItems?: number;
 	signal?: AbortSignal;
 };
 
-type MdbItem = Record<string, unknown>;
+type Classified = SourceTitle | 'noImdb' | 'invalid';
 
-function record(value: unknown): MdbItem | null {
-	return typeof value === 'object' && value !== null
-		? (value as MdbItem)
-		: null;
-}
-
-function nonEmptyString(value: unknown): string | null {
-	return typeof value === 'string' && value.trim() ? value.trim() : null;
-}
-
-function numberValue(value: unknown): number | null {
-	if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
-		return value;
-	}
-	if (typeof value === 'string' && /^\d{1,6}$/.test(value.trim())) {
-		const parsed = Number(value);
-		return parsed > 0 ? parsed : null;
-	}
-	if (typeof value === 'string') {
-		const year = Number(/^\d{4}/.exec(value.trim())?.[0]);
-		return Number.isInteger(year) && year > 0 ? year : null;
-	}
-	return null;
-}
-
-function imdbValue(value: unknown): string | null {
-	const id = nonEmptyString(value)?.toLowerCase();
-	return id && /^tt\d+$/.test(id) ? id : null;
+function rawMediaType(item: JsonRecord): unknown {
+	return item.mediatype ?? item.media_type ?? item.type ?? item.kind;
 }
 
 function mediaType(value: unknown): TitleType {
-	const type = nonEmptyString(value)?.toLowerCase();
-	return ['show', 'series', 'tv', 'tvshow', 'tv_series', 'tvseries'].includes(
-		type ?? ''
-	)
-		? 'series'
-		: 'movie';
+	const type = nonEmptyString(value)?.toLowerCase() ?? '';
+	return SERIES_TYPES.includes(type) ? 'series' : 'movie';
 }
 
-function nestedId(item: MdbItem, key: string): unknown {
-	const ids = record(item.ids);
-	return ids?.[key];
+function nestedId(item: JsonRecord, key: string): unknown {
+	return record(item.ids)?.[key];
 }
 
-/** Normalize one MDBList item. Items without a usable IMDb id are omitted. */
-export function normalizeMdbListItem(item: unknown): SourceTitle | null {
+function classifyMdbListItem(item: unknown): Classified {
 	const raw = record(item);
-	if (!raw) return null;
+	if (!raw) return 'invalid';
 
 	const imdbId = imdbValue(
 		raw.imdb_id ?? raw.imdbId ?? raw.imdb ?? nestedId(raw, 'imdb')
 	);
-	if (!imdbId) return null;
+	if (!imdbId) return 'noImdb';
 
 	const name = nonEmptyString(
 		raw.title ?? raw.name ?? raw.original_title ?? raw.original_name
 	);
-	if (!name) return null;
+	if (!name) return 'invalid';
 
 	return {
 		imdbId,
-		type: mediaType(raw.mediatype ?? raw.media_type ?? raw.type ?? raw.kind),
+		type: mediaType(rawMediaType(raw)),
 		name,
-		year: numberValue(raw.year ?? raw.release_year ?? raw.releaseYear),
-		tmdbId: numberValue(
+		year: yearValue(raw.year ?? raw.release_year ?? raw.releaseYear),
+		tmdbId: positiveInt(
 			raw.tmdb_id ?? raw.tmdbid ?? raw.tmdbId ?? nestedId(raw, 'tmdb')
 		),
 	};
 }
 
-/** Normalize either known MDBList response shape and count missing IMDb ids. */
+/** Normalize one MDBList item. Items without a usable IMDb id are omitted. */
+export function normalizeMdbListItem(item: unknown): SourceTitle | null {
+	const result = classifyMdbListItem(item);
+	return typeof result === 'string' ? null : result;
+}
+
+/** Normalize either known MDBList response shape, counting skipped items. */
 export function normalizeMdbListItems(items: unknown): {
 	titles: SourceTitle[];
 	skippedNoImdb: number;
+	skippedInvalid: number;
 } {
 	const inputItems = Array.isArray(items) ? items : parsePayload(items).items;
-	if (!Array.isArray(inputItems)) return { titles: [], skippedNoImdb: 0 };
-
 	const titles: SourceTitle[] = [];
 	let skippedNoImdb = 0;
+	let skippedInvalid = 0;
 	for (const item of inputItems) {
-		const normalized = normalizeMdbListItem(item);
-		if (normalized) {
-			titles.push(normalized);
-		} else {
-			skippedNoImdb += 1;
-		}
+		const result = classifyMdbListItem(item);
+		if (result === 'noImdb') skippedNoImdb += 1;
+		else if (result === 'invalid') skippedInvalid += 1;
+		else titles.push(result);
 	}
-	return { titles, skippedNoImdb };
+	return { titles, skippedNoImdb, skippedInvalid };
 }
-
-export const normaliseMdbListItems = normalizeMdbListItems;
-export const normalizeMdbListResponse = normalizeMdbListItems;
 
 function endpointFor(source: MdbListDetectedSource): string {
-	return `/lists/${encodeURIComponent(source.user)}/${encodeURIComponent(source.slug)}/items`;
+	return `/lists/${encodeURIComponent(source.user)}/${encodeURIComponent(
+		source.slug
+	)}/items`;
 }
+
+export type MdbListPageRequest = {
+	limit: number;
+	/** Current API: opaque cursor from the previous response. */
+	cursor?: string;
+	/** Legacy API: number of items already read. */
+	offset?: number;
+	baseUrl?: string;
+};
 
 export function buildMdbListItemsUrl(
 	source: MdbListDetectedSource,
 	apiKey: string,
-	page: number,
-	limit: number,
-	baseUrl = MDBLIST_API_URL,
-	cursor?: string
+	{ limit, cursor, offset = 0, baseUrl = MDBLIST_API_URL }: MdbListPageRequest
 ): string {
 	const url = new URL(endpointFor(source), `${baseUrl.replace(/\/$/, '')}/`);
 	url.searchParams.set('apikey', apiKey);
 	url.searchParams.set('limit', String(limit));
 	if (cursor) url.searchParams.set('cursor', cursor);
-	else url.searchParams.set('page', String(page));
+	else if (offset > 0) url.searchParams.set('offset', String(offset));
 	return url.toString();
 }
 
@@ -145,18 +140,24 @@ type ParsedPayload = {
 	hasMore: boolean | null;
 };
 
-function positiveNumber(value: unknown): number | null {
-	if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-		return Math.floor(value);
-	}
-	if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
-	return null;
+/**
+ * Items in the current `movies`/`shows` buckets may not repeat their media
+ * type, so the bucket supplies it when the item does not.
+ */
+function bucketItems(bucket: unknown, type: 'movie' | 'show'): unknown[] {
+	if (!Array.isArray(bucket)) return [];
+	return bucket.map((item) => {
+		const raw = record(item);
+		return raw && rawMediaType(raw) === undefined
+			? { ...raw, mediatype: type }
+			: item;
+	});
 }
 
 /**
- * MDBList has returned both a top-level array and an object containing an
- * `items` array over time. Keep the parser tolerant while recording the shape
- * in fixtures so changes can be spotted in tests.
+ * MDBList has returned a top-level array, an object containing an `items`
+ * array, and (currently) `movies`/`shows` buckets. Keep the parser tolerant
+ * while recording the shape in fixtures so changes can be spotted in tests.
  */
 function parsePayload(payload: unknown): ParsedPayload {
 	if (Array.isArray(payload)) {
@@ -168,7 +169,7 @@ function parsePayload(payload: unknown): ParsedPayload {
 	}
 
 	const pagination = record(root.pagination) ?? record(root.meta);
-	const pageCount = positiveNumber(
+	const pageCount = positiveInt(
 		root.page_count ??
 			root.pageCount ??
 			pagination?.page_count ??
@@ -189,12 +190,12 @@ function parsePayload(payload: unknown): ParsedPayload {
 		root.hasMore;
 	const hasMore = typeof hasMoreValue === 'boolean' ? hasMoreValue : null;
 
-	const buckets = [root.movies, root.shows];
-	const bucketItems = buckets
-		.filter((bucket): bucket is unknown[] => Array.isArray(bucket))
-		.flatMap((bucket) => bucket);
-	if (bucketItems.length > 0) {
-		return { items: bucketItems, pageCount, nextCursor, hasMore };
+	const buckets = [
+		...bucketItems(root.movies, 'movie'),
+		...bucketItems(root.shows, 'show'),
+	];
+	if (buckets.length > 0) {
+		return { items: buckets, pageCount, nextCursor, hasMore };
 	}
 
 	for (const candidate of [root.items, root.results, root.data]) {
@@ -218,7 +219,9 @@ async function responseJson(response: Response): Promise<unknown> {
 	if (!response.ok) {
 		const body = await response.text();
 		throw new Error(
-			`MDBList request failed (${response.status} ${response.statusText}): ${body.slice(0, 300)}`
+			`MDBList request failed (${response.status} ${
+				response.statusText
+			}): ${body.slice(0, 300)}`
 		);
 	}
 	return response.json() as Promise<unknown>;
@@ -242,7 +245,14 @@ function optionsFor(
 	return { ...apiKeyOrOptions, fetch: apiKeyOrOptions.fetch ?? fetcher };
 }
 
-/** Fetch and normalize all pages of an MDBList public list. */
+/**
+ * Fetch and normalize all pages of an MDBList public list.
+ *
+ * Follows `next_cursor` when the response supplies one (current API) and
+ * otherwise advances `offset` (legacy API). A page identical to the previous
+ * one means the server ignored the pagination request; that is reported as an
+ * error rather than returning a silently truncated list.
+ */
 export async function fetchMdbList(
 	sourceInput: string | MdbListDetectedSource,
 	apiKeyOrOptions: string | MdbListFetchOptions,
@@ -262,45 +272,51 @@ export async function fetchMdbList(
 		Math.max(options.pageSize ?? DEFAULT_PAGE_SIZE, 1),
 		1000
 	);
-	const maxItems = Math.max(options.maxItems ?? DEFAULT_MAX_ITEMS, 1);
+	const maxItems =
+		options.maxItems === undefined ? Infinity : Math.max(options.maxItems, 1);
 	const titles: SourceTitle[] = [];
 	let skippedNoImdb = 0;
+	let skippedInvalid = 0;
 	let pages = 0;
 	let previousSignature = '';
 	let cursor: string | undefined;
+	let offset = 0;
 
-	for (let page = 1; titles.length + skippedNoImdb < maxItems; page += 1) {
+	for (let page = 1; titles.length < maxItems; page += 1) {
 		const response = await request(
-			buildMdbListItemsUrl(
-				source,
-				options.apiKey,
-				page,
+			buildMdbListItemsUrl(source, options.apiKey, {
 				limit,
-				options.baseUrl,
-				cursor
-			),
+				cursor,
+				offset,
+				baseUrl: options.baseUrl,
+			}),
 			{
 				headers: { Accept: 'application/json' },
 				signal: options.signal,
 			}
 		);
 		const parsed = parsePayload(await responseJson(response));
-		const normalized = normalizeMdbListItems(parsed.items);
 		const signature = parsed.items
 			.map((item) => JSON.stringify(item))
 			.join('|');
-		if (page > 1 && signature && signature === previousSignature) break;
+		if (page > 1 && signature && signature === previousSignature) {
+			throw new Error(
+				`MDBList returned the same page twice for ${source.url}; ` +
+					'its pagination response is not supported.'
+			);
+		}
 		previousSignature = signature;
 
-		const remaining = maxItems - (titles.length + skippedNoImdb);
-		titles.push(...normalized.titles.slice(0, remaining));
-		skippedNoImdb += Math.min(
-			normalized.skippedNoImdb,
-			Math.max(remaining - normalized.titles.length, 0)
-		);
+		const normalized = normalizeMdbListItems(parsed.items);
+		titles.push(...normalized.titles.slice(0, maxItems - titles.length));
+		skippedNoImdb += normalized.skippedNoImdb;
+		skippedInvalid += normalized.skippedInvalid;
+		offset += parsed.items.length;
 		pages = page;
 
+		if (parsed.items.length === 0) break;
 		if (parsed.pageCount !== null && page >= parsed.pageCount) break;
+		if (parsed.hasMore === false) break;
 		if (parsed.nextCursor) {
 			cursor = parsed.nextCursor;
 			continue;
@@ -315,11 +331,9 @@ export async function fetchMdbList(
 	return {
 		titles,
 		skippedNoImdb,
+		skippedInvalid,
 		pages,
 		totalItems: titles.length,
 		source,
 	};
 }
-
-export const fetchMdbListItems = fetchMdbList;
-export const fetchMdbListSource = fetchMdbList;

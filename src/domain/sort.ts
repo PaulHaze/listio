@@ -1,4 +1,4 @@
-import type { CombinedList, SortOrder, Title } from './types';
+import type { CombinedList, SortOrder, Title } from './types.ts';
 
 function yearCompare(a: Title, b: Title, direction: 1 | -1): number {
 	if (a.year === null && b.year === null) return 0;
@@ -44,5 +44,3 @@ export function sortCombinedList(
 		sort: order,
 	};
 }
-
-export const sortListTitles = sortTitles;

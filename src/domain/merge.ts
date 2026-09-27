@@ -1,4 +1,4 @@
-import type { CombinedList, SourceTitle, Title } from './types';
+import type { CombinedList, SourceTitle, Title } from './types.ts';
 
 export type MergeInput = SourceTitle | Omit<Title, 'addedSeq'>;
 
@@ -33,15 +33,18 @@ function titleFromInput(input: MergeInput, addedSeq: number): Title {
 	};
 }
 
+/**
+ * Removed Titles keep their `addedSeq` so a restore returns them to their
+ * original position; they must count here or a new Title could reuse it.
+ */
 function deriveNextSeq(
-	titles: readonly Title[],
-	nextSeq: number | undefined
+	list: Pick<CombinedList, 'titles' | 'removed' | 'nextSeq'>
 ): number {
-	const highest = titles.reduce(
+	const highest = [...list.titles, ...list.removed].reduce(
 		(max, title) => Math.max(max, title.addedSeq),
 		-1
 	);
-	return Math.max(nextSeq ?? 0, highest + 1);
+	return Math.max(list.nextSeq ?? 0, highest + 1);
 }
 
 /**
@@ -63,7 +66,7 @@ export function mergeTitles(
 	);
 	const seenIncoming = new Set<string>();
 	const newTitles: Title[] = [];
-	let nextSeq = deriveNextSeq(list.titles, list.nextSeq);
+	let nextSeq = deriveNextSeq(list);
 	let skippedExisting = 0;
 	let skippedRemoved = 0;
 	let skippedDuplicate = 0;
@@ -122,5 +125,3 @@ export function mergeIntoList(
 		newIds: result.newIds,
 	};
 }
-
-export const mergeSource = mergeTitles;

@@ -1,6 +1,6 @@
 # Sprint 02 — Domain core & Sources: Trakt, MDBList, TMDB
 
-**Status:** implementation complete (offline verification; live probes pending credentials)
+**Status:** in progress — code and offline tests done; live verification pending
 
 ## Goal
 
@@ -15,13 +15,15 @@ correctly — as pure, tested TypeScript, before any UI or storage exists.
 - [x] `domain/sort.ts` — newest (default) / oldest / A–Z / order added
 - [x] `sources/detect.ts` — recognise Trakt (`/users/{u}/lists/{slug}`, `/lists/{id}`) and MDBList URLs; clear error otherwise
 - [x] `sources/trakt.ts` — paginated fetch, normalize, map types, skip no-IMDb items (counted)
-- [x] `sources/mdblist.ts` — current cursor/bucket response plus legacy shapes; live response verification requires a key
+- [ ] `sources/mdblist.ts` — same; verify the real response shape with a key first
 - [x] `tmdb/enrich.ts` — details by tmdbId (or `/find` by IMDb ID) → poster, year, blurb (tagline, else first sentence of overview)
-- [x] Recorded fixtures + unit tests for all of the above
+- [ ] Recorded fixtures + unit tests for all of the above
 - [x] `scripts/probe-*.ts` to run a real URL end-to-end from the terminal
 
-> Offline verification is complete. Live Trakt/MDBList/TMDB probes were not run because
-> `.dev.vars` and real list URLs were not available in this workspace.
+> The code and offline tests are done. `sources/mdblist.ts` handles the current cursor/bucket response
+> and legacy offset paging, but the response shape has not yet been checked against a real response.
+> The fixtures are constructed, not recorded. `.dev.vars` now has all three keys; the live probes still
+> need real list URLs. See the remediation note in `docs/audits/sprint-02-audit-summary.md`.
 
 ## Done when
 

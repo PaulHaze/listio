@@ -46,7 +46,8 @@ function hostIs(hostname: string, ...accepted: string[]): boolean {
 /**
  * Recognise one of the public list URLs supported by Listio.
  *
- * Query strings and fragments are ignored, while extra path segments are
+ * Query strings and fragments are dropped from the returned `url` so the same
+ * list is always recorded under one Source URL, while extra path segments are
  * rejected so an accidentally pasted detail page produces an actionable
  * error before any API request is made.
  */
@@ -67,6 +68,8 @@ export function detectSource(input: string): DetectedSource {
 	}
 
 	const segments = pathSegments(parsed.pathname);
+	parsed.search = '';
+	parsed.hash = '';
 	const canonicalUrl = parsed.toString();
 
 	if (hostIs(parsed.hostname, 'trakt.tv')) {
@@ -120,5 +123,3 @@ export function tryDetectSource(input: string): DetectedSource | null {
 		throw error;
 	}
 }
-
-export const parseSourceUrl = detectSource;

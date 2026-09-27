@@ -22,9 +22,6 @@ export function slugify(name: string): string {
 	return slug || FALLBACK_SLUG;
 }
 
-/** Alias that reads naturally at call sites creating a new Combined List. */
-export const slugifyName = slugify;
-
 /**
  * Return a slug that does not collide with an existing id.
  *
@@ -43,6 +40,3 @@ export function uniqueSlug(
 	while (isTaken(`${base}-${suffix}`)) suffix += 1;
 	return `${base}-${suffix}`;
 }
-
-export const createUniqueSlug = uniqueSlug;
-export const makeUniqueSlug = uniqueSlug;

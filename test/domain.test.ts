@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeTitles } from '../src/domain/merge.ts';
+import { mergeIntoList, mergeTitles } from '../src/domain/merge.ts';
 import { slugify, uniqueSlug } from '../src/domain/slug.ts';
 import { sortTitles } from '../src/domain/sort.ts';
 import type { CombinedList, Title } from '../src/domain/types.ts';
@@ -29,6 +29,14 @@ describe('slug generation', () => {
 		expect(
 			uniqueSlug('Spy Thrillers', ['spy-thrillers', 'spy-thrillers-2'])
 		).toBe('spy-thrillers-3');
+	});
+
+	it('accepts a predicate for store-backed collision checks', () => {
+		const taken = new Set(['spy-thrillers']);
+		expect(uniqueSlug('Spy Thrillers', (id) => taken.has(id))).toBe(
+			'spy-thrillers-2'
+		);
+		expect(uniqueSlug('!!!', () => false)).toBe('list');
 	});
 });
 
@@ -75,6 +83,70 @@ describe('mergeTitles', () => {
 			'tt0000001',
 			'tt0000003',
 		]);
+	});
+
+	it('never reuses the addedSeq of a Removed Title, even with a stale nextSeq', () => {
+		const result = mergeTitles(
+			{
+				titles: [title({ addedSeq: 0 })],
+				removed: [title({ imdbId: 'tt0000002', addedSeq: 7 })],
+				nextSeq: 1,
+			},
+			[
+				{
+					imdbId: 'tt0000009',
+					type: 'movie',
+					name: 'New',
+					year: 2021,
+					tmdbId: null,
+				},
+			]
+		);
+		expect(result.newTitles[0].addedSeq).toBe(8);
+		expect(result.nextSeq).toBe(9);
+	});
+
+	it('counts incoming Titles without an IMDb id', () => {
+		const result = mergeTitles(emptyList, [
+			{ imdbId: ' ', type: 'movie', name: 'Blank', year: null, tmdbId: null },
+		]);
+		expect(result.skippedNoImdb).toBe(1);
+		expect(result.newTitles).toEqual([]);
+	});
+});
+
+describe('mergeIntoList', () => {
+	it('returns an updated list without mutating the original', () => {
+		const list: CombinedList = {
+			id: 'spy-thrillers',
+			name: 'Spy Thrillers',
+			sort: 'newest',
+			sources: [],
+			titles: [title()],
+			removed: [],
+			nextSeq: 1,
+			version: 3,
+			updatedAt: '2026-09-27T00:00:00.000Z',
+		};
+		const merged = mergeIntoList(list, [
+			{
+				imdbId: 'tt0000004',
+				type: 'movie',
+				name: 'Fresh',
+				year: 2025,
+				tmdbId: 4,
+			},
+		]);
+
+		expect(merged.titles.map((item) => item.imdbId)).toEqual([
+			'tt0000001',
+			'tt0000004',
+		]);
+		expect(merged.newIds).toEqual(['tt0000004']);
+		expect(merged.nextSeq).toBe(2);
+		expect(merged.version).toBe(3);
+		expect(list.titles).toHaveLength(1);
+		expect(list.nextSeq).toBe(1);
 	});
 });
 

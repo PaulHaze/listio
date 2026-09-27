@@ -27,7 +27,7 @@ if (!url) {
 			result.titles,
 			requiredValue('TMDB_API_KEY', vars)
 		);
-		printProbeResult('trakt', url, titles, result.skippedNoImdb);
+		printProbeResult('trakt', url, titles, result);
 	} catch (error) {
 		console.error(error instanceof Error ? error.message : error);
 		process.exitCode = 1;

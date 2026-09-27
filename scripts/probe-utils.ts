@@ -48,7 +48,7 @@ export function printProbeResult(
 	site: string,
 	url: string,
 	titles: readonly Title[],
-	skippedNoImdb: number
+	skipped: { skippedNoImdb: number; skippedInvalid: number }
 ): void {
 	console.log(
 		JSON.stringify(
@@ -56,7 +56,10 @@ export function printProbeResult(
 				site,
 				url,
 				titleCount: titles.length,
-				skippedNoImdb,
+				skippedNoImdb: skipped.skippedNoImdb,
+				skippedInvalid: skipped.skippedInvalid,
+				enrichedCount: titles.filter((title) => title.poster || title.blurb)
+					.length,
 				titles: titles.slice(0, 10),
 			},
 			null,

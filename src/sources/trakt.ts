@@ -1,13 +1,22 @@
 import type { SourceTitle, TitleType } from '../domain/types.ts';
 import { detectSource, type TraktDetectedSource } from './detect.ts';
+import {
+	imdbValue,
+	nonEmptyString,
+	positiveInt,
+	record,
+	yearValue,
+	type JsonRecord,
+} from './parse.ts';
 
 const TRAKT_API_URL = 'https://api.trakt.tv';
 const DEFAULT_PAGE_SIZE = 100;
-const DEFAULT_MAX_ITEMS = 1000;
 
 export type TraktFetchResult = {
 	titles: SourceTitle[];
 	skippedNoImdb: number;
+	/** Movies/shows that had an IMDb id but were otherwise unusable (e.g. no name). */
+	skippedInvalid: number;
 	pages: number;
 	totalItems: number;
 	source: TraktDetectedSource;
@@ -18,59 +27,31 @@ export type TraktFetchOptions = {
 	fetch?: typeof globalThis.fetch;
 	baseUrl?: string;
 	pageSize?: number;
+	/** Optional cap on accepted Titles. Lists have no size cap by default. */
 	maxItems?: number;
 	signal?: AbortSignal;
 };
 
-type TraktItem = Record<string, unknown>;
+type Classified = SourceTitle | 'unsupported' | 'noImdb' | 'invalid';
 
-function record(value: unknown): TraktItem | null {
-	return typeof value === 'object' && value !== null
-		? (value as TraktItem)
-		: null;
-}
-
-function nonEmptyString(value: unknown): string | null {
-	return typeof value === 'string' && value.trim() ? value.trim() : null;
-}
-
-function numberValue(value: unknown): number | null {
-	if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
-		return value;
-	}
-	if (typeof value === 'string' && /^\d{1,6}$/.test(value.trim())) {
-		const parsed = Number(value);
-		return parsed > 0 ? parsed : null;
-	}
-	return null;
-}
-
-function imdbValue(value: unknown): string | null {
-	const id = nonEmptyString(value)?.toLowerCase();
-	return id && /^tt\d+$/.test(id) ? id : null;
-}
-
-function mediaType(value: unknown, media: TraktItem): TitleType | null {
-	const type = nonEmptyString(value)?.toLowerCase();
-	if (type === 'show') return 'series';
-	if (type === 'movie') return 'movie';
+function mediaType(value: string | null, media: JsonRecord): TitleType | null {
+	if (value === 'show') return 'series';
+	if (value === 'movie') return 'movie';
 	if (media.show !== undefined) return 'series';
 	if (media.movie !== undefined) return 'movie';
 	return null;
 }
 
-function nestedId(media: TraktItem, key: string): unknown {
-	const ids = record(media.ids);
-	return ids?.[key];
+function nestedId(media: JsonRecord, key: string): unknown {
+	return record(media.ids)?.[key];
 }
 
-/** Normalize one Trakt item; unsupported seasons, episodes and people return null. */
-export function normalizeTraktItem(item: unknown): SourceTitle | null {
+function classifyTraktItem(item: unknown): Classified {
 	const raw = record(item);
-	if (!raw) return null;
+	if (!raw) return 'invalid';
 
-	const type = nonEmptyString(raw.type)?.toLowerCase();
-	if (type && !['movie', 'show'].includes(type)) return null;
+	const type = nonEmptyString(raw.type)?.toLowerCase() ?? null;
+	if (type && !['movie', 'show'].includes(type)) return 'unsupported';
 
 	const inferredType =
 		type ??
@@ -86,57 +67,64 @@ export function normalizeTraktItem(item: unknown): SourceTitle | null {
 				? raw.movie
 				: (raw.show ?? raw.movie)
 	);
-	if (!media) return null;
+	if (!media) return 'invalid';
 
 	const mappedType = mediaType(inferredType, media);
-	if (!mappedType) return null;
+	if (!mappedType) return 'invalid';
 
 	const imdbId = imdbValue(nestedId(media, 'imdb') ?? media.imdb ?? raw.imdb);
-	if (!imdbId) return null;
+	if (!imdbId) return 'noImdb';
 
 	const name = nonEmptyString(
 		media.title ?? media.name ?? raw.title ?? raw.name
 	);
-	if (!name) return null;
+	if (!name) return 'invalid';
 
 	return {
 		imdbId,
 		type: mappedType,
 		name,
-		year: numberValue(media.year ?? raw.year),
-		tmdbId: numberValue(
+		year: yearValue(media.year ?? raw.year),
+		tmdbId: positiveInt(
 			nestedId(media, 'tmdb') ?? media.tmdb_id ?? media.tmdbId
 		),
 	};
 }
 
-/** Normalize a page of Trakt items and count items with no usable IMDb id. */
+/** Normalize one Trakt item; unsupported seasons, episodes and people return null. */
+export function normalizeTraktItem(item: unknown): SourceTitle | null {
+	const result = classifyTraktItem(item);
+	return typeof result === 'string' ? null : result;
+}
+
+/** Normalize a page of Trakt items, counting movies/shows that were skipped. */
 export function normalizeTraktItems(items: unknown): {
 	titles: SourceTitle[];
 	skippedNoImdb: number;
+	skippedInvalid: number;
 } {
 	const inputItems = Array.isArray(items) ? items : record(items)?.items;
-	if (!Array.isArray(inputItems)) return { titles: [], skippedNoImdb: 0 };
-
 	const titles: SourceTitle[] = [];
 	let skippedNoImdb = 0;
-	for (const item of inputItems) {
-		const raw = record(item);
-		const type = nonEmptyString(raw?.type)?.toLowerCase();
-		const shouldCount = !type || type === 'movie' || type === 'show';
-		const title = normalizeTraktItem(item);
-		if (title) titles.push(title);
-		else if (shouldCount) skippedNoImdb += 1;
+	let skippedInvalid = 0;
+	if (!Array.isArray(inputItems)) {
+		return { titles, skippedNoImdb, skippedInvalid };
 	}
-	return { titles, skippedNoImdb };
-}
 
-export const normaliseTraktItems = normalizeTraktItems;
-export const normalizeTraktResponse = normalizeTraktItems;
+	for (const item of inputItems) {
+		const result = classifyTraktItem(item);
+		if (result === 'noImdb') skippedNoImdb += 1;
+		else if (result === 'invalid') skippedInvalid += 1;
+		else if (result !== 'unsupported') titles.push(result);
+	}
+	return { titles, skippedNoImdb, skippedInvalid };
+}
 
 function endpointFor(source: TraktDetectedSource): string {
 	if (source.user && source.slug) {
-		return `/users/${encodeURIComponent(source.user)}/lists/${encodeURIComponent(source.slug)}/items`;
+		return `/users/${encodeURIComponent(
+			source.user
+		)}/lists/${encodeURIComponent(source.slug)}/items`;
 	}
 	if (source.listId) return `/lists/${encodeURIComponent(source.listId)}/items`;
 	throw new Error('The Trakt URL did not include a user list or list id.');
@@ -165,7 +153,9 @@ async function responseJson(response: Response): Promise<unknown> {
 	if (!response.ok) {
 		const body = await response.text();
 		throw new Error(
-			`Trakt request failed (${response.status} ${response.statusText}): ${body.slice(0, 300)}`
+			`Trakt request failed (${response.status} ${
+				response.statusText
+			}): ${body.slice(0, 300)}`
 		);
 	}
 	return response.json() as Promise<unknown>;
@@ -201,12 +191,14 @@ export async function fetchTrakt(
 		Math.max(options.pageSize ?? DEFAULT_PAGE_SIZE, 1),
 		100
 	);
-	const maxItems = Math.max(options.maxItems ?? DEFAULT_MAX_ITEMS, 1);
+	const maxItems =
+		options.maxItems === undefined ? Infinity : Math.max(options.maxItems, 1);
 	const titles: SourceTitle[] = [];
 	let skippedNoImdb = 0;
+	let skippedInvalid = 0;
 	let pages = 0;
 
-	for (let page = 1; titles.length + skippedNoImdb < maxItems; page += 1) {
+	for (let page = 1; titles.length < maxItems; page += 1) {
 		const response = await request(
 			buildTraktItemsUrl(source, page, limit, options.baseUrl),
 			{
@@ -221,12 +213,9 @@ export async function fetchTrakt(
 		const payload = await responseJson(response);
 		const items = Array.isArray(payload) ? payload : record(payload)?.items;
 		const normalized = normalizeTraktItems(items);
-		const remaining = maxItems - (titles.length + skippedNoImdb);
-		titles.push(...normalized.titles.slice(0, remaining));
-		skippedNoImdb += Math.min(
-			normalized.skippedNoImdb,
-			Math.max(remaining - normalized.titles.length, 0)
-		);
+		titles.push(...normalized.titles.slice(0, maxItems - titles.length));
+		skippedNoImdb += normalized.skippedNoImdb;
+		skippedInvalid += normalized.skippedInvalid;
 		pages = page;
 
 		const totalPages = pageCount(response);
@@ -242,11 +231,9 @@ export async function fetchTrakt(
 	return {
 		titles,
 		skippedNoImdb,
+		skippedInvalid,
 		pages,
 		totalItems: titles.length,
 		source,
 	};
 }
-
-export const fetchTraktList = fetchTrakt;
-export const fetchTraktSource = fetchTrakt;
