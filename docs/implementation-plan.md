@@ -5,12 +5,12 @@ Implements [`list-combiner-spec.md`](../list-combiner-spec.md). Vocabulary per
 
 ## 1. Platform constraints that shape the design
 
-| Constraint (Cloudflare free tier) | Consequence |
-| --- | --- |
-| **50 external subrequests per Worker invocation** | TMDB enrichment can't happen in one request for a 300-Title Source. The browser drives enrichment in chunks of ≤40 Titles per request. |
-| **KV: 1,000 writes/day, 1 write/sec per key** | No per-Title KV caching of TMDB data. A Save is ~2 writes (list + index). TMDB data is stored inside the list record, so Titles already in the list (or Removed) are never re-enriched. |
-| **KV: eventually consistent (~60s)** | After Save, Nuvio may see the old Catalog for up to a minute. Acceptable. The editor reads back its own saved state from the Save response, not from KV. |
-| **KV value max 25 MiB** | One record per Combined List is fine (~300 bytes/Title → 3,000 Titles ≈ 1 MB). |
+| Constraint (Cloudflare free tier)                 | Consequence                                                                                                                                                                             |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **50 external subrequests per Worker invocation** | TMDB enrichment can't happen in one request for a 300-Title Source. The browser drives enrichment in chunks of ≤40 Titles per request.                                                  |
+| **KV: 1,000 writes/day, 1 write/sec per key**     | No per-Title KV caching of TMDB data. A Save is ~2 writes (list + index). TMDB data is stored inside the list record, so Titles already in the list (or Removed) are never re-enriched. |
+| **KV: eventually consistent (~60s)**              | After Save, Nuvio may see the old Catalog for up to a minute. Acceptable. The editor reads back its own saved state from the Save response, not from KV.                                |
+| **KV value max 25 MiB**                           | One record per Combined List is fine (~300 bytes/Title → 3,000 Titles ≈ 1 MB).                                                                                                          |
 
 Stack versions: Astro 7, `@astrojs/cloudflare` v14 (Workers, not Pages), Wrangler,
 TypeScript strict, Vitest. Bindings are read via `import { env } from 'cloudflare:workers'`.
@@ -52,38 +52,39 @@ test/fixtures/        # recorded Trakt / MDBList / TMDB responses
 type TitleType = 'movie' | 'series';
 
 interface Title {
-  imdbId: string;          // "tt0120815" — identity
-  type: TitleType;
-  name: string;
-  year: number | null;
-  poster: string | null;   // full TMDB image URL
-  blurb: string | null;    // tagline, else first sentence of overview
-  tmdbId: number | null;
-  addedSeq: number;        // monotonically increasing → "order added" sort
+	imdbId: string; // "tt0120815" — identity
+	type: TitleType;
+	name: string;
+	year: number | null;
+	poster: string | null; // full TMDB image URL
+	blurb: string | null; // tagline, else first sentence of overview
+	tmdbId: number | null;
+	addedSeq: number; // monotonically increasing → "order added" sort
 }
 
 interface SourceRecord {
-  url: string;
-  site: 'trakt' | 'mdblist' | 'imdb' | 'imdb-csv';
-  addedAt: string;         // ISO
-  titleCount: number;
-  skippedNoImdb: number;
+	url: string;
+	site: 'trakt' | 'mdblist' | 'imdb' | 'imdb-csv';
+	addedAt: string; // ISO
+	titleCount: number;
+	skippedNoImdb: number;
 }
 
 interface CombinedList {
-  id: string;              // "spy-thrillers" — immutable
-  name: string;
-  sort: 'newest' | 'oldest' | 'az' | 'added';   // default 'newest'
-  sources: SourceRecord[];
-  titles: Title[];
-  removed: Title[];        // full Title kept so the Removed view can render + restore
-  nextSeq: number;
-  version: number;         // incremented on every save (optimistic concurrency)
-  updatedAt: string;
+	id: string; // "spy-thrillers" — immutable
+	name: string;
+	sort: 'newest' | 'oldest' | 'az' | 'added'; // default 'newest'
+	sources: SourceRecord[];
+	titles: Title[];
+	removed: Title[]; // full Title kept so the Removed view can render + restore
+	nextSeq: number;
+	version: number; // incremented on every save (optimistic concurrency)
+	updatedAt: string;
 }
 ```
 
 **KV keys**
+
 - `list:{id}` → `CombinedList`
 - `index` → `{ id, name, count, types: TitleType[] }[]` — read by Home and the manifest
   (avoids KV `list()` and its eventual consistency on new keys)
@@ -94,6 +95,7 @@ Type mapping from Sources: Trakt `show` / MDBList `show` / IMDb `tvSeries|tvMini
 ## 4. Flows
 
 ### Adding a Source (all client-driven, nothing saved)
+
 1. Editor POSTs `{url}` to `/api/sources/fetch` → server detects site, pages through the
    Source API (Trakt: `limit=100` pages; ≤1,000 items max), returns normalized
    `{ imdbId, type, name, year, tmdbId }[]` + skipped count.
@@ -106,11 +108,13 @@ Type mapping from Sources: Trakt `show` / MDBList `show` / IMDb `tvSeries|tvMini
    Enrichment failure leaves poster/blurb null — the Title is still usable.
 
 ### Save
+
 `PUT /api/lists/{id}` with `{ version, name?, sort, sources, titles, removed }` (the full
 next state). Server rejects with 409 if `version` is stale (e.g. edited in two tabs),
 validates shape, writes `list:{id}` then updates `index`. Response returns the saved list.
 
 ### Create / rename / delete
+
 - Create: slugify name, suffix `-2`, `-3`… if `list:{id}` or index entry exists; write empty list + index.
 - Rename: updates `name` only.
 - Delete: removes `list:{id}` and its index entry.
@@ -136,12 +140,14 @@ One interactive island for the whole editor; the rest of each page is static Ast
 for a single-user tool; familiarity wins.
 
 State held in the island:
+
 ```
 saved: CombinedList            // last saved
 draft: { titles, removed, sources, sort, newIds:Set, changes:number }
 selection: Set<imdbId>
 view: 'all' | 'new' | 'removed'
 ```
+
 - Trash → move Title from `draft.titles` to `draft.removed`, `changes++`, no confirm
 - Checkbox → `selection`; floating **Remove selected (N)** fixed bottom-right when `selection.size > 0`
 - **Save** appears beside it when `changes > 0` → confirm dialog → PUT → reset draft from response

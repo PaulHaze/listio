@@ -3,10 +3,12 @@
 **Status:** complete
 
 ## Goal
+
 An empty-but-real Listio app that runs locally and is deployed to `workers.dev`, with tests
 running. Everything later builds on this without re-plumbing.
 
 ## Tasks
+
 - [x] Astro 7 project, TypeScript strict, minimal template
 - [x] `@astrojs/cloudflare` adapter; `wrangler.jsonc` with `main: "@astrojs/cloudflare/entrypoints/server"`
 - [x] KV namespace binding `LISTIO` (create namespace in Cloudflare; local emulation in dev)
@@ -20,9 +22,11 @@ running. Everything later builds on this without re-plumbing.
 - [x] First deploy to `listio.<account>.workers.dev`
 
 ## Done when
+
 - `npm run dev` serves the page locally, KV round-trip works
 - `npm test` and `npm run typecheck` pass
 - Deployed URL serves the same page, KV round-trip works there too
 
 ## Needs from Paul
+
 - Cloudflare account logged in via `wrangler login`

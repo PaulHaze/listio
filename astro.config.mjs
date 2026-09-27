@@ -6,22 +6,19 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import icon from 'astro-icon';
 
-const isTypecheck = process.env.LISTIO_TYPECHECK === '1';
-
 // https://astro.build/config
 export default defineConfig({
-	...(isTypecheck
-		? {}
-		: {
-				output: 'server',
-				adapter: cloudflare({
-					persistState: true,
-					prerenderEnvironment: 'node',
-				}),
-			}),
-	// TODO: set to the deployed URL. Used for the sitemap, canonical and
-	// Open Graph URLs.
-	site: 'https://example.com',
+	output: 'server',
+	adapter: cloudflare({
+		persistState: true,
+		// workerd can't run on macOS < 13.5, so prerender in Node instead.
+		prerenderEnvironment: 'node',
+		// Posters are plain TMDB URLs; avoids provisioning a Cloudflare Images binding.
+		imageService: 'passthrough',
+	}),
+	// Unused; stops the adapter auto-provisioning a SESSION KV namespace.
+	session: false,
+	site: 'https://listio.listio.workers.dev',
 	vite: { plugins: [tailwindcss()] },
 	integrations: [react(), sitemap(), icon()],
 	// Downloaded at build time and self-hosted, with size-adjusted fallbacks to

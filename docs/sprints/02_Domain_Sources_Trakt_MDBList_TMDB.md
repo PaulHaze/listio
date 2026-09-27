@@ -3,10 +3,12 @@
 **Status:** not started
 
 ## Goal
+
 Given a Trakt or MDBList URL, produce enriched Titles and merge them into a Combined List
 correctly — as pure, tested TypeScript, before any UI or storage exists.
 
 ## Tasks
+
 - [ ] `domain/types.ts` — Title, CombinedList, SourceRecord, SortOrder (plan §3)
 - [ ] `domain/slug.ts` — name → unique id (`spy-thrillers`, `spy-thrillers-2`)
 - [ ] `domain/merge.ts` — dedupe by IMDb ID, skip existing and Removed Titles, flag new, assign `addedSeq`
@@ -19,10 +21,12 @@ correctly — as pure, tested TypeScript, before any UI or storage exists.
 - [ ] `scripts/probe-*.ts` to run a real URL end-to-end from the terminal
 
 ## Done when
+
 - Probe script turns a real Trakt URL and a real MDBList URL into enriched Titles
 - Merging a second Source into a list skips duplicates and Removed Titles (tested)
 - All tests pass
 
 ## Needs from Paul
+
 - Trakt client ID, MDBList API key, TMDB key in `.dev.vars`
 - One or two real list URLs to test against

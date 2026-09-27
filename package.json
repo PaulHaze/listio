@@ -8,10 +8,10 @@
 	"scripts": {
 		"dev": "astro dev",
 		"start": "astro dev",
-		"check": "LISTIO_TYPECHECK=1 astro check",
-		"typecheck": "LISTIO_TYPECHECK=1 astro check",
+		"check": "astro check",
+		"typecheck": "astro check",
 		"watch": "astro check --watch",
-		"build": "LISTIO_TYPECHECK=1 astro check && astro build",
+		"build": "astro check && astro build",
 		"preview": "astro preview",
 		"test": "vitest run",
 		"deploy": "astro build && wrangler deploy",

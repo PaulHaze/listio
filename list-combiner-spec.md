@@ -18,19 +18,23 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
 ## 2. Scope
 
 **v1 Sources**
+
 - **Trakt** public lists — `trakt.tv/users/{user}/lists/{slug}` or `trakt.tv/lists/{id}`
 - **MDBList** lists — `mdblist.com/lists/{user}/{slug}`
 
 **Next, in order**
+
 - **IMDb** lists — paste `imdb.com/list/ls…` URL; if fetching fails, prompt for a CSV upload
   (the CSV exported from IMDb while logged in)
 
 **Later (not v1)**
+
 - Simkl — its API needs a PRO/VIP token and its pages block scripts; revisit via a browser
   bookmarklet that reads a list page the user is viewing and sends it to Listio
 - Another addon's catalogs as a Source (pick catalogs from a checklist, capped at 500 Titles each)
 
 **Out of scope**
+
 - Searching for or adding individual Titles
 - Reordering by hand
 - Syncing/refreshing Sources
@@ -54,6 +58,7 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
 ## 4. Screens & workflow
 
 ### Home — Combined Lists
+
 - List of Combined Lists (name, Title count), each opens its editor
 - **+ New list** → enter a name → opens the editor
 - Rename and delete per list (delete asks for confirmation)
@@ -61,12 +66,14 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
   (Nuvio caches the addon's list of Catalogs)
 
 ### Editor — adding Sources
+
 - A URL box; a small **+** adds another URL box; repeat for as many Sources as needed
 - Each URL is recognised by site and fetched in the background, showing status
   (fetching / N Titles / error)
 - **Review List** opens the review grid with the merged result
 
 ### Editor — review grid
+
 - Large grid; each Title shows **poster, title, year, and a one-line description**
   (TMDB tagline, falling back to the first sentence of the TMDB overview). Nothing else.
 - Each Title has a **trash icon** (removes it from view instantly, into the Draft — no

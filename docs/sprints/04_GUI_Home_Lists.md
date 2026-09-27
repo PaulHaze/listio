@@ -3,9 +3,11 @@
 **Status:** not started
 
 ## Goal
+
 A home page to create, rename, open and delete Combined Lists.
 
 ## Tasks
+
 - [ ] Base layout + plain CSS styling
 - [ ] `pages/index.astro` — lists from `index` (name, Title count), each links to its editor
 - [ ] `+ New list` → name → `POST /api/lists` → open editor
@@ -16,5 +18,6 @@ A home page to create, rename, open and delete Combined Lists.
 - [ ] Stub editor page `pages/lists/[id].astro`
 
 ## Done when
+
 - Lists can be created, renamed and deleted from the browser, and the addon manifest reflects it
 - Creating a duplicate name yields `-2` id

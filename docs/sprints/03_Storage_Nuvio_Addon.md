@@ -3,10 +3,12 @@
 **Status:** not started
 
 ## Goal
+
 Prove the end of the pipeline: a Combined List stored in KV shows up in Nuvio as a Catalog,
 before building any GUI.
 
 ## Tasks
+
 - [ ] `storage/lists.ts` — get / put (with `version` check) / delete list; maintain `index` key (plan §3)
 - [ ] `addon/` builders — manifest (one Catalog per type present, `skip` extra) and catalog pages of 100 (plan §5)
 - [ ] Routes `addon/[secret]/manifest.json` and `addon/[secret]/catalog/[type]/[...rest]` (`{id}.json`, `{id}/skip=N.json`)
@@ -16,6 +18,7 @@ before building any GUI.
 - [ ] Generate `ADDON_SECRET`, set with `wrangler secret put`, deploy
 
 ## Done when
+
 - Addon installed in Nuvio from the deployed URL
 - The seeded list appears as a row with posters, correct order, and pages beyond 100 Titles load
 - A mixed movie/show list appears as two Catalogs
@@ -23,4 +26,5 @@ before building any GUI.
 - Wrong secret returns 404
 
 ## Needs from Paul
+
 - Installing the addon in Nuvio and checking it on-device
