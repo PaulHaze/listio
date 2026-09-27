@@ -1,0 +1,38 @@
+{
+	"name": "Recorded MDBList fixture",
+	"movies": [
+		{
+			"id": 10,
+			"imdb_id": "tt2543164",
+			"ids": { "imdb": "tt2543164", "tmdb": 329865 },
+			"tmdbid": 329865,
+			"title": "Arrival",
+			"release_year": 2016,
+			"mediatype": "movie"
+		},
+		{
+			"id": 12,
+			"imdb_id": null,
+			"title": "No IMDb id",
+			"release_year": 2022,
+			"mediatype": "movie"
+		}
+	],
+	"shows": [
+		{
+			"id": 11,
+			"imdb_id": "tt5753856",
+			"ids": { "imdb": "tt5753856", "tmdb": 70523 },
+			"tmdbid": 70523,
+			"title": "Dark",
+			"release_year": 2017,
+			"mediatype": "show"
+		}
+	],
+	"seasons": [],
+	"episodes": [],
+	"pagination": {
+		"next_cursor": null,
+		"has_more": false
+	}
+}
