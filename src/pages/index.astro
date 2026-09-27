@@ -1,13 +1,83 @@
 ---
+import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
+
+export const prerender = false;
+
+const kvKey = 'hello';
+let kvValue = await env.LISTIO.get(kvKey);
+let notice = '';
+
+if (Astro.request.method === 'POST') {
+	const formData = await Astro.request.formData();
+	const submittedValue = formData.get('value');
+
+	if (typeof submittedValue === 'string' && submittedValue.trim()) {
+		kvValue = submittedValue.trim();
+		await env.LISTIO.put(kvKey, kvValue);
+		notice = 'Saved to the LISTIO KV namespace.';
+	}
+}
 ---
 
-<Layout title="Simple Barebones Astro + Tailwind Starter Template">
-	<main class="relative flex w-full flex-col justify-center pt-10 text-center">
-		<div class="flex-center">
-			<h1 class="font-bold tracking-tight">
-				Bare Bones Astro + Tailwind Starter
-			</h1>
+<Layout title="Listio" description="A curated movie and TV list builder.">
+	<main class="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 px-6 py-16">
+		<div class="space-y-3">
+			<p class="text-sm font-semibold tracking-[0.2em] text-primary uppercase">
+				Listio
+			</p>
+			<h1 class="font-bold tracking-tight">Your lists start here.</h1>
+			<p class="text-lg">
+				The app is ready for the first Combined List. This page also checks the
+				Workers KV connection used by the application.
+			</p>
 		</div>
+
+		<section
+			class="space-y-4 rounded-xl border border-foreground/15 bg-background-200 p-6"
+			aria-labelledby="kv-heading"
+		>
+			<div>
+				<h2 id="kv-heading" class="text-2xl font-bold">
+					KV round trip
+				</h2>
+				<p class="mt-1 text-sm">
+					Read from and write to the <code>LISTIO</code> namespace.
+				</p>
+			</div>
+
+			<p class="rounded-lg border border-foreground/10 bg-background-100 p-4">
+				<strong>Stored value:</strong>
+				<span>{kvValue ?? 'Nothing has been saved yet.'}</span>
+			</p>
+
+			<form method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+				<label
+					class="flex flex-1 flex-col gap-1 text-sm font-semibold"
+					for="value"
+				>
+					Value
+					<input
+						id="value"
+						name="value"
+						value={kvValue ?? ''}
+						placeholder="Hello from Listio"
+						class="rounded-lg border border-foreground/20 bg-background-100 px-3 py-2 font-normal"
+					/>
+				</label>
+				<button
+					type="submit"
+					class="rounded-lg bg-primary px-4 py-2 font-semibold text-background"
+				>
+					Write to KV
+				</button>
+			</form>
+
+			{notice && (
+				<p role="status" class="text-sm text-success">
+					{notice}
+				</p>
+			)}
+		</section>
 	</main>
 </Layout>

@@ -29,9 +29,7 @@ pnpm-debug.log*
 .wrangler/
 .dev.vars
 .dev.vars.*
-
-# IMDb CSV drop folder (per spec §4 — manually-downloaded exports)
-imports/
+!.dev.vars.example
 
 # editor
 .vscode/*

@@ -5,7 +5,7 @@ sprint's **Status** and tick its tasks as work happens.
 
 | # | Sprint | Status |
 | --- | --- | --- |
-| 01 | [Scaffolding: Astro, Vitest, Cloudflare](./01_Scaffolding_Astro_Vitest_Cloudflare.md) | not started |
+| 01 | [Scaffolding: Astro, Vitest, Cloudflare](./01_Scaffolding_Astro_Vitest_Cloudflare.md) | complete |
 | 02 | [Domain core & Sources: Trakt, MDBList, TMDB](./02_Domain_Sources_Trakt_MDBList_TMDB.md) | not started |
 | 03 | [Storage & Nuvio addon](./03_Storage_Nuvio_Addon.md) | not started |
 | 04 | [GUI: Home & list management](./04_GUI_Home_Lists.md) | not started |

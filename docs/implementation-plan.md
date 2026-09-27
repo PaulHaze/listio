@@ -12,7 +12,7 @@ Implements [`list-combiner-spec.md`](../list-combiner-spec.md). Vocabulary per
 | **KV: eventually consistent (~60s)** | After Save, Nuvio may see the old Catalog for up to a minute. Acceptable. The editor reads back its own saved state from the Save response, not from KV. |
 | **KV value max 25 MiB** | One record per Combined List is fine (~300 bytes/Title → 3,000 Titles ≈ 1 MB). |
 
-Stack versions: Astro 6, `@astrojs/cloudflare` v13 (Workers, not Pages), Wrangler,
+Stack versions: Astro 7, `@astrojs/cloudflare` v14 (Workers, not Pages), Wrangler,
 TypeScript strict, Vitest. Bindings are read via `import { env } from 'cloudflare:workers'`.
 `astro dev` runs on workerd with local KV emulation, so dev == prod code path.
 
