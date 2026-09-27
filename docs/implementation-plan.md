@@ -14,7 +14,9 @@ Implements [`list-combiner-spec.md`](../list-combiner-spec.md). Vocabulary per
 
 Stack versions: Astro 7, `@astrojs/cloudflare` v14 (Workers, not Pages), Wrangler,
 TypeScript strict, Vitest. Bindings are read via `import { env } from 'cloudflare:workers'`.
-`astro dev` runs on workerd with local KV emulation, so dev == prod code path.
+`astro dev` runs on workerd with local KV emulation, so dev == prod code path. Temporarily,
+`pnpm dev` runs a Node dev server with a file-backed KV stand-in instead, because workerd
+needs macOS 13.5+ ([ADR 0004](./adr/0004-temporary-node-dev-server.md)).
 
 ## 2. Project layout
 

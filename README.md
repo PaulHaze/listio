@@ -48,15 +48,18 @@ A step-by-step deployment guide will be added before the open-source release ([S
 
 ### Commands
 
-| Command           | Action                                                        |
-| :---------------- | :------------------------------------------------------------ |
-| `pnpm install`    | Install dependencies                                          |
-| `pnpm dev`        | Start the dev server at `localhost:4321`                      |
-| `pnpm check`      | Type-check `.astro` and TypeScript files                      |
-| `pnpm build`      | Type-check, then build the production site to `dist/`         |
-| `pnpm preview`    | Preview the production build locally                          |
-| `pnpm lint`       | Format with Prettier and fix ESLint issues                    |
-| `pnpm lint:check` | Check formatting and lint without changing files (used in CI) |
+| Command            | Action                                                                                                                                |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm install`     | Install dependencies                                                                                                                  |
+| `pnpm dev`         | Start a Node dev server at `localhost:4321` with a file-backed KV stand-in ([ADR 0004](./docs/adr/0004-temporary-node-dev-server.md)) |
+| `pnpm dev:workerd` | Start the dev server on Cloudflare's `workerd` runtime (needs macOS 13.5+)                                                            |
+| `pnpm check`       | Type-check `.astro` and TypeScript files                                                                                              |
+| `pnpm build`       | Type-check, then build the production site to `dist/`                                                                                 |
+| `pnpm preview`     | Preview the production build locally                                                                                                  |
+| `pnpm test`        | Run the Vitest suite                                                                                                                  |
+| `pnpm deploy`      | Build and deploy to Cloudflare Workers                                                                                                |
+| `pnpm lint`        | Format with Prettier and fix ESLint issues                                                                                            |
+| `pnpm lint:check`  | Check formatting and lint without changing files (used in CI)                                                                         |
 
 ### Notes
 

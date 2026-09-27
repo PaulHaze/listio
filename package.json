@@ -6,8 +6,9 @@
 		"node": "^22.22.3 || ^24.16.0 || >=26.3.0"
 	},
 	"scripts": {
-		"dev": "astro dev",
-		"start": "astro dev",
+		"dev": "LISTIO_NODE_DEV=1 astro dev",
+		"dev:workerd": "astro dev",
+		"start": "LISTIO_NODE_DEV=1 astro dev",
 		"check": "astro check",
 		"typecheck": "astro check",
 		"watch": "astro check --watch",
