@@ -30,7 +30,7 @@ You'll need:
 
 The editing UI sits behind Cloudflare Access, restricted to your email. The addon endpoints Nuvio calls are protected by a long secret in the URL.
 
-A step-by-step deployment guide will be added before the open-source release ([Sprint 09](./docs/sprints/09_Open_Source_Release.md)).
+A step-by-step deployment guide will be added before the open-source release ([Sprint 10](./docs/sprints/10_Open_Source_Release.md)).
 
 ## Stack
 

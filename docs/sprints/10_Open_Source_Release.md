@@ -1,4 +1,4 @@
-# Sprint 09 — Open-source release (BYOK)
+# Sprint 10 — Open-source release (BYOK)
 
 **Status:** not started
 
