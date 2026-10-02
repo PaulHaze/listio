@@ -77,6 +77,47 @@ describe('TMDB enrichment', () => {
 		expect(enriched.blurb).toBe('Why are they here?');
 	});
 
+	it('enriches from recorded live TMDB responses', async () => {
+		const options = {
+			apiKey: 'v3-key',
+			baseUrl: 'https://api.example.test/3',
+			fetch: async (input: unknown) => {
+				const url = String(input);
+				if (url.includes('/find/'))
+					return response(fixture('tmdb-find-live.json'));
+				if (url.includes('/tv/')) return response(fixture('tmdb-tv-live.json'));
+				return response(fixture('tmdb-movie-live.json'));
+			},
+		};
+
+		const movie = await enrichTitle(
+			{ ...baseTitle, imdbId: 'tt0120915', name: 'Episode I', tmdbId: null },
+			options
+		);
+		expect(movie).toMatchObject({
+			tmdbId: 1893,
+			year: 1999,
+			poster: 'https://image.tmdb.org/t/p/w185/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg',
+			blurb: 'Every saga has a beginning.',
+		});
+
+		const series = await enrichTitle(
+			{
+				...baseTitle,
+				imdbId: 'tt12262202',
+				type: 'series',
+				name: 'The Acolyte',
+				tmdbId: 114479,
+			},
+			options
+		);
+		expect(series).toMatchObject({
+			year: 2024,
+			poster: 'https://image.tmdb.org/t/p/w185/mztdt3y6GBsJR69zHtszFezTCLT.jpg',
+			blurb: 'In an age of light, a darkness rises.',
+		});
+	});
+
 	it('falls back to the /find result when the details request fails', async () => {
 		const enriched = await enrichTitle(
 			{ ...baseTitle, tmdbId: null },

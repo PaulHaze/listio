@@ -1,0 +1,143 @@
+[
+	{
+		"type": "show",
+		"show": {
+			"ids": {
+				"imdb": "tt12262202",
+				"plex": {
+					"guid": "5fd4f9d15e58c2002ed6b402",
+					"slug": "the-acolyte"
+				},
+				"slug": "the-acolyte",
+				"tmdb": 114479,
+				"tvdb": 393197,
+				"trakt": 170568
+			},
+			"year": 2024,
+			"title": "The Acolyte",
+			"aired_episodes": 8
+		},
+		"rank": 1,
+		"id": 644862188,
+		"listed_at": "2021-12-29T09:15:19.000Z",
+		"notes": null,
+		"my_rating": null
+	},
+	{
+		"type": "episode",
+		"show": {
+			"ids": {
+				"imdb": "tt20723374",
+				"plex": {
+					"guid": "62d640da8e100d08d32d0115",
+					"slug": "star-wars-tales-of-the-jedi"
+				},
+				"slug": "star-wars-tales-of-the-jedi",
+				"tmdb": 203085,
+				"tvdb": 420659,
+				"trakt": 195758
+			},
+			"year": 2022,
+			"title": "Star Wars: Tales of the Jedi",
+			"aired_episodes": 6
+		},
+		"episode": {
+			"ids": {
+				"imdb": "tt20764572",
+				"plex": {
+					"guid": "631ce76bcbff4464978ffb64"
+				},
+				"tmdb": 3947845,
+				"tvdb": 9191069,
+				"trakt": 6693106
+			},
+			"title": "Justice",
+			"number": 2,
+			"season": 1
+		},
+		"rank": 2,
+		"id": 757665885,
+		"listed_at": "2022-10-27T09:15:58.000Z",
+		"notes": null,
+		"my_rating": null
+	},
+	{
+		"type": "season",
+		"show": {
+			"ids": {
+				"imdb": "tt0458290",
+				"plex": {
+					"guid": "5d9c08097b5c2e001e652b09",
+					"slug": "star-wars-the-clone-wars"
+				},
+				"slug": "star-wars-the-clone-wars",
+				"tmdb": 4194,
+				"tvdb": 83268,
+				"trakt": 4170
+			},
+			"year": 2008,
+			"title": "Star Wars: The Clone Wars",
+			"aired_episodes": 133
+		},
+		"season": {
+			"ids": {
+				"plex": {
+					"guid": "602e5cb667f4c8002ce2acd5"
+				},
+				"tmdb": 12282,
+				"tvdb": 472097,
+				"trakt": 12745
+			},
+			"number": 4
+		},
+		"rank": 85,
+		"id": 93126226,
+		"listed_at": "2016-05-05T09:04:35.000Z",
+		"notes": null,
+		"my_rating": null
+	},
+	{
+		"type": "movie",
+		"movie": {
+			"ids": {
+				"imdb": "tt0120915",
+				"plex": {
+					"guid": "5d77682a961905001eb91f0f",
+					"slug": "star-wars-episode-i-the-phantom-menace"
+				},
+				"slug": "star-wars-episode-i-the-phantom-menace-1999",
+				"tmdb": 1893,
+				"trakt": 1268
+			},
+			"year": 1999,
+			"title": "Star Wars: Episode I - The Phantom Menace"
+		},
+		"rank": 5,
+		"id": 93125243,
+		"listed_at": "2016-05-05T08:48:41.000Z",
+		"notes": null,
+		"my_rating": null
+	},
+	{
+		"type": "movie",
+		"movie": {
+			"ids": {
+				"imdb": "tt0121765",
+				"plex": {
+					"guid": "5d77682a961905001eb91f40",
+					"slug": "star-wars-episode-ii-attack-of-the-clones"
+				},
+				"slug": "star-wars-episode-ii-attack-of-the-clones-2002",
+				"tmdb": 1894,
+				"trakt": 1269
+			},
+			"year": 2002,
+			"title": "Star Wars: Episode II - Attack of the Clones"
+		},
+		"rank": 10,
+		"id": 93125268,
+		"listed_at": "2016-05-05T08:49:39.000Z",
+		"notes": null,
+		"my_rating": null
+	}
+]

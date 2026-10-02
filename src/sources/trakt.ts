@@ -206,6 +206,8 @@ export async function fetchTrakt(
 					Accept: 'application/json',
 					'trakt-api-key': options.clientId,
 					'trakt-api-version': '2',
+					// Trakt's Cloudflare front returns 403 to requests without a User-Agent.
+					'User-Agent': 'Listio/0.1',
 				},
 				signal: options.signal,
 			}

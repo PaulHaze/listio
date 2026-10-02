@@ -1,5 +1,5 @@
 {
-	"name": "Constructed MDBList fixture (replace with a sanitized live capture)",
+	"name": "Constructed MDBList fixture (edge cases; see mdblist-live.json for a real capture)",
 	"movies": [
 		{
 			"id": 10,

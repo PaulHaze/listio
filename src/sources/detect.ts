@@ -72,15 +72,17 @@ export function detectSource(input: string): DetectedSource {
 	parsed.hash = '';
 	const canonicalUrl = parsed.toString();
 
-	if (hostIs(parsed.hostname, 'trakt.tv')) {
+	if (hostIs(parsed.hostname, 'trakt.tv', 'app.trakt.tv')) {
+		// The new web app (app.trakt.tv) appends a view segment, e.g. `/eff`, to
+		// list URLs. Both forms are recorded under the classic trakt.tv URL.
 		if (
-			segments.length === 4 &&
+			(segments.length === 4 || segments.length === 5) &&
 			segments[0].toLowerCase() === 'users' &&
 			segments[2].toLowerCase() === 'lists'
 		) {
 			return {
 				site: 'trakt',
-				url: canonicalUrl,
+				url: `https://trakt.tv/users/${segments[1]}/lists/${segments[3]}`,
 				user: segments[1],
 				slug: segments[3],
 			};
@@ -88,7 +90,7 @@ export function detectSource(input: string): DetectedSource {
 		if (segments.length === 2 && segments[0].toLowerCase() === 'lists') {
 			return {
 				site: 'trakt',
-				url: canonicalUrl,
+				url: `https://trakt.tv/lists/${segments[1]}`,
 				listId: segments[1],
 			};
 		}

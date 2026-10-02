@@ -42,6 +42,19 @@ describe('source URL detection', () => {
 		});
 	});
 
+	it('accepts app.trakt.tv list URLs and records the classic URL', () => {
+		expect(
+			detectSource(
+				'https://app.trakt.tv/users/paul/lists/spy-thrillers/eff?x=1'
+			)
+		).toEqual({
+			site: 'trakt',
+			url: 'https://trakt.tv/users/paul/lists/spy-thrillers',
+			user: 'paul',
+			slug: 'spy-thrillers',
+		});
+	});
+
 	it('gives a clear error for unsupported URLs', () => {
 		expect(() => detectSource('https://example.com/list/1')).toThrow(
 			SourceDetectionError
@@ -80,6 +93,34 @@ describe('Trakt source normalization', () => {
 			},
 		]);
 		expect(result.skippedNoImdb).toBe(1);
+	});
+
+	it('normalizes a recorded live response, ignoring episodes and seasons', () => {
+		const result = normalizeTraktItems(fixture('trakt-live.json'));
+		expect(result.titles).toEqual([
+			{
+				imdbId: 'tt12262202',
+				type: 'series',
+				name: 'The Acolyte',
+				year: 2024,
+				tmdbId: 114479,
+			},
+			{
+				imdbId: 'tt0120915',
+				type: 'movie',
+				name: 'Star Wars: Episode I - The Phantom Menace',
+				year: 1999,
+				tmdbId: 1893,
+			},
+			{
+				imdbId: 'tt0121765',
+				type: 'movie',
+				name: 'Star Wars: Episode II - Attack of the Clones',
+				year: 2002,
+				tmdbId: 1894,
+			},
+		]);
+		expect(result.skippedNoImdb).toBe(0);
 	});
 
 	it('fetches pages using Trakt headers and pagination', async () => {
@@ -164,7 +205,34 @@ describe('Trakt source normalization', () => {
 });
 
 describe('MDBList source normalization', () => {
-	it('handles the recorded object response shape', () => {
+	it('normalizes a recorded live cursor-paged response', () => {
+		const result = normalizeMdbListItems(fixture('mdblist-live.json'));
+		expect(result.titles).toEqual([
+			{
+				imdbId: 'tt36984433',
+				type: 'series',
+				name: 'S.W.A.T. Exiles',
+				year: 2026,
+				tmdbId: 292742,
+			},
+			{
+				imdbId: 'tt33081352',
+				type: 'series',
+				name: 'A Different World',
+				year: 2026,
+				tmdbId: 305357,
+			},
+			{
+				imdbId: 'tt6773088',
+				type: 'series',
+				name: 'Brothers',
+				year: 2026,
+				tmdbId: 250203,
+			},
+		]);
+	});
+
+	it('handles the constructed object response shape', () => {
 		const result = normalizeMdbListItems(fixture('mdblist-items.json'));
 		expect(result.titles.map((item) => [item.imdbId, item.type])).toEqual([
 			['tt2543164', 'movie'],
