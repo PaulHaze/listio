@@ -23,6 +23,14 @@
 - Audit report filename: `sprint-NN-astra-audit.md`, with `NN` replaced by the
   two-digit sprint number
 
+### `$new-task` context
+
+- Parent branch: `main`
+- Task branch pattern: `sprint-NN` (two-digit, e.g. `sprint-02`). The prefix is
+  `sprint-`, not the parent name: `sprint-02` merges into `main`, and the next
+  branch is `sprint-03` (not `main-03`).
+- Sprint plan doc (for the "exceeds the plan" check): `docs/sprints/README.md`
+
 ### Work tracking
 
 No GitHub Issues. Work is tracked as numbered sprint files in `docs/sprints/`, worked one at a time in order. See `docs/agents/issue-tracker.md`.
