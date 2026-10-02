@@ -7,7 +7,9 @@ Vocabulary (Source, Combined List, Title, Removed Title, Draft, Catalog) is defi
 
 Build curated, themed movie/TV lists (e.g. "Spy Thrillers") by pulling in public lists from
 other sites, de-duplicating them, and removing everything unwanted — then publish the result
-as a Catalog in Nuvio.
+as a Catalog in Nuvio. Lists can also be built by hand: search for Titles and add them one
+at a time (e.g. a "Genre Benders" list), with or without any Sources. Free Trakt and MDBList
+accounts cap how many lists you can make; Listio has no cap.
 
 Other people's lists are full of things I don't want. Listio is a **curate-once** tool: pull
 in a lot of Titles, strip them down, and keep the result fixed. It is not a sync tool.
@@ -35,8 +37,7 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
 
 **Out of scope**
 
-- Searching for or adding individual Titles
-- Reordering by hand
+- Reordering by hand (use the "order added" sort instead)
 - Syncing/refreshing Sources
 - Multiple users
 
@@ -71,6 +72,16 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
 - Each URL is recognised by site and fetched in the background, showing status
   (fetching / N Titles / error)
 - **Review List** opens the review grid with the merged result
+
+### Editor — search & add Titles
+
+- A search box (movies and shows together, via TMDB) shows a poster grid of results, each
+  with title, year and a Movie/Series badge
+- **Add** puts the Title into the Draft, the same as a Title from a Source. A result already
+  in the list shows **In list**. A Removed Title shows **Restore**
+- Titles with no IMDb ID can't be added ("No IMDb ID, can't add"), since Nuvio can't resolve them
+- A list needs no Sources: a hand-built list is an ordinary Combined List, saved and published
+  the same way (ADR 0005)
 
 ### Editor — review grid
 

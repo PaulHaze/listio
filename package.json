@@ -15,6 +15,8 @@
 		"build": "astro check && astro build",
 		"preview": "astro preview",
 		"test": "vitest run",
+		"probe:trakt": "node --experimental-strip-types scripts/probe-trakt.ts",
+		"probe:mdblist": "node --experimental-strip-types scripts/probe-mdblist.ts",
 		"deploy": "astro build && wrangler deploy",
 		"astro": "astro",
 		"lint": "prettier --write  \"**/*.{js,jsx,ts,tsx,md,mdx,astro}\" && eslint --fix \"src/**/*.{js,ts,jsx,tsx,astro}\"",

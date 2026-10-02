@@ -1,0 +1,17 @@
+{
+	"movie_results": [
+		{
+			"id": 1893,
+			"title": "Star Wars: Episode I - The Phantom Menace",
+			"original_title": "Star Wars: Episode I - The Phantom Menace",
+			"release_date": "1999-05-19",
+			"poster_path": "/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg",
+			"overview": "Anakin Skywalker, a young slave strong with the Force, is discovered on Tatooine. Meanwhile, the evil Sith have returned, enacting their plot for revenge against the Jedi.",
+			"media_type": "movie"
+		}
+	],
+	"person_results": [],
+	"tv_results": [],
+	"tv_episode_results": [],
+	"tv_season_results": []
+}

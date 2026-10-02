@@ -1,0 +1,15 @@
+[
+	{
+		"type": "movie",
+		"movie": {
+			"title": "The Second Arrival",
+			"year": 2025,
+			"ids": {
+				"trakt": 5,
+				"slug": "the-second-arrival",
+				"imdb": "tt7654321",
+				"tmdb": null
+			}
+		}
+	}
+]

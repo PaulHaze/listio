@@ -1,0 +1,39 @@
+[
+	{
+		"type": "movie",
+		"score": 0.98,
+		"movie": {
+			"title": "Arrival",
+			"year": 2016,
+			"ids": {
+				"trakt": 1,
+				"slug": "arrival-2016",
+				"imdb": "tt2543164",
+				"tmdb": 329865
+			}
+		}
+	},
+	{
+		"type": "show",
+		"show": {
+			"title": "Dark",
+			"year": 2017,
+			"ids": { "trakt": 2, "slug": "dark", "imdb": "tt5753856", "tmdb": 70523 }
+		}
+	},
+	{
+		"type": "movie",
+		"movie": {
+			"title": "Missing IMDb",
+			"year": 2020,
+			"ids": { "trakt": 3, "slug": "missing-imdb", "imdb": null, "tmdb": 123 }
+		}
+	},
+	{
+		"type": "episode",
+		"episode": {
+			"title": "A season episode is ignored",
+			"ids": { "trakt": 4, "imdb": "tt9999999" }
+		}
+	}
+]

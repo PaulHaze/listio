@@ -25,14 +25,17 @@ src/
   domain/            # pure TS, no Cloudflare imports — fully unit-tested
     types.ts         # Title, CombinedList, SourceRecord, SortOrder
     slug.ts          # name → unique list id
-    merge.ts         # add Source Titles into a list: dedupe, skip Removed, flag new
+    merge.ts         # add Source Titles into a list: dedupe, skip Removed, flag new;
+                     # addTitle for a single searched Title (restores if Removed)
     sort.ts
   sources/           # one module per Source site
     detect.ts        # URL → { site, params } | error
     trakt.ts
     mdblist.ts
-    imdb.ts          # (phase 9) GraphQL fetch + CSV parse
+    imdb.ts          # (Sprint 09) GraphQL fetch + CSV parse
   tmdb/enrich.ts     # imdb/tmdb id → poster, year, blurb
+  tmdb/search.ts     # (Sprint 07) query → movie/series results (no IMDb IDs yet)
+  tmdb/lookup.ts     # (Sprint 07) tmdbId + type → full Title incl. IMDb ID
   storage/lists.ts   # KV repository: get/put list, index, delete
   addon/             # Stremio protocol: manifest + catalog builders (pure)
   pages/
@@ -42,6 +45,8 @@ src/
     api/lists/[id].ts              # GET, PATCH rename, PUT save, DELETE
     api/sources/fetch.ts           # POST {url} → normalized Titles (not enriched)
     api/titles/enrich.ts           # POST {titles ≤40} → enriched Titles
+    api/titles/lookup.ts           # POST {tmdbId, type} → Title, 422 if no IMDb ID
+    api/search.ts                  # GET ?q= → TMDB multi-search results
     addon/[secret]/manifest.json.ts
     addon/[secret]/catalog/[type]/[...rest].ts   # {id}.json and {id}/skip=N.json
   components/editor/  # island (see §6)
@@ -109,6 +114,22 @@ Type mapping from Sources: Trakt `show` / MDBList `show` / IMDb `tvSeries|tvMini
    if no tmdbId, `GET /find/{imdbId}?external_source=imdb_id` first.
    Enrichment failure leaves poster/blurb null — the Title is still usable.
 
+### Adding a Title by search (client-driven, nothing saved)
+
+A hand-built list is an ordinary Combined List, possibly with no Sources (ADR 0005).
+
+1. Editor calls `GET /api/search?q=` (debounced ~300 ms) → server calls TMDB
+   `/search/multi`, keeps `movie`/`tv` (`tv` → `series`), and returns
+   `{ tmdbId, type, name, year, poster }[]`. Search results have no IMDb IDs.
+2. On **Add**, editor POSTs `{ tmdbId, type }` to `/api/titles/lookup` → one TMDB call
+   (`/movie|tv/{id}?append_to_response=external_ids`) returns a fully enriched `Title`.
+   A null `imdb_id` → 422 "No IMDb ID, can't add".
+3. Client applies `addTitle` to the Draft: already in `titles` → no-op; in `removed` →
+   restored (an explicit add overrides a removal); otherwise appended as **new** with the
+   next `addedSeq`. Saved with the normal Save.
+
+Both calls are one TMDB subrequest each, well inside Worker limits.
+
 ### Save
 
 `PUT /api/lists/{id}` with `{ version, name?, sort, sources, titles, removed }` (the full
@@ -167,7 +188,7 @@ view: 'all' | 'new' | 'removed'
   `ADDON_SECRET`, `TRAKT_CLIENT_ID`, `MDBLIST_API_KEY`, `TMDB_API_KEY` (v4 read token or v3 key).
 - Dev: Access isn't present locally; admin routes are open on localhost only.
 - Nothing deployment-specific (keys, email, KV IDs, hostnames) is hard-coded: the repo will be
-  open-sourced for others to self-host with their own keys (ADR 0003, Sprint 09).
+  open-sourced for others to self-host with their own keys (ADR 0003, Sprint 10).
 
 ## 8. Testing
 
@@ -183,5 +204,5 @@ Broken into numbered sprints in [`docs/sprints/`](./sprints/README.md).
 ## 10. Open items
 
 - MDBList exact response shape (verify in Sprint 02).
-- Whether IMDb's GraphQL endpoint accepts requests from Cloudflare IPs (Sprint 08).
+- Whether IMDb's GraphQL endpoint accepts requests from Cloudflare IPs (Sprint 09).
 - Styling approach — plain CSS / scoped Astro styles assumed; no UI kit.

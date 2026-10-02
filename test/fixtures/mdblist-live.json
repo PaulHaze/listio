@@ -1,0 +1,81 @@
+{
+	"movies": [],
+	"shows": [
+		{
+			"id": 292742,
+			"mediatype": "show",
+			"imdb_id": "tt36984433",
+			"tvdb_id": 463828,
+			"ids": {
+				"mdblist": "3zpaq",
+				"imdb": "tt36984433",
+				"tmdb": 292742,
+				"tvdb": 463828
+			},
+			"title": "S.W.A.T. Exiles",
+			"language": "en",
+			"spoken_language": "en",
+			"country": "us",
+			"release_year": 2026,
+			"adult": 0,
+			"release_date": "2026-09-25",
+			"status": "Returning Series",
+			"runtime": 440,
+			"added_at": "2026-09-30T03:40:20",
+			"rank": 250
+		},
+		{
+			"id": 305357,
+			"mediatype": "show",
+			"imdb_id": "tt33081352",
+			"tvdb_id": 463765,
+			"ids": {
+				"mdblist": "43hdv",
+				"imdb": "tt33081352",
+				"tmdb": 305357,
+				"tvdb": 463765
+			},
+			"title": "A Different World",
+			"language": "en",
+			"spoken_language": "en",
+			"country": "us",
+			"release_year": 2026,
+			"adult": 0,
+			"release_date": "2026-09-24",
+			"status": "Returning Series",
+			"runtime": 324,
+			"added_at": "2026-09-27T21:42:17",
+			"rank": 500
+		},
+		{
+			"id": 250203,
+			"mediatype": "show",
+			"imdb_id": "tt6773088",
+			"tvdb_id": 448114,
+			"ids": {
+				"mdblist": "3e284",
+				"imdb": "tt6773088",
+				"tmdb": 250203,
+				"tvdb": 448114
+			},
+			"title": "Brothers",
+			"language": "en",
+			"spoken_language": "en",
+			"country": "us",
+			"release_year": 2026,
+			"adult": 0,
+			"release_date": "2026-09-22",
+			"status": "Returning Series",
+			"runtime": 222,
+			"added_at": "2026-09-25T15:08:10",
+			"rank": 1000
+		}
+	],
+	"pagination": {
+		"limit": 3,
+		"offset": 0,
+		"total": 300,
+		"has_more": true,
+		"next_cursor": "eyJzIjogMTAwMCwgImkiOiA0MDU3NzE5NzE2MiwgInIiOiAxMDAwfQ=="
+	}
+}
