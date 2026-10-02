@@ -9,7 +9,7 @@
 - Branch convention: `sprint-NN` (for example, `sprint-01`). The user creates
   and manages sprint branches; the skill must not create, switch, rename, merge,
   or delete branches.
-- Implementation agent: `gpt-5.6-luna` at maximum reasoning effort.
+- Implementation agent: `gpt-6.1-sol` at medium reasoning effort.
 - Audit agent: `gpt-6-astra` at high reasoning effort, in a fresh context
   after the implementation commit is complete. Invoke `$audit-commit` and
   write only the declared audit report; do not implement audit findings.
