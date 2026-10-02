@@ -10,9 +10,13 @@
   and manages sprint branches; the skill must not create, switch, rename, merge,
   or delete branches.
 - Implementation agent: `gpt-5.6-luna` at maximum reasoning effort.
+- Audit agent: `gpt-6-astra` at high reasoning effort, in a fresh context
+  after the implementation commit is complete. Invoke `$audit-commit` and
+  write only the declared audit report; do not implement audit findings.
 - Sprints are completed one at a time in numeric order, as listed in
   `docs/sprints/README.md`.
-- Audit destination: `docs/audits/sprint-NN-astra-audit.md`.
+- Audit destination: `docs/audits/sprint-NN-audit-astra.md`, with `NN` replaced
+  by the requested two-digit sprint number (for example, `sprint-02-audit-astra.md`).
 
 ### `$audit-commit` context
 
@@ -20,16 +24,14 @@
 - Implementation file: the unique sprint Markdown file in `docs/sprints/` whose
   two-digit filename prefix matches the requested sprint number
 - Audit report directory: `docs/audits/`
-- Audit report filename: `sprint-NN-astra-audit.md`, with `NN` replaced by the
+- Audit report filename: `sprint-NN-audit-astra.md`, with `NN` replaced by the
   two-digit sprint number
 
 ### `$new-task` context
 
 - Parent branch: `main`
-- Task branch pattern: `sprint-NN` (two-digit, e.g. `sprint-02`). The prefix is
-  `sprint-`, not the parent name: `sprint-02` merges into `main`, and the next
-  branch is `sprint-03` (not `main-03`).
-- Sprint plan doc (for the "exceeds the plan" check): `docs/sprints/README.md`
+- Push flag: `true`
+- Branch naming: `sprint-{nn}`
 
 ### Work tracking
 
