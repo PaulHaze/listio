@@ -15,6 +15,7 @@
 		"build": "astro check && astro build",
 		"preview": "astro preview",
 		"test": "vitest run",
+		"seed:list": "node --experimental-strip-types scripts/seed-list.ts",
 		"probe:trakt": "node --experimental-strip-types scripts/probe-trakt.ts",
 		"probe:mdblist": "node --experimental-strip-types scripts/probe-mdblist.ts",
 		"deploy": "astro build && wrangler deploy",
