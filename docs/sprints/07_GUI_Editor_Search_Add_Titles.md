@@ -100,3 +100,42 @@ the editor. Temporary local test data was deleted.
 Deployed Workers and Nuvio acceptance (including both Catalogs in one folder)
 remains pending; local Node development does not exercise the real Workers
 runtime or Nuvio. No deployment is part of this implementation commit.
+
+#### ✅ Summary of work — completed & audited 2026-10-03
+
+_Full audit consolidation: [`audits/sprint-07-audit-summary.md`](../audits/sprint-07-audit-summary.md) (13 issues: 4 critical, 4 warnings, 5 suggestions. Astra's verdict was FAIL because of #1–#3. The owner ACTIONs below cover #2/#3; #1 is accepted as out of scope)._
+
+**Files created / changed:**
+
+- `src/tmdb/search.ts` **(new)**: normalizes TMDB search results into Candidates and searches `/search/multi`. Posters use the shared w185 constant.
+- `src/tmdb/lookup.ts` **(new)**: TMDB details → Title with an IMDb ID. The stored poster now uses w342, the same as Source enrichment.
+- `src/tmdb/match.ts` **(new)**: confident matching for pasted lines. A unique name match within ±2 years is accepted, and `&`, "and" and the articles The/A/An are ignored.
+- `src/pages/api/search.ts`, `src/pages/api/titles/lookup.ts`, `src/pages/api/titles/match.ts` **(new)**: the routes. The match route fails one line (`retry: true`) instead of the whole batch, and still fails the batch on 401/403.
+- `src/domain/pasteLines.ts` **(new)**: parses pasted lines. `src/domain/merge.ts`: `addTitle`.
+- `src/components/editor/TitleDiscovery.tsx` **(new)**: the search and paste UI, the Need a look review, repeat-paste reuse, IMDb identity resolution and retrying failed lines at the end.
+- `src/components/editor/api.ts` **(new)**: the shared `api`/`ApiError` helper, which tolerates non-JSON responses. It's used by `Editor.tsx` and `TitleDiscovery.tsx`.
+- `src/styles/main.css`: discovery panel styles, with theme borders (`--background-300`).
+- `test/title-discovery.test.ts` and the `test/fixtures/tmdb-search-*.json` recordings.
+
+**Key decisions made:**
+
+- Match batches of 20 with a typed `lookup` continuation to stay under the Workers 50-subrequest limit.
+- ⚠️ Divergence from the spec's "year equals" rule (owner decision): searches are no longer year-filtered, and a unique name match within ±2 years is accepted. An exact-year match is preferred when there are several.
+- Restores done through search or paste are flagged as new (owner decision). The grid's Restore isn't.
+- A module-level TMDB → Title identity cache is shared by Add, labels and repeat-paste reconciliation.
+
+**Audit outcomes (owner-actioned 2026-10-03):**
+
+- 🔴 **#1 (Critical) — left as-is (owner):** non-Latin names normalize to empty. This is a personal tool, so Latin-alphabet titles are enough for now; revisit for a public version.
+- 🔴 **#2 / #4 (Critical) — fixed:** the line → IMDb ID chosen in Need a look (by candidate or through the No-match search) is now remembered. A repeat paste reuses it: an active Title counts as "already in list" and a Removed one is restored. Ambiguous lines whose candidate is already in the Draft are settled the same way.
+- 🔴 **#3 / #6 (Critical/Warning) — fixed:** when the Draft has Titles without a TMDB ID, search results of those types that don't match by TMDB ID get a background IMDb lookup (cached), so In list / Restore show correctly before any Add.
+- 🟡 **#5 (Warning) — fixed:** `lookupTitle` stores a w342 poster through the exported `posterFromTmdb`/`TMDB_IMAGE_URL`, and search uses `TMDB_SEARCH_IMAGE_URL`.
+- 🟡 **#7 (Warning) — no action:** the same issue as #1.
+- 🟡 **#8 (Warning) — fixed:** errors are now handled per line in the match route. Failed lines are retried once, in batches, at the end of the paste.
+- 🔵 **#9 (Suggestion) — fixed:** the year tolerance is ±2 (owner widened it from ±1).
+- 🔵 **#10 (Suggestion) — left as-is (owner):** restores from search or paste stay flagged as new. The difference is explained in the audit summary.
+- 🔵 **#11 (Suggestion) — fixed:** the shared `src/components/editor/api.ts` helper.
+- 🔵 **#12 (Suggestion) — fixed:** borders use `var(--background-300)`. A full styling pass is planned for the end of the build.
+- 🔵 **#13 (Suggestion) — fixed:** `&`/"and" are dropped on both sides and a leading "An" is ignored. The search query itself is unchanged.
+
+`tsc --noEmit` is clean and Vitest passes (84 tests: ±2-year, ampersand and per-line-failure tests added). Prettier was applied to the touched files. ESLint reports only 3 existing `_input` unused-var errors in `test/title-discovery.test.ts`. There are no automated component tests for the repeat-paste and identity UI flows, so they still need a browser check.

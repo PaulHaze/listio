@@ -18,6 +18,7 @@ import {
 } from './draft.ts';
 import { addTitle } from '../../domain/merge.ts';
 import TitleDiscovery from './TitleDiscovery.tsx';
+import { api, ApiError } from './api.ts';
 import { enrichmentQueue } from './enrichment.ts';
 
 type SourceRow = {
@@ -35,39 +36,6 @@ type CardActionHandler = (
 ) => void;
 /** Cards rendered per progressive batch (plan §6). */
 const BATCH = 60;
-class ApiError extends Error {
-	constructor(
-		message: string,
-		readonly status: number
-	) {
-		super(message);
-	}
-}
-async function api<T>(
-	url: string,
-	body: unknown,
-	signal: AbortSignal,
-	method = 'POST'
-): Promise<T> {
-	const response = await fetch(url, {
-		method,
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-		signal,
-	});
-	const data = await response.json().catch(() => null);
-	if (!response.ok || !data)
-		throw new ApiError(
-			(data &&
-			typeof data === 'object' &&
-			'error' in data &&
-			typeof data.error === 'string'
-				? data.error
-				: '') || 'Unable to complete this request. Please try again.',
-			response.status
-		);
-	return data as T;
-}
 
 export default function Editor({
 	initialList,
@@ -193,7 +161,7 @@ export default function Editor({
 				titles: SourceTitle[];
 				source: SourceRecord;
 				skippedInvalid: number;
-			}>('/api/sources/fetch', { url }, controller.current.signal);
+			}>('/api/sources/fetch', controller.current.signal, { url });
 			const merged = addSource(draftRef.current, result.source, result.titles);
 			update(() => merged.draft);
 			const { titleCount, skippedNoImdb } = result.source;
@@ -214,8 +182,8 @@ export default function Editor({
 				try {
 					const enriched = await api<{ titles: Title[] }>(
 						'/api/titles/enrich',
-						{ titles: chunk },
-						controller.current.signal
+						controller.current.signal,
+						{ titles: chunk }
 					);
 					if (!controller.current.signal.aborted)
 						update((draft) => applyEnrichment(draft, enriched.titles));
@@ -255,6 +223,7 @@ export default function Editor({
 			const current = draftRef.current;
 			const list = await api<CombinedList>(
 				`/api/lists/${encodeURIComponent(saved.id)}`,
+				controller.current.signal,
 				{
 					version: saved.version,
 					sort: current.sort,
@@ -262,7 +231,6 @@ export default function Editor({
 					removed: current.removed,
 					sources: current.sources,
 				},
-				controller.current.signal,
 				'PUT'
 			);
 			setSaved(list);

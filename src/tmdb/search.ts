@@ -5,7 +5,12 @@ import {
 	nonEmptyString,
 	yearValue,
 } from '../sources/parse.ts';
-import { fetchJson, type TmdbEnrichOptions } from './enrich.ts';
+import {
+	fetchJson,
+	posterFromTmdb,
+	TMDB_SEARCH_IMAGE_URL,
+	type TmdbEnrichOptions,
+} from './enrich.ts';
 export type Candidate = {
 	tmdbId: number;
 	type: TitleType;
@@ -33,7 +38,6 @@ export function normalizeResults(
 			media === 'movie' ? value?.title : value?.name
 		)?.trim();
 		if (!value || !media || !tmdbId || !name) return [];
-		const path = nonEmptyString(value.poster_path);
 		return [
 			{
 				tmdbId,
@@ -42,9 +46,7 @@ export function normalizeResults(
 				year: yearValue(
 					media === 'movie' ? value.release_date : value.first_air_date
 				),
-				poster: path
-					? `https://image.tmdb.org/t/p/w185/${path.replace(/^\//, '')}`
-					: null,
+				poster: posterFromTmdb(value, TMDB_SEARCH_IMAGE_URL),
 			},
 		];
 	});

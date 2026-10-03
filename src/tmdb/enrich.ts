@@ -8,7 +8,9 @@ import {
 } from '../sources/parse.ts';
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w342';
+export const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w342';
+/** Smaller posters for the search-result grid. */
+export const TMDB_SEARCH_IMAGE_URL = 'https://image.tmdb.org/t/p/w185';
 const DEFAULT_CONCURRENCY = 8;
 
 export type TmdbAuth = 'v3' | 'v4';
@@ -70,7 +72,7 @@ export function ratingFromTmdb(details: JsonRecord): number | null {
 	return Math.round(average * 10) / 10;
 }
 
-function posterFromTmdb(
+export function posterFromTmdb(
 	details: JsonRecord,
 	imageBaseUrl: string
 ): string | null {

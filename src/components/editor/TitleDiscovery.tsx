@@ -4,44 +4,41 @@ import { pasteLines, type PasteLine } from '../../domain/pasteLines.ts';
 import type { Candidate } from '../../tmdb/search.ts';
 import type { BatchMatchResult, MatchResult } from '../../tmdb/match.ts';
 import type { Draft } from './draft.ts';
+import { api, ApiError } from './api.ts';
 
-class RequestError extends Error {
-	constructor(
-		message: string,
-		readonly status: number
-	) {
-		super(message);
+/** TMDB result → looked-up Title (null: no IMDb ID), shared across searches. */
+const identities = new Map<string, Title | null>();
+const candidateKey = (c: Candidate) => `${c.type}-${c.tmdbId}`;
+const sameId = (a: string, b: string | undefined) =>
+	!!b && a.toLowerCase() === b.toLowerCase();
+/** A Draft Title (active or Removed) that is this TMDB result. */
+function draftTitleFor(draft: Draft, candidate: Candidate): Title | undefined {
+	const imdbId = identities.get(candidateKey(candidate))?.imdbId;
+	const same = (title: Title) =>
+		sameId(title.imdbId, imdbId) ||
+		(title.tmdbId === candidate.tmdbId && title.type === candidate.type);
+	return draft.titles.find(same) ?? draft.removed.find(same);
+}
+async function lookupCandidate(
+	candidate: Candidate,
+	signal: AbortSignal
+): Promise<Title> {
+	const key = candidateKey(candidate);
+	const cached = identities.get(key);
+	if (cached) return cached;
+	try {
+		const title = await api<Title>('/api/titles/lookup', signal, candidate);
+		identities.set(key, title);
+		return title;
+	} catch (error) {
+		if (error instanceof ApiError && error.status === 422)
+			identities.set(key, null);
+		throw error;
 	}
 }
-async function request<T>(
-	url: string,
-	signal: AbortSignal,
-	body?: unknown
-): Promise<T> {
-	const response = await fetch(url, {
-		signal,
-		...(body === undefined
-			? {}
-			: {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(body),
-				}),
-	});
-	const data = await response.json();
-	if (!response.ok)
-		throw new RequestError(
-			data &&
-				typeof data === 'object' &&
-				'error' in data &&
-				typeof data.error === 'string'
-				? data.error
-				: 'Unable to find Titles. Please try again.',
-			response.status
-		);
-	return data as T;
-}
 type ReviewLine = PasteLine & { result: MatchResult; resolved: boolean };
+type AddStatus = 'added' | 'duplicate' | 'restored';
+const lineKey = (line: PasteLine) => line.line.trim().toLowerCase();
 export default function TitleDiscovery({
 	draft,
 	saving,
@@ -50,7 +47,7 @@ export default function TitleDiscovery({
 }: {
 	draft: Draft;
 	saving: boolean;
-	add: (title: Title) => 'added' | 'duplicate' | 'restored';
+	add: (title: Title) => AddStatus;
 	busy: (delta: number) => void;
 }) {
 	const [text, setText] = useState('');
@@ -63,11 +60,31 @@ export default function TitleDiscovery({
 	const [review, setReview] = useState<ReviewLine[]>([]);
 	const [error, setError] = useState('');
 	const controller = useRef<AbortController | null>(null);
+	const draftRef = useRef(draft);
+	draftRef.current = draft;
+	// Pasted line → IMDb ID chosen in Need a look, reused on a repeat paste.
+	const resolutions = useRef(new Map<string, string>());
 	useEffect(() => {
 		controller.current = new AbortController();
 		return () => controller.current?.abort();
 	}, []);
 	const signal = () => controller.current!.signal;
+	/** A Draft Title this line was already resolved to, if any. */
+	function known(line: PasteLine, result: MatchResult): Title | undefined {
+		const current = draftRef.current;
+		const chosen = resolutions.current.get(lineKey(line));
+		const byChoice =
+			chosen &&
+			[...current.titles, ...current.removed].find((t) =>
+				sameId(t.imdbId, chosen)
+			);
+		if (byChoice) return byChoice;
+		if (result.status === 'ambiguous')
+			for (const candidate of result.candidates) {
+				const title = draftTitleFor(current, candidate);
+				if (title) return title;
+			}
+	}
 	async function find() {
 		const lines = pasteLines(text);
 		if (!lines.length || matching || saving) return;
@@ -79,53 +96,71 @@ export default function TitleDiscovery({
 		let added = 0,
 			duplicate = 0;
 		const unresolved: ReviewLine[] = [];
-		try {
+		const settle = async (batch: PasteLine[], results: BatchMatchResult[]) => {
+			const failed: PasteLine[] = [];
+			for (const [i, initial] of results.entries()) {
+				let result: MatchResult;
+				if (initial.status === 'lookup') {
+					try {
+						result = {
+							status: 'matched',
+							title: await lookupCandidate(initial.candidate, signal()),
+						};
+					} catch (error) {
+						if (signal().aborted) throw error;
+						// Preserve the candidate for retry if lookup failed transiently.
+						result =
+							error instanceof ApiError && error.status === 422
+								? { status: 'none', reason: error.message }
+								: {
+										status: 'ambiguous',
+										candidates: [initial.candidate],
+										reason:
+											error instanceof Error
+												? error.message
+												: 'Unable to look up this Title.',
+									};
+					}
+				} else result = initial;
+				if (result.status === 'none' && result.retry && retrying === false) {
+					failed.push(batch[i]);
+					continue;
+				}
+				const title =
+					result.status === 'matched' ? result.title : known(batch[i], result);
+				if (title) {
+					if (add(title) === 'duplicate') duplicate++;
+					else added++;
+				} else unresolved.push({ ...batch[i], result, resolved: false });
+			}
+			return failed;
+		};
+		const run = async (lines: PasteLine[], label: string) => {
+			const failed: PasteLine[] = [];
 			for (let offset = 0; offset < lines.length; offset += 20) {
-				setProgress(`Matching ${offset} / ${lines.length}…`);
+				setProgress(`${label} ${offset} / ${lines.length}…`);
 				const batch = lines.slice(offset, offset + 20);
-				const results = await request<BatchMatchResult[]>(
+				const results = await api<BatchMatchResult[]>(
 					'/api/titles/match',
 					signal(),
 					{ lines: batch.map(({ name, year }) => ({ name, year })) }
 				);
-				for (const [i, initial] of results.entries()) {
-					let result: MatchResult;
-					if (initial.status === 'lookup') {
-						try {
-							result = {
-								status: 'matched',
-								title: await request<Title>(
-									'/api/titles/lookup',
-									signal(),
-									initial.candidate
-								),
-							};
-						} catch (error) {
-							if (signal().aborted) throw error;
-							// Preserve the candidate for retry if lookup failed transiently.
-							result =
-								error instanceof RequestError && error.status === 422
-									? { status: 'none', reason: error.message }
-									: {
-											status: 'ambiguous',
-											candidates: [initial.candidate],
-											reason:
-												error instanceof Error
-													? error.message
-													: 'Unable to look up this Title.',
-										};
-						}
-					} else result = initial;
-					if (result.status === 'matched') {
-						if (add(result.title) === 'duplicate') duplicate++;
-						else added++;
-					} else unresolved.push({ ...batch[i], result, resolved: false });
-				}
+				failed.push(...(await settle(batch, results)));
 				setProgress(
-					`Matching ${Math.min(offset + 20, lines.length)} / ${lines.length}…`
+					`${label} ${Math.min(offset + 20, lines.length)} / ${lines.length}…`
 				);
 				setReview([...unresolved]);
 				setSummary({ added, duplicate });
+			}
+			return failed;
+		};
+		let retrying = false;
+		try {
+			const failed = await run(lines, 'Matching');
+			// Lines that hit a transient TMDB error get one more try at the end.
+			if (failed.length) {
+				retrying = true;
+				await run(failed, 'Retrying');
 			}
 			setProgress('');
 		} catch (error) {
@@ -146,7 +181,8 @@ export default function TitleDiscovery({
 			}
 		}
 	}
-	function resolve(index: number, status?: 'added' | 'duplicate' | 'restored') {
+	function resolve(index: number, status?: AddStatus, title?: Title) {
+		if (title) resolutions.current.set(lineKey(review[index]), title.imdbId);
 		setReview((rows) =>
 			rows.map((row, i) => (i === index ? { ...row, resolved: true } : row))
 		);
@@ -220,7 +256,7 @@ export default function TitleDiscovery({
 										disabled={saving || matching}
 										add={add}
 										busy={busy}
-										onAdded={(status) => resolve(index, status)}
+										onAdded={(status, title) => resolve(index, status, title)}
 									/>
 								</>
 							) : row.result.status === 'ambiguous' ? (
@@ -239,7 +275,7 @@ export default function TitleDiscovery({
 										disabled={saving || matching}
 										add={add}
 										busy={busy}
-										onAdded={(status) => resolve(index, status)}
+										onAdded={(status, title) => resolve(index, status, title)}
 									/>
 								</>
 							) : null}
@@ -268,9 +304,9 @@ function Search({
 	initialQuery?: string;
 	draft: Draft;
 	disabled: boolean;
-	add: (title: Title) => 'added' | 'duplicate' | 'restored';
+	add: (title: Title) => AddStatus;
 	busy: (delta: number) => void;
-	onAdded?: (status: 'added' | 'duplicate' | 'restored') => void;
+	onAdded?: (status: AddStatus, title: Title) => void;
 }) {
 	const [query, setQuery] = useState(initialQuery);
 	const [results, setResults] = useState<Candidate[]>([]);
@@ -284,7 +320,7 @@ function Search({
 		if (query.trim().length < 2) return () => controller.abort();
 		const timer = setTimeout(() => {
 			setMessage('Searching…');
-			void request<Candidate[]>(
+			void api<Candidate[]>(
 				`/api/search?q=${encodeURIComponent(query.trim())}`,
 				controller.signal
 			)
@@ -343,35 +379,60 @@ function Candidates({
 	candidates: Candidate[];
 	draft: Draft;
 	disabled: boolean;
-	add: (title: Title) => 'added' | 'duplicate' | 'restored';
+	add: (title: Title) => AddStatus;
 	busy: (delta: number) => void;
-	onAdded?: (status: 'added' | 'duplicate' | 'restored') => void;
+	onAdded?: (status: AddStatus, title: Title) => void;
 }) {
 	const [pending, setPending] = useState<Set<string>>(new Set());
 	const [errors, setErrors] = useState<Record<string, string>>({});
-	const [identities, setIdentities] = useState<Record<string, string>>({});
+	// Re-render once background identity lookups land in the shared cache.
+	const [, setResolved] = useState(0);
 	const controller = useRef<AbortController | null>(null);
 	const inFlight = useRef(new Set<string>());
 	useEffect(() => {
 		controller.current = new AbortController();
 		return () => controller.current?.abort();
 	}, []);
+	// Draft Titles without a TMDB ID can only be recognised by IMDb ID, so look
+	// up results of those types that don't already match by TMDB ID.
+	const missingTypes = new Set(
+		[...draft.titles, ...draft.removed]
+			.filter((title) => title.tmdbId === null)
+			.map((title) => title.type)
+	);
+	const unidentified = candidates.filter(
+		(candidate) =>
+			missingTypes.has(candidate.type) &&
+			!identities.has(candidateKey(candidate)) &&
+			!draftTitleFor(draft, candidate)
+	);
+	const unidentifiedKey = unidentified.map(candidateKey).join(',');
+	useEffect(() => {
+		if (!unidentified.length) return;
+		const signal = controller.current!.signal;
+		void (async () => {
+			for (const candidate of unidentified) {
+				if (signal.aborted) return;
+				// Failures are left uncached; Add retries the lookup.
+				await lookupCandidate(candidate, signal).catch(() => null);
+				if (!signal.aborted) setResolved((n) => n + 1);
+			}
+		})();
+	}, [unidentifiedKey]);
 	async function lookup(candidate: Candidate) {
-		const key = `${candidate.type}-${candidate.tmdbId}`;
+		const key = candidateKey(candidate);
 		if (disabled || inFlight.current.has(key)) return;
 		inFlight.current.add(key);
 		setPending(new Set(inFlight.current));
 		busy(1);
 		setErrors((errors) => ({ ...errors, [key]: '' }));
 		try {
-			const title = await request<Title>(
-				'/api/titles/lookup',
-				controller.current!.signal,
-				candidate
+			const title = await lookupCandidate(
+				candidate,
+				controller.current!.signal
 			);
-			setIdentities((ids) => ({ ...ids, [key]: title.imdbId }));
 			const status = add(title);
-			onAdded?.(status);
+			onAdded?.(status, title);
 		} catch (error) {
 			if (!controller.current!.signal.aborted)
 				setErrors((errors) => ({
@@ -391,14 +452,12 @@ function Candidates({
 	return (
 		<ul className="title-grid search-grid">
 			{candidates.map((candidate) => {
-				const key = `${candidate.type}-${candidate.tmdbId}`;
-				const same = (title: Title) =>
-					title.imdbId === identities[key] ||
-					(title.tmdbId === candidate.tmdbId && title.type === candidate.type);
-				const active = draft.titles.find(same);
-				const removed = draft.removed.some(same);
+				const key = candidateKey(candidate);
+				const match = draftTitleFor(draft, candidate);
+				const active = match && draft.titles.includes(match) ? match : null;
+				const removed = !!match && !active;
 				const label = active
-					? draft.newIds.has(active.imdbId)
+					? draft.newIds.has(active.imdbId.toLowerCase())
 						? '✓ Added'
 						: 'In list'
 					: removed

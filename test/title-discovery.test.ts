@@ -3,7 +3,7 @@ import type { APIContext, APIRoute } from 'astro';
 import { readFileSync } from 'node:fs';
 import { normalizeResults, searchTitles } from '../src/tmdb/search.ts';
 import { lookupTitle } from '../src/tmdb/lookup.ts';
-import { matchTitle } from '../src/tmdb/match.ts';
+import { matchTitle, normalizedName } from '../src/tmdb/match.ts';
 import { pasteLines } from '../src/domain/pasteLines.ts';
 import { addTitle, mergeTitles } from '../src/domain/merge.ts';
 import { createDraft, countChanges } from '../src/components/editor/draft.ts';
@@ -146,6 +146,25 @@ describe('TMDB discovery', () => {
 				})
 			).toMatchObject({ status: 'matched', title: { imdbId: 'tt0120601' } });
 	});
+	it('accepts a unique name match within two years', async () => {
+		const fetcher = vi.fn(async (url: string | URL | Request) =>
+			response(
+				String(url).includes('/search/') ? fixture('movie') : fixture('lookup')
+			)
+		);
+		expect(
+			await matchTitle('Being John Malkovich', 2001, {
+				apiKey: 'key',
+				fetch: fetcher as typeof fetch,
+			})
+		).toMatchObject({ status: 'matched', title: { imdbId: 'tt0120601' } });
+	});
+	it('normalizes ampersands, "and" and leading articles', () => {
+		expect(normalizedName('Fear & Loathing in Las Vegas')).toBe(
+			normalizedName('Fear and Loathing in Las Vegas')
+		);
+		expect(normalizedName('An American Werewolf')).toBe('american werewolf');
+	});
 	it('does not confidently choose a year mismatch or two same-name films', async () => {
 		const fetcher = async (url: string | URL | Request) =>
 			response({
@@ -154,7 +173,7 @@ describe('TMDB discovery', () => {
 					: fixture('movie').results,
 			});
 		expect(
-			await matchTitle('Being John Malkovich', 2000, {
+			await matchTitle('Being John Malkovich', 2005, {
 				apiKey: 'key',
 				fetch: fetcher as typeof fetch,
 			})
@@ -311,5 +330,30 @@ describe('discovery API routes', () => {
 		expect(data.map((r) => r.title?.name ?? r.candidate?.name)).toEqual(
 			Array.from({ length: 20 }, (_, i) => `Show ${i}`)
 		);
+	});
+	it('fails only the line whose TMDB call errors, but rethrows a bad key', async () => {
+		let status = 500;
+		vi.stubGlobal('fetch', async (url: string | URL | Request) => {
+			const parsed = new URL(String(url));
+			if (parsed.searchParams.get('query') === 'Bad')
+				return new Response('nope', { status });
+			return response(
+				parsed.pathname.includes('/search/')
+					? fixture('movie')
+					: fixture('lookup')
+			);
+		});
+		const lines = [
+			{ name: 'Bad' },
+			{ name: 'Being John Malkovich', year: 1999 },
+		];
+		const data = (await (await call(match, { lines })).json()) as Array<{
+			status: string;
+			retry?: boolean;
+		}>;
+		expect(data[0]).toMatchObject({ status: 'none', retry: true });
+		expect(data[1].status).toBe('matched');
+		status = 401;
+		expect((await call(match, { lines })).status).toBe(502);
 	});
 });

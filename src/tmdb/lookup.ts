@@ -4,6 +4,8 @@ import {
 	blurbFromTmdb,
 	ratingFromTmdb,
 	fetchJson,
+	posterFromTmdb,
+	TMDB_IMAGE_URL,
 	type TmdbEnrichOptions,
 } from './enrich.ts';
 import { normalizeResults } from './search.ts';
@@ -35,6 +37,7 @@ export async function lookupTitle(
 		title: {
 			...candidate,
 			imdbId,
+			poster: posterFromTmdb(details, options.imageBaseUrl ?? TMDB_IMAGE_URL),
 			addedSeq: 0,
 			blurb: blurbFromTmdb(details),
 			rating: ratingFromTmdb(details),
