@@ -5,5 +5,6 @@ declare namespace Cloudflare {
 	// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 	interface Env {
 		LISTIO: KVNamespace;
+		ADDON_SECRET: string;
 	}
 }

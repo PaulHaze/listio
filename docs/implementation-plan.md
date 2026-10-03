@@ -206,3 +206,17 @@ Broken into numbered sprints in [`docs/sprints/`](./sprints/README.md).
 - MDBList exact response shape (verify in Sprint 02).
 - Whether IMDb's GraphQL endpoint accepts requests from Cloudflare IPs (Sprint 09).
 - Styling approach — plain CSS / scoped Astro styles assumed; no UI kit.
+
+## Addendum: Xperience integration (future)
+
+Desirable once everything works as planned (after Sprint 10); explore further then.
+Xperience adds Catalogs from Trakt and MDBList list URLs, so it can't read Listio's
+KV lists directly. Options to explore:
+
+- **Check first:** whether Xperience can add Catalogs from installed addons. If so,
+  Listio works as-is with no new code.
+- **Sync to Trakt:** Listio mirrors each Combined List to a list on Paul's Trakt
+  account (needs Trakt OAuth and a sync step), which Xperience then reads by URL.
+  Caveats: Trakt list-count and item limits on free accounts, and Trakt's own
+  ordering may not match Listio's sort.
+- **MDBList:** unlikely; its API may not support pushing a fixed set of titles.
