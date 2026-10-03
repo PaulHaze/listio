@@ -30,6 +30,10 @@ You'll need:
 
 The editing UI sits behind Cloudflare Access, restricted to your email. The addon endpoints Nuvio calls are protected by a long secret in the URL.
 
+Configure both dashboard applications using the [Cloudflare Access setup guide](./docs/cloudflare-access.md)
+and complete its live checks before treating a deployment as protected. Access
+policies are not created by deploying the Worker.
+
 A step-by-step deployment guide will be added before the open-source release ([Sprint 10](./docs/sprints/10_Open_Source_Release.md)).
 
 ## Stack
