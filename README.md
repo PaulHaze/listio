@@ -25,14 +25,13 @@ Listio is single-user and self-hosted: you deploy your own copy to your own Clou
 
 You'll need:
 
-- A Cloudflare account (Workers, Workers KV and Cloudflare Access, all on the free tier)
+- A Cloudflare account (Workers and Workers KV, both on the free tier)
 - A Trakt client ID, an MDBList API key and a TMDB API key (all free)
 
-The editing UI sits behind Cloudflare Access, restricted to your email. The addon endpoints Nuvio calls are protected by a long secret in the URL.
-
-Configure both dashboard applications using the [Cloudflare Access setup guide](./docs/cloudflare-access.md)
-and complete its live checks before treating a deployment as protected. Access
-policies are not created by deploying the Worker.
+The editing UI and `/api/*` sit behind a username and password (HTTP Basic Auth), set as the
+`ADMIN_USER` and `ADMIN_PASSWORD` secrets. If either is missing, every admin page returns 503.
+The addon endpoints Nuvio calls are protected by a long secret in the URL instead.
+([ADR 0006](./docs/adr/0006-basic-auth-instead-of-cloudflare-access.md))
 
 A step-by-step deployment guide will be added before the open-source release ([Sprint 10](./docs/sprints/10_Open_Source_Release.md)).
 
@@ -40,7 +39,7 @@ A step-by-step deployment guide will be added before the open-source release ([S
 
 - [Astro 7](https://astro.build) + TypeScript (strict), with a React island for the list editor
 - [Tailwind CSS 4](https://tailwindcss.com), icons via `astro-icon` ([Lucide](https://lucide.dev/icons))
-- Cloudflare Workers + Workers KV, Cloudflare Access for login ([ADR 0002](./docs/adr/0002-astro-on-cloudflare.md))
+- Cloudflare Workers + Workers KV, HTTP Basic Auth for login ([ADR 0002](./docs/adr/0002-astro-on-cloudflare.md))
 - ESLint 10 (flat config) and Prettier
 
 ## Development

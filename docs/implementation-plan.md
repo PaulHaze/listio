@@ -182,11 +182,12 @@ view: 'all' | 'new' | 'removed'
 
 ## 7. Access & secrets
 
-- Cloudflare Access application on the Worker hostname, allow policy = my email.
-  A second Access application on path `/addon/*` with a **Bypass** policy so Nuvio can reach it.
+- HTTP Basic Auth in `src/middleware.ts` on every route except `/addon/*` and `/robots.txt`,
+  checked against `ADMIN_USER` / `ADMIN_PASSWORD`; returns 503 if either is unset (ADR 0006).
 - Secrets (`wrangler secret put`, `.dev.vars` locally, gitignored):
-  `ADDON_SECRET`, `TRAKT_CLIENT_ID`, `MDBLIST_API_KEY`, `TMDB_API_KEY` (v4 read token or v3 key).
-- Dev: Access isn't present locally; admin routes are open on localhost only.
+  `ADDON_SECRET`, `TRAKT_CLIENT_ID`, `MDBLIST_API_KEY`, `TMDB_API_KEY` (v4 read token or v3 key),
+  `ADMIN_USER`, `ADMIN_PASSWORD`.
+- Dev: the same login applies locally, using the values in `.dev.vars`.
 - Nothing deployment-specific (keys, email, KV IDs, hostnames) is hard-coded: the repo will be
   open-sourced for others to self-host with their own keys (ADR 0003, Sprint 10).
 
