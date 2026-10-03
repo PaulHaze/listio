@@ -589,18 +589,28 @@ const TitleCard = memo(function TitleCard({
 	const label = `${title.name}${title.year !== null ? ` (${title.year})` : ''}`;
 	return (
 		<li className="title-card" data-id={title.imdbId}>
-			{title.poster ? (
-				<img
-					src={title.poster}
-					alt=""
-					width="185"
-					height="278"
-					loading="lazy"
-					decoding="async"
-				/>
-			) : (
-				<div className="poster-placeholder">No poster</div>
-			)}
+			<div className="poster">
+				{title.poster ? (
+					<img
+						src={title.poster}
+						alt=""
+						width="342"
+						height="513"
+						loading="lazy"
+						decoding="async"
+					/>
+				) : (
+					<div className="poster-placeholder">No poster</div>
+				)}
+				{title.rating != null && (
+					<span
+						className="rating"
+						aria-label={`TMDB rating ${title.rating.toFixed(1)} out of 10`}
+					>
+						★ {title.rating.toFixed(1)}
+					</span>
+				)}
+			</div>
 			<div className="card-tools">
 				{removedView ? (
 					<button

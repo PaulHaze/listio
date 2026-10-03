@@ -8,7 +8,7 @@ import {
 } from '../sources/parse.ts';
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w185';
+const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w342';
 const DEFAULT_CONCURRENCY = 8;
 
 export type TmdbAuth = 'v3' | 'v4';
@@ -49,22 +49,25 @@ function isFatal(error: unknown, options: TmdbEnrichOptions): boolean {
 	);
 }
 
-function firstSentence(overview: string): string {
-	const trimmed = overview.trim();
-	if (!trimmed) return '';
-	const match = /^(.+?[.!?])(?:\s|$)/s.exec(trimmed);
-	return (match?.[1] ?? trimmed).trim();
-}
-
-/** Choose a TMDB tagline, falling back to the first sentence of its overview. */
+/** Choose the TMDB overview, falling back to its tagline. */
 export function blurbFromTmdb(details: unknown): string | null {
 	const value = record(details);
 	if (!value) return null;
-	const tagline = nonEmptyString(value.tagline);
-	if (tagline) return tagline;
-	const overview = nonEmptyString(value.overview);
-	if (!overview) return null;
-	return firstSentence(overview) || null;
+	return (
+		nonEmptyString(value.overview)?.trim() ??
+		nonEmptyString(value.tagline)?.trim() ??
+		null
+	);
+}
+
+/** TMDB's 0–10 vote average to one decimal, or null when nobody has voted. */
+export function ratingFromTmdb(details: JsonRecord): number | null {
+	const average = details.vote_average;
+	const count = details.vote_count;
+	if (typeof average !== 'number' || !Number.isFinite(average)) return null;
+	if (typeof count === 'number' && count <= 0) return null;
+	if (average <= 0 || average > 10) return null;
+	return Math.round(average * 10) / 10;
 }
 
 function posterFromTmdb(
@@ -205,6 +208,7 @@ export async function enrichTitle(
 					details.release_date ?? details.first_air_date ?? details.date
 				) ?? title.year,
 			blurb: blurbFromTmdb(details),
+			rating: ratingFromTmdb(details),
 		};
 	} catch (error) {
 		if (isFatal(error, options)) throw error;

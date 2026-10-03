@@ -22,6 +22,11 @@ export function isTitle(value: unknown): value is Title {
 		(value.poster === null ||
 			(typeof value.poster === 'string' &&
 				/^https?:\/\//.test(value.poster))) &&
+		(value.rating === undefined ||
+			value.rating === null ||
+			(typeof value.rating === 'number' &&
+				value.rating >= 0 &&
+				value.rating <= 10)) &&
 		(value.tmdbId === null || (integer(value.tmdbId) && value.tmdbId > 0)) &&
 		integer(value.addedSeq)
 	);

@@ -21,6 +21,8 @@ export type Title = {
 	poster: string | null;
 	blurb: string | null;
 	tmdbId: number | null;
+	/** TMDB vote average (0–10). Absent on Titles saved before ratings existed. */
+	rating?: number | null;
 	addedSeq: number;
 };
 

@@ -28,6 +28,7 @@ function titleFromInput(input: MergeInput, addedSeq: number): Title {
 		year: input.year,
 		poster: 'poster' in input ? input.poster : null,
 		blurb: 'blurb' in input ? input.blurb : null,
+		rating: 'rating' in input ? (input.rating ?? null) : null,
 		tmdbId: input.tmdbId,
 		addedSeq,
 	};

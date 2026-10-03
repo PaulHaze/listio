@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
 	blurbFromTmdb,
+	ratingFromTmdb,
 	enrichTitle,
 	enrichTitles,
 } from '../src/tmdb/enrich.ts';
@@ -46,10 +47,13 @@ describe('TMDB enrichment', () => {
 		expect(requested).toContain('/movie/329865');
 		expect(requested).toContain('api_key=v3-key');
 		expect(enriched.poster).toBe(
-			'https://image.tmdb.org/t/p/w185/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg'
+			'https://image.tmdb.org/t/p/w342/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg'
 		);
 		expect(enriched.year).toBe(2016);
-		expect(enriched.blurb).toBe('Why are they here?');
+		expect(enriched.rating).toBe(7.6);
+		expect(enriched.blurb).toBe(
+			'A linguist works with the military to communicate with alien lifeforms.'
+		);
 	});
 
 	it('resolves an IMDb id with /find, then reads details for the tagline', async () => {
@@ -74,7 +78,9 @@ describe('TMDB enrichment', () => {
 		expect(calls[1]).toContain('/movie/329865');
 		expect(enriched.tmdbId).toBe(329865);
 		expect(enriched.year).toBe(2016);
-		expect(enriched.blurb).toBe('Why are they here?');
+		expect(enriched.blurb).toBe(
+			'A linguist works with the military to communicate with alien lifeforms.'
+		);
 	});
 
 	it('enriches from recorded live TMDB responses', async () => {
@@ -97,8 +103,8 @@ describe('TMDB enrichment', () => {
 		expect(movie).toMatchObject({
 			tmdbId: 1893,
 			year: 1999,
-			poster: 'https://image.tmdb.org/t/p/w185/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg',
-			blurb: 'Every saga has a beginning.',
+			poster: 'https://image.tmdb.org/t/p/w342/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg',
+			blurb: expect.stringMatching(/^Anakin Skywalker, a young slave/),
 		});
 
 		const series = await enrichTitle(
@@ -113,8 +119,8 @@ describe('TMDB enrichment', () => {
 		);
 		expect(series).toMatchObject({
 			year: 2024,
-			poster: 'https://image.tmdb.org/t/p/w185/mztdt3y6GBsJR69zHtszFezTCLT.jpg',
-			blurb: 'In an age of light, a darkness rises.',
+			poster: 'https://image.tmdb.org/t/p/w342/mztdt3y6GBsJR69zHtszFezTCLT.jpg',
+			blurb: expect.stringMatching(/^A hundred years before the rise/),
 		});
 	});
 
@@ -130,7 +136,10 @@ describe('TMDB enrichment', () => {
 			}
 		);
 		expect(enriched.tmdbId).toBe(329865);
-		expect(enriched.blurb).toBe('A linguist works with the military.');
+		expect(enriched.blurb).toBe(
+			'A linguist works with the military. A second sentence.'
+		);
+		expect(enriched.rating).toBeNull();
 	});
 
 	it('sends a v4 read token as a bearer header, not a query parameter', async () => {
@@ -183,11 +192,21 @@ describe('TMDB enrichment', () => {
 		);
 	});
 
-	it('prefers a tagline and returns null for empty metadata', () => {
+	it('prefers the overview, falls back to the tagline, else null', () => {
 		expect(
 			blurbFromTmdb({ tagline: 'A tagline', overview: 'First. Second.' })
-		).toBe('A tagline');
+		).toBe('First. Second.');
+		expect(blurbFromTmdb({ tagline: 'A tagline', overview: '' })).toBe(
+			'A tagline'
+		);
 		expect(blurbFromTmdb({ tagline: '', overview: '' })).toBeNull();
+	});
+
+	it('rounds the vote average and ignores unrated Titles', () => {
+		expect(ratingFromTmdb({ vote_average: 6.849, vote_count: 12 })).toBe(6.8);
+		expect(ratingFromTmdb({ vote_average: 0, vote_count: 0 })).toBeNull();
+		expect(ratingFromTmdb({ vote_average: 8, vote_count: 0 })).toBeNull();
+		expect(ratingFromTmdb({})).toBeNull();
 	});
 
 	it('leaves a Title intact when TMDB is unavailable', async () => {

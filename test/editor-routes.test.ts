@@ -223,7 +223,7 @@ describe('Source and enrichment routes', () => {
 			titles.map((t) => t.imdbId)
 		);
 		expect(result.titles[0]).toMatchObject({
-			poster: 'https://image.tmdb.org/t/p/w185/poster.jpg',
+			poster: 'https://image.tmdb.org/t/p/w342/poster.jpg',
 			blurb: 'A blurb',
 			year: 2020,
 		});

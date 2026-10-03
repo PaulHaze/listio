@@ -43,6 +43,7 @@ export function applyEnrichment(draft: Draft, titles: Title[]): Draft {
 					...title,
 					poster: enriched.poster,
 					blurb: enriched.blurb,
+					rating: enriched.rating ?? null,
 					year: enriched.year,
 					tmdbId: enriched.tmdbId,
 				}
