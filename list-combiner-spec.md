@@ -80,6 +80,9 @@ self-host with their own keys (BYOK); there will be no public hosted version. (A
 - **Add** puts the Title into the Draft, the same as a Title from a Source. A result already
   in the list shows **In list**. A Removed Title shows **Restore**
 - Titles with no IMDb ID can't be added ("No IMDb ID, can't add"), since Nuvio can't resolve them
+- **Paste titles**: paste many titles, one per line (`Title (Year)`, year optional). Each line is
+  matched on TMDB. Confident matches are added. Unclear lines go into a **Need a look** queue
+  to choose a candidate or skip
 - A list needs no Sources: a hand-built list is an ordinary Combined List, saved and published
   the same way (ADR 0005)
 

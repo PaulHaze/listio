@@ -30,15 +30,45 @@ Combined List (ADR 0005), so Sources and searched Titles can be mixed in one lis
 - [ ] Recorded fixtures + unit tests: search normalizer (person dropped, tv → series, missing poster/date),
       lookup (with and without IMDb ID), `addTitle` (new / duplicate / restore)
 
+### Paste a list of titles
+
+Paste many titles at once, one per line, and have them found and added. For example, create
+"Modern Head Trips" and paste every line from that section of `docs/movie_lists/midnight_movies.txt`.
+
+- [ ] `domain/pasteLines.ts`: parse pasted text into `{ line, name, year? }[]`. One title per line. Trailing
+      `(YYYY)` becomes the year. Ignore blank lines and lines starting with `#` or `//`. Trim whitespace and
+      a leading list marker (`-`, `*`, `1.`). Drop repeated lines
+- [ ] `tmdb/match.ts`: `(name, year?)` → `matched` (one `Title`) | `ambiguous` (up to 6 candidates) | `none`.
+      Search `/search/movie` (with `year` when given), then `/search/tv` if no movie fits. **Confident** = exactly
+      one result whose normalized name (case, punctuation, leading "The/A") equals the line's name, and whose
+      year equals the given year (or there's no year and only one name match). Anything else is `ambiguous`.
+      A confident match goes through `tmdb/lookup.ts`. No IMDb ID → `none` with that reason
+- [ ] `POST /api/titles/match` `{ lines: { name, year? }[] }` → one result per line, in order. Max 20 lines per
+      request (stays under Workers subrequest limits). The client sends batches of 20 and shows progress
+- [ ] Editor **Paste titles** panel, next to search: a textarea and a **Find titles** button. Progress reads
+      "Matching 40 / 61…". Matched Titles go into the Draft through `addTitle`, so duplicates, restores and
+      **Show only new** all work as they do for search
+- [ ] Result summary: "52 added · 3 already in list · 6 need a look". **Need a look** shows each line with its
+      candidates as a small poster grid (title, year, badge). Choose one → **Add**, or **Skip**. A `none` line
+      shows "No match" and a search box prefilled with the line
+- [ ] Nothing reaches Nuvio until Save, as with search
+- [ ] Unit tests: `pasteLines` (years, blanks, comments, markers, duplicates, titles with brackets or colons,
+      e.g. `2001: A Space Odyssey (1968)`), `match` confidence rules (exact, year mismatch, two same-name
+      films, no year, no IMDb ID) from recorded fixtures
+
 ## Done when
 
 - A new list built only by search is saved and shows in Nuvio. Both of its Catalogs sit in one collection folder
 - Searching a Title already in the list shows **In list**. Adding a Removed Title restores it
 - Adding a Source to a hand-built list later doesn't duplicate the searched Titles
 - A title with no IMDb ID shows a clear "can't add" message
+- Pasting the "Modern Head Trips" section into a new list of that name adds most titles automatically. The rest
+  can be fixed in **Need a look** without leaving the editor. Saved, the list shows in Nuvio
+- Pasting the same lines again adds nothing new (all "already in list")
 - All tests pass
 
 ## Not in this sprint
 
 - Drag-to-reorder. Hand-built lists use the existing sorts. "Order added" gives the order you added Titles in
 - Cinemeta as a keyless search fallback
+- Making several lists from one file (one per `##` header). That's Sprint 11
