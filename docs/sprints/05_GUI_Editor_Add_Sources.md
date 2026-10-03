@@ -38,10 +38,11 @@ In the editor, paste Source URLs and pull their Titles into a Draft, ready for r
   and returns 409 for an observed stale version. KV's existing eventual-consistency and
   non-atomic concurrency limitations still apply. Save waits for fetching/enrichment to
   finish; enrichment errors leave Titles available for saving.
-- MDBList imports stop with an explicit error after 40 API pages rather than importing
-  a truncated Source. At the current 100-Title page size this supports a 500+ Title Source;
-  larger Sources requiring more than 40 pages need a future continuation flow. Trakt's
-  existing 1,000-Title cap remains as specified in the implementation plan.
+- Trakt and MDBList imports stop with an explicit error after 40 API pages rather than
+  importing a truncated Source. The budget counts every page, including pages whose
+  records are all skipped. At the current 100-record page size this supports a 500+ Title
+  Source with up to 4,000 records; larger Sources need a future continuation flow. This
+  replaces the plan's silent 1,000-item Trakt cap.
 - Automated verification: `pnpm test`, `pnpm build`, and `pnpm lint:check` passed.
   Tests cover 501-Title paginated Source fetching, 601-Title chunk processing, overlap and
   Removed-Title deduplication, request budgets, enrichment failures, save validation,
@@ -65,3 +66,39 @@ These checks were **not** performed; this sprint is not yet accepted as complete
 
 The full review grid (remove/restore, selection, views and progressive card rendering)
 remains Sprint 06 work.
+
+#### ✅ Summary of work — completed & audited 2026-10-03
+
+_Full audit consolidation: [`audits/sprint-05-audit-summary.md`](../audits/sprint-05-audit-summary.md) (6 issues — 1 critical, 1 warning, 4 suggestions; Astra FAIL on unbounded Trakt pagination, all now fixed). Deployed/Nuvio acceptance above is still pending._
+
+**Files created / changed:**
+
+- `src/components/editor/Editor.tsx` **(new)** — React island: Source URL rows, per-Source status, progressive enrichment, basic Review List, Save with confirm and 409 handling.
+- `src/components/editor/draft.ts` **(new)** — pure Draft helpers (`createDraft`, `addSource`, `applyEnrichment`) over `domain/merge.ts`.
+- `src/components/editor/enrichment.ts` **(new)** — cost-aware chunking and one shared 3-wide enrichment queue.
+- `src/tmdb/budget.ts` **(new)** — shared enrichment limits (`MAX_ENRICH_TITLES`, `MAX_ENRICH_REQUESTS`, `enrichmentCost`).
+- `src/sources/errors.ts` **(new)** — shared `SourceRequestBudgetError`.
+- `src/pages/api/sources/fetch.ts` **(new)** — detect + fetch + normalize, 40-page budget for Trakt and MDBList, sanitized errors.
+- `src/pages/api/titles/enrich.ts` **(new)** — validates Title and TMDB-call budgets before enriching.
+- `src/api/validate.ts` **(new)** — `savedDraft` validation for PUT.
+- `src/pages/api/lists/[id].ts` — added `PUT` save with version check.
+- `src/sources/trakt.ts`, `src/sources/mdblist.ts` — `maxPages` option that fails instead of truncating.
+- `src/pages/lists/[id].astro`, `src/styles/main.css`, `src/env.d.ts` — island mount, editor styles, env typing.
+- `test/editor.test.ts` **(new)**, `test/editor-routes.test.ts` **(new)**, `test/list-routes.test.ts` — Draft, queue, route-budget and save tests.
+
+**Key decisions made:**
+
+- Source imports fail with a 422 after 40 upstream pages rather than truncating; ⚠️ this replaces the plan's silent 1,000-item Trakt cap, and Sources over 40 pages need a future continuation flow.
+- Save derives `nextSeq` and keeps `id` on the server; only editable fields are accepted from the client.
+- Sort counts as one change only while it differs from the saved sort.
+
+**Audit outcomes (owner-actioned 2026-10-03):**
+
+- 🔴 **#1 (Critical, Astra) — fixed:** unbounded Trakt pagination; Trakt now uses the 40-page budget, counting pages of skipped records, with dense and sparse route tests.
+- 🟡 **#2 (Warning, Opus) — fixed:** same Trakt gap and false sprint-doc claim; resolved by #1's change and the corrected note.
+- 🔵 **#3 (Suggestion, Opus) — fixed:** sort toggles no longer inflate the change count.
+- 🔵 **#4 (Suggestion, Opus) — fixed:** per-Source status numbers now add up.
+- 🔵 **#5 (Suggestion, Opus) — fixed:** enrichment limits moved to `src/tmdb/budget.ts`; no server import from the component folder.
+- 🔵 **#6 (Suggestion, Opus) — fixed:** lazy initialisers and review-only memoised sort in the editor.
+
+`pnpm test` (68 tests), `pnpm lint:check` and `pnpm build` pass.

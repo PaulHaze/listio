@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
 	CombinedList,
 	SourceRecord,
@@ -67,19 +67,23 @@ export default function Editor({
 	const [notice, setNotice] = useState(
 		created ? 'Refresh the Listio addon in Nuvio to see this change' : ''
 	);
-	const requested = useRef(
-		new Set(
-			initialList.sources.map((source) => {
-				try {
-					return detectSource(source.url).url;
-				} catch {
-					return source.url;
-				}
-			})
-		)
+	// Lazy initialisers: these run once, not on every enrichment re-render.
+	const [requested] = useState(
+		() =>
+			new Set(
+				initialList.sources.map((source) => {
+					try {
+						return detectSource(source.url).url;
+					} catch {
+						return source.url;
+					}
+				})
+			)
 	);
-	const schedule = useRef(enrichmentQueue());
-	const controller = useRef(new AbortController());
+	const [schedule] = useState(enrichmentQueue);
+	const [controller] = useState(() => ({ current: new AbortController() }));
+	// Sort is compared with the saved list so switching back is not a change.
+	const changes = draft.changes + (draft.sort !== saved.sort ? 1 : 0);
 	function update(change: (draft: Draft) => Draft) {
 		draftRef.current = change(draftRef.current);
 		setDraft(draftRef.current);
@@ -99,14 +103,14 @@ export default function Editor({
 		return () => controller.current.abort();
 	}, []);
 	useEffect(() => {
-		if (!draft.changes && !pending) return;
+		if (!changes && !pending) return;
 		const warn = (event: BeforeUnloadEvent) => {
 			event.preventDefault();
 			event.returnValue = '';
 		};
 		window.addEventListener('beforeunload', warn);
 		return () => window.removeEventListener('beforeunload', warn);
-	}, [draft.changes, pending]);
+	}, [changes, pending]);
 
 	async function fetchSource(id: number, input: string) {
 		if (!input.trim() || saving) return;
@@ -121,14 +125,14 @@ export default function Editor({
 			});
 			return;
 		}
-		if (requested.current.has(url)) {
+		if (requested.has(url)) {
 			rowStatus(id, {
 				state: 'error',
 				message: 'This Source has already been added or is fetching.',
 			});
 			return;
 		}
-		requested.current.add(url);
+		requested.add(url);
 		rowStatus(id, { url, state: 'fetching', message: 'Fetching…' });
 		setPending((n) => n + 1);
 		setError('');
@@ -141,16 +145,21 @@ export default function Editor({
 			}>('/api/sources/fetch', { url }, controller.current.signal);
 			const merged = addSource(draftRef.current, result.source, result.titles);
 			update(() => merged.draft);
-			const skipped =
-				merged.skipped + result.source.skippedNoImdb + result.skippedInvalid;
-			const message = `${result.source.titleCount} Titles · ${merged.newTitles.length} new · ${skipped} skipped (${result.source.skippedNoImdb} — no IMDb ID)`;
+			const { titleCount, skippedNoImdb } = result.source;
+			// new + already-in-list + skipped categories add up to the received count.
+			const received = titleCount + skippedNoImdb + result.skippedInvalid;
+			const message =
+				`${received} Titles · ${merged.newTitles.length} new · ${merged.skipped} already in list or removed · ${skippedNoImdb} skipped — no IMDb ID` +
+				(result.skippedInvalid
+					? ` · ${result.skippedInvalid} skipped — invalid`
+					: '');
 			rowStatus(id, {
 				state: 'done',
 				message:
 					message + (merged.newTitles.length ? ' · Filling posters…' : ''),
 			});
 			let failed = false;
-			await schedule.current(merged.newTitles, async (chunk) => {
+			await schedule(merged.newTitles, async (chunk) => {
 				try {
 					const enriched = await api<{ titles: Title[] }>(
 						'/api/titles/enrich',
@@ -172,7 +181,7 @@ export default function Editor({
 							: ''),
 				});
 		} catch (error) {
-			requested.current.delete(url);
+			requested.delete(url);
 			if (!controller.current.signal.aborted)
 				rowStatus(id, {
 					state: 'error',
@@ -186,13 +195,8 @@ export default function Editor({
 		}
 	}
 	async function save() {
-		if (saving || pending || !draftRef.current.changes) return;
-		if (
-			!window.confirm(
-				`Save ${draftRef.current.changes} changes to ${saved.name}?`
-			)
-		)
-			return;
+		if (saving || pending || !changes) return;
+		if (!window.confirm(`Save ${changes} changes to ${saved.name}?`)) return;
 		setSaving(true);
 		setError('');
 		try {
@@ -222,7 +226,10 @@ export default function Editor({
 			setSaving(false);
 		}
 	}
-	const titles = sortTitles(draft.titles, draft.sort);
+	const titles = useMemo(
+		() => (review ? sortTitles(draft.titles, draft.sort) : []),
+		[review, draft.titles, draft.sort]
+	);
 	return (
 		<div className="editor">
 			{notice && (
@@ -324,14 +331,14 @@ export default function Editor({
 			</section>
 			<div className="editor-actions">
 				<p role="status">
-					{draft.titles.length} Titles · {draft.newIds.size} new ·{' '}
-					{draft.changes} unsaved changes
+					{draft.titles.length} Titles · {draft.newIds.size} new · {changes}{' '}
+					unsaved changes
 					{pending > 0 ? ' · Fetching Sources or filling posters…' : ''}
 				</p>
 				<button type="button" onClick={() => setReview(true)}>
 					Review List
 				</button>
-				{draft.changes > 0 && (
+				{changes > 0 && (
 					<button
 						type="button"
 						disabled={saving || pending > 0}
@@ -356,11 +363,7 @@ export default function Editor({
 						disabled={saving}
 						onChange={(event) => {
 							const sort = event.target.value as Draft['sort'];
-							update((draft) => ({
-								...draft,
-								sort,
-								changes: draft.changes + 1,
-							}));
+							update((draft) => ({ ...draft, sort }));
 						}}
 					>
 						<option value="newest">Newest</option>

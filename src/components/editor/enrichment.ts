@@ -1,17 +1,21 @@
 import type { Title } from '../../domain/types.ts';
+import {
+	enrichmentCost,
+	MAX_ENRICH_REQUESTS,
+	MAX_ENRICH_TITLES,
+} from '../../tmdb/budget.ts';
 
-// Leave headroom below the Worker's 50 external subrequests. /find + details
-// costs two calls when the Source did not provide a TMDB ID.
-export const MAX_ENRICH_REQUESTS = 40;
-export const enrichmentCost = (title: Title): number =>
-	title.tmdbId === null ? 2 : 1;
+export { enrichmentCost };
 export function enrichmentChunks(titles: readonly Title[]): Title[][] {
 	const chunks: Title[][] = [];
 	let chunk: Title[] = [],
 		cost = 0;
 	for (const title of titles) {
 		const next = enrichmentCost(title);
-		if (cost + next > MAX_ENRICH_REQUESTS || chunk.length === 40) {
+		if (
+			cost + next > MAX_ENRICH_REQUESTS ||
+			chunk.length === MAX_ENRICH_TITLES
+		) {
 			chunks.push(chunk);
 			chunk = [];
 			cost = 0;

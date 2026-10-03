@@ -106,6 +106,65 @@ describe('Source and enrichment routes', () => {
 		});
 		expect(fetcher).toHaveBeenCalledTimes(40);
 	});
+	it.each([
+		['dense', 100],
+		['sparse', 10],
+	])(
+		'fails rather than exceeding the Worker request budget for a %s Trakt Source',
+		async (_, valid) => {
+			// 51 pages advertised; only `valid` records per page carry an IMDb ID.
+			const fetcher = vi.fn(async (input: string) => {
+				const page = Number(new URL(input).searchParams.get('page'));
+				return new Response(
+					JSON.stringify(
+						Array.from({ length: 100 }, (_, i) => ({
+							type: 'movie',
+							movie: {
+								title: `Title ${page}-${i}`,
+								ids: i < valid ? { imdb: `tt${page * 1000 + i}` } : {},
+							},
+						}))
+					),
+					{ headers: { 'x-pagination-page-count': '51' } }
+				);
+			});
+			vi.stubGlobal('fetch', fetcher);
+			const response = await call(source, {
+				url: 'https://trakt.tv/lists/123',
+			});
+			expect(response.status).toBe(422);
+			expect(await response.json()).toEqual({
+				error:
+					'This Source needs more than 40 API pages. No Titles were imported.',
+			});
+			expect(fetcher).toHaveBeenCalledTimes(40);
+		}
+	);
+	it('fetches a 501-Title Trakt Source over six pages without truncating', async () => {
+		const fetcher = vi.fn(async (input: string) => {
+			const page = Number(new URL(input).searchParams.get('page'));
+			const count = Math.min(100, 501 - (page - 1) * 100);
+			return new Response(
+				JSON.stringify(
+					Array.from({ length: count }, (_, i) => ({
+						type: 'movie',
+						movie: {
+							title: 'Title',
+							ids: { imdb: `tt${(page - 1) * 100 + i}` },
+						},
+					}))
+				),
+				{ headers: { 'x-pagination-page-count': '6' } }
+			);
+		});
+		vi.stubGlobal('fetch', fetcher);
+		const response = await call(source, { url: 'https://trakt.tv/lists/123' });
+		expect(response.status).toBe(200);
+		expect(
+			((await response.json()) as { titles: Title[] }).titles
+		).toHaveLength(501);
+		expect(fetcher).toHaveBeenCalledTimes(6);
+	});
 
 	it('rejects invalid URLs and sanitizes upstream errors', async () => {
 		const fetcher = vi

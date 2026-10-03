@@ -3,11 +3,12 @@ import { env } from 'cloudflare:workers';
 import { json } from '../../../api/http.ts';
 import { isRecord } from '../../../api/validate.ts';
 import { detectSource, SourceDetectionError } from '../../../sources/detect.ts';
+import { SourceRequestBudgetError } from '../../../sources/errors.ts';
 import { fetchTrakt } from '../../../sources/trakt.ts';
-import {
-	fetchMdbList,
-	SourceRequestBudgetError,
-} from '../../../sources/mdblist.ts';
+import { fetchMdbList } from '../../../sources/mdblist.ts';
+
+// Leave headroom below the Worker's 50 external subrequests per invocation.
+const MAX_SOURCE_PAGES = 40;
 
 export const POST: APIRoute = async ({ request }) => {
 	const body: unknown = await request.json().catch(() => null);
@@ -26,8 +27,14 @@ export const POST: APIRoute = async ({ request }) => {
 			);
 		const result =
 			source.site === 'trakt'
-				? await fetchTrakt(source, { clientId: key })
-				: await fetchMdbList(source, { apiKey: key, maxPages: 40 });
+				? await fetchTrakt(source, {
+						clientId: key,
+						maxPages: MAX_SOURCE_PAGES,
+					})
+				: await fetchMdbList(source, {
+						apiKey: key,
+						maxPages: MAX_SOURCE_PAGES,
+					});
 		return json({
 			titles: result.titles,
 			skippedInvalid: result.skippedInvalid,

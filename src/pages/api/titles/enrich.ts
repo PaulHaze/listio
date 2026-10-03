@@ -5,7 +5,8 @@ import { isRecord, isTitle } from '../../../api/validate.ts';
 import {
 	enrichmentCost,
 	MAX_ENRICH_REQUESTS,
-} from '../../../components/editor/enrichment.ts';
+	MAX_ENRICH_TITLES,
+} from '../../../tmdb/budget.ts';
 import { enrichTitles } from '../../../tmdb/enrich.ts';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -13,14 +14,13 @@ export const POST: APIRoute = async ({ request }) => {
 	if (
 		!isRecord(body) ||
 		!Array.isArray(body.titles) ||
-		body.titles.length > 40 ||
+		body.titles.length > MAX_ENRICH_TITLES ||
 		!body.titles.every(isTitle) ||
 		body.titles.reduce((n, t) => n + enrichmentCost(t), 0) > MAX_ENRICH_REQUESTS
 	)
 		return json(
 			{
-				error:
-					'Send at most 40 Titles and 40 TMDB requests (a Title without a TMDB ID needs two).',
+				error: `Send at most ${MAX_ENRICH_TITLES} Titles and ${MAX_ENRICH_REQUESTS} TMDB requests (a Title without a TMDB ID needs two).`,
 			},
 			400
 		);

@@ -24,6 +24,7 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Where:** `src/pages/api/sources/fetch.ts:27-30`. Supporting helper code: `src/sources/trakt.ts:194-203`, `src/sources/trakt.ts:215-229`. Inaccurate sprint-doc note: `docs/sprints/05_GUI_Editor_Add_Sources.md:41-44`.
 - **Related:** #2. Opus raised the same problem as a Warning. Kept separate for the owner to judge.
 - **Suggested fix (Astra):** Enforce an explicit Trakt request or page budget at the Worker boundary. It must count pages full of skipped or unsupported records too. Implement the intended 1,000-item policy explicitly, and tell the user about any cap or truncation. If a Source needs more requests than one invocation allows, either use a continuation flow or return a clear budget error before the budget runs out, as MDBList already does. A `maxItems` limit alone won't protect against sparse pages. Add route-level tests for a dense oversized Source and for a sparse Source, checking the number of upstream calls and the response. Correct the sprint note so it describes the policy that is actually enforced.
+- **ACTION** (owner, via chat "fix all of them"): Fix. Done: Trakt now uses the shared 40-page `SourceRequestBudgetError` budget (counts skipped-record pages); dense + sparse route tests added; sprint note corrected.
 
 ### 2. Trakt Sources have no page or item cap; the sprint doc's 1,000-Title claim is false [Warning] · raised by Opus
 
@@ -32,6 +33,7 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Where:** `src/pages/api/sources/fetch.ts:29`, `src/sources/trakt.ts:30`, `src/sources/trakt.ts:201`
 - **Related:** #1. Astra raised the same problem as Critical and also proved that sparse pages trigger it at only 510 usable Titles, a case Opus didn't consider. Kept separate.
 - **Suggested fix (Opus):** Give Trakt the same treatment as MDBList. Add a `maxPages` option to `fetchTrakt` that throws `SourceRequestBudgetError` before it requests page `maxPages + 1`, and pass `maxPages: 40` from `fetch.ts`. Move `SourceRequestBudgetError` into a shared module such as `src/sources/errors.ts`, and add a route test that mirrors the MDBList 40-page test. Opus also offered `maxItems: 1000` (the plan's literal cap) as an alternative, but noted that it silently truncates. Astra's point in #1 rules it out as the *only* safeguard, because it doesn't limit requests on sparse pages. Recommendation: use the page budget, and optionally add a 1,000-item cap on top only if you're happy with truncation. Fix the sprint doc sentence either way.
+- **ACTION** (owner, via chat "fix all of them"): Fix (same change as #1). Page budget chosen over a silent `maxItems: 1000` cap.
 
 ### 3. Changing the sort always counts as a change, even when you switch back [Suggestion] · raised by Opus
 
@@ -39,6 +41,7 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Why it matters:** The Save button stays visible, the status line says "2 unsaved changes", and you get a "leave this page?" warning for a Draft that matches the saved list. It's misleading but harmless.
 - **Where:** `src/components/editor/Editor.tsx:357-363`, `src/components/editor/Editor.tsx:101-109`
 - **Suggested fix:** Don't count sort as a running total. Derive it from `draft.sort !== saved.sort`, for example `totalChanges = draft.changes + (draft.sort !== saved.sort ? 1 : 0)`. Use `totalChanges` for the Save button visibility, the status line, the confirm text and the `beforeunload` warning.
+- **ACTION** (owner, via chat "fix all of them"): Fix. Done: sort counts as one change only when it differs from the saved sort.
 
 ### 4. The per-Source status numbers don't add up [Suggestion] · raised by Opus
 
@@ -46,6 +49,7 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Why it matters:** It's cosmetic, but the user can't make the numbers reconcile.
 - **Where:** `src/components/editor/Editor.tsx:144-146`
 - **Suggested fix:** List the categories separately, for example "100 Titles · 80 new · 20 already in list · 5 skipped (no IMDb ID)". Or make N the total received, so that new + skipped = N.
+- **ACTION** (owner, via chat "fix all of them"): Fix. Done: status reads received · new · already in list or removed · skipped (no IMDb ID / invalid), and adds up.
 
 ### 5. A server route imports from the editor component folder, and the 40-Title limit is copied in two places [Suggestion] · raised by Opus
 
@@ -53,6 +57,7 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Why it matters:** This is about maintainability. If the limit changes on one side only, the client will send chunks the server rejects with a 400.
 - **Where:** `src/pages/api/titles/enrich.ts:5-8`, `src/pages/api/titles/enrich.ts:16`, `src/components/editor/enrichment.ts:14`
 - **Suggested fix:** Move `enrichmentCost`, `MAX_ENRICH_REQUESTS` and a new `MAX_ENRICH_TITLES = 40` into a shared non-UI module (for example `src/tmdb/budget.ts`). Import them from both the route and the client chunker.
+- **ACTION** (owner, via chat "fix all of them"): Fix. Done: limits moved to `src/tmdb/budget.ts` with `MAX_ENRICH_TITLES`; route and chunker both import it.
 
 ### 6. The editor repeats work on every render [Suggestion] · raised by Opus
 
@@ -65,7 +70,6 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - **Why it matters:** It's wasted work with no wrong results today. It will matter more when Sprint 06 adds the full grid.
 - **Where:** `src/components/editor/Editor.tsx:70-82`, `src/components/editor/Editor.tsx:225`
 - **Suggested fix:** Create these values once with lazy initialisers (e.g. `useState(() => new Set(...))`). Only sort when `review` is true, inside `useMemo(..., [draft.titles, draft.sort])`.
-
 ---
 **Tally:** 6 issues total (1 from Astra, 5 from Opus). 1 critical, 1 warning, 4 suggestions.
 **Overlaps to judge:** #1 ↔ #2 (both describe the missing Trakt budget; Astra rated it Critical, Opus rated it Warning).
@@ -125,3 +129,5 @@ Both auditors independently found the same Trakt pagination problem (#1, #2).
 - One enrichment queue is shared across Sources. A test proves no more than 3 requests are in flight across two Sources, and that one failed chunk doesn't stop the others.
 - `addSource` and `applyEnrichment` don't modify their inputs. Enrichment can't change a Title's identity, type or order, and Save resets the Draft from the server's response.
 - Save is blocked while Sources are fetching or enriching, and `beforeunload` covers in-progress work. Aborted requests don't update state after the editor unmounts.
+- **ACTION** (owner, via chat "fix all of them"): Fix. Done: lazy initialisers for requested set, queue and controller; sort memoised and only when Review List is open.
+

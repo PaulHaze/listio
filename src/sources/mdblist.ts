@@ -8,18 +8,11 @@ import {
 	yearValue,
 	type JsonRecord,
 } from './parse.ts';
+import { SourceRequestBudgetError } from './errors.ts';
 
 const MDBLIST_API_URL = 'https://api.mdblist.com';
 const DEFAULT_PAGE_SIZE = 100;
 
-export class SourceRequestBudgetError extends Error {
-	constructor(maxPages: number) {
-		super(
-			`This Source needs more than ${maxPages} API pages. No Titles were imported.`
-		);
-		this.name = 'SourceRequestBudgetError';
-	}
-}
 const SERIES_TYPES = [
 	'show',
 	'series',
