@@ -118,13 +118,13 @@ One Stremio-protocol catalog addon, named **Listio**, installed once in Nuvio.
 
 ## 6. Access
 
-- **Editing UI** — behind Cloudflare Access, allow-listed to my email only.
-- **Addon endpoints** — outside Access (Nuvio can't log in); protected by a long secret slug
+- **Editing UI** — behind HTTP Basic Auth (one username and password, set as secrets). (ADR 0006)
+- **Addon endpoints** — outside the login (Nuvio can't log in); protected by a long secret slug
   in the URL. If it leaks, rotate it and reinstall in Nuvio.
 
 ## 7. Stack & hosting
 
-Astro + TypeScript on Cloudflare Workers, Workers KV for storage, Cloudflare Access for login.
+Astro + TypeScript on Cloudflare Workers, Workers KV for storage, HTTP Basic Auth for login.
 Default `*.workers.dev` address; custom domain optional later. (ADR 0002)
 
 External services (all free keys): Trakt client ID, MDBList API key, TMDB API key.

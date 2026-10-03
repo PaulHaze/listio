@@ -9,5 +9,7 @@ declare namespace Cloudflare {
 		TRAKT_CLIENT_ID: string;
 		MDBLIST_API_KEY: string;
 		TMDB_API_KEY: string;
+		ADMIN_USER: string;
+		ADMIN_PASSWORD: string;
 	}
 }
