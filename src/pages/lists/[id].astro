@@ -2,6 +2,7 @@
 import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import { getList } from '@/storage/lists';
+import Editor from '@/components/editor/Editor';
 
 export const prerender = false;
 const id = Astro.params.id!;
@@ -18,24 +19,7 @@ const created = Astro.url.searchParams.get('created') === '1';
 				<header class="page-heading">
 					<h1>{list.name}</h1>
 				</header>
-				{created && (
-					<p class="notice" role="status">
-						Refresh the Listio addon in Nuvio to see this change
-					</p>
-				)}
-				<list-editor data-id={id}>
-					<section class="panel">
-						<h2>Combined List editor</h2>
-						<p data-count>
-							{list.titles.length}{' '}
-							{list.titles.length === 1 ? 'Title' : 'Titles'}
-						</p>
-						<p>
-							Adding Sources and Titles will be available in the next sprints.
-						</p>
-						<p class="error" role="alert" hidden></p>
-					</section>
-				</list-editor>
+				<Editor client:load initialList={list} created={created} />
 			</>
 		) : (
 			<header class="page-heading">
@@ -47,39 +31,3 @@ const created = Astro.url.searchParams.get('created') === '1';
 		)}
 	</main>
 </Layout>
-
-<script>
-	import type { CombinedList } from '@/domain/types';
-	class ListEditor extends HTMLElement {
-		connectedCallback() {
-			// Show the refresh notice once, not again on reload or from a bookmark.
-			const url = new URL(window.location.href);
-			if (url.searchParams.has('created')) {
-				url.searchParams.delete('created');
-				history.replaceState(history.state, '', url);
-			}
-			void this.load();
-		}
-		async load() {
-			try {
-				const response = await fetch(
-					`/api/lists/${encodeURIComponent(this.dataset.id!)}`
-				);
-				const list = (await response.json().catch(() => null)) as
-					(CombinedList & { error?: string }) | null;
-				if (!response.ok || !list)
-					throw new Error(list?.error || 'Unable to load this Combined List.');
-				this.querySelector('[data-count]')!.textContent =
-					`${list.titles.length} ${list.titles.length === 1 ? 'Title' : 'Titles'}`;
-			} catch (error) {
-				const message = this.querySelector<HTMLElement>('[role="alert"]')!;
-				message.textContent =
-					error instanceof Error
-						? error.message
-						: 'Unable to load this Combined List.';
-				message.hidden = false;
-			}
-		}
-	}
-	customElements.define('list-editor', ListEditor);
-</script>

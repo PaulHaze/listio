@@ -8,6 +8,7 @@ import {
 	yearValue,
 	type JsonRecord,
 } from './parse.ts';
+import { SourceRequestBudgetError } from './errors.ts';
 
 const TRAKT_API_URL = 'https://api.trakt.tv';
 const DEFAULT_PAGE_SIZE = 100;
@@ -29,6 +30,9 @@ export type TraktFetchOptions = {
 	pageSize?: number;
 	/** Optional cap on accepted Titles. Lists have no size cap by default. */
 	maxItems?: number;
+	/** Fail instead of silently truncating when a Worker request budget is spent.
+	 * Counts every page, including pages whose records are all skipped. */
+	maxPages?: number;
 	signal?: AbortSignal;
 };
 
@@ -199,6 +203,8 @@ export async function fetchTrakt(
 	let pages = 0;
 
 	for (let page = 1; titles.length < maxItems; page += 1) {
+		if (options.maxPages !== undefined && page > options.maxPages)
+			throw new SourceRequestBudgetError(options.maxPages);
 		const response = await request(
 			buildTraktItemsUrl(source, page, limit, options.baseUrl),
 			{

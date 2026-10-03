@@ -307,3 +307,67 @@ list-manager,
 list-editor {
 	display: block;
 }
+
+.editor-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	margin: 1.5rem 0;
+}
+.editor-actions p {
+	flex: 1 1 20rem;
+}
+.add-source {
+	margin-top: 1rem;
+}
+.source-status {
+	min-height: 1.5rem;
+	margin-top: 0.5rem;
+}
+.source-history {
+	margin-top: 1rem;
+}
+.source-history li {
+	margin-top: 0.5rem;
+	overflow-wrap: anywhere;
+}
+.title-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+	gap: 1rem;
+	list-style: none;
+	margin-top: 1.5rem;
+}
+.title-card {
+	min-width: 0;
+}
+.title-card img,
+.poster-placeholder {
+	width: 100%;
+	aspect-ratio: 2 / 3;
+	object-fit: cover;
+	border-radius: 0.4rem;
+}
+.poster-placeholder {
+	display: grid;
+	place-items: center;
+	background: var(--background-200);
+}
+.title-card h3 {
+	font-size: 1rem;
+	font-weight: 600;
+	margin-top: 0.5rem;
+}
+.title-card p {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.9rem;
+}
+.editor select {
+	border: 1px solid var(--foreground);
+	border-radius: 0.4rem;
+	padding: 0.5rem;
+	background: var(--background);
+}

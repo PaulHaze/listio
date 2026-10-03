@@ -23,7 +23,8 @@ vi.mock('cloudflare:workers', () => ({
 	env: { LISTIO: kv, ADDON_SECRET: 'right' },
 }));
 const { POST } = await import('../src/pages/api/lists/index.ts');
-const { GET, PATCH, DELETE } = await import('../src/pages/api/lists/[id].ts');
+const { GET, PATCH, PUT, DELETE } =
+	await import('../src/pages/api/lists/[id].ts');
 const { GET: manifest } =
 	await import('../src/pages/addon/[secret]/manifest.json.ts');
 
@@ -118,6 +119,74 @@ describe('Combined List API', () => {
 			catalogs: [],
 		});
 		expect((await call(GET, 'GET', list.id)).status).toBe(404);
+	});
+
+	it('saves a full Draft, updates catalogs, and rejects stale versions without losing data', async () => {
+		const list = await create();
+		const title = {
+			imdbId: 'tt123',
+			type: 'movie',
+			name: 'Saved Title',
+			year: 2020,
+			poster: null,
+			blurb: null,
+			tmdbId: 123,
+			addedSeq: 9,
+		};
+		const body = {
+			...list,
+			id: 'malicious-id',
+			titles: [title],
+			sort: 'az',
+			nextSeq: 0,
+		};
+		const response = await call(PUT, 'PUT', list.id, body);
+		expect(response.status).toBe(200);
+		const saved = await response.json();
+		expect(saved).toMatchObject({
+			id: list.id,
+			version: 2,
+			nextSeq: 10,
+			titles: [title],
+			sort: 'az',
+		});
+		expect(await (await call(GET, 'GET', list.id)).json()).toEqual(saved);
+		expect(JSON.parse(values.get('index')!)[0]).toMatchObject({
+			count: 1,
+			types: ['movie'],
+		});
+		expect((await call(PUT, 'PUT', list.id, body)).status).toBe(409);
+		expect(await (await call(GET, 'GET', list.id)).json()).toEqual(saved);
+	});
+
+	it('rejects malformed Drafts and missing lists without writing', async () => {
+		const list = await create();
+		const before = [...values];
+		const title = {
+			imdbId: 'tt123',
+			type: 'movie',
+			name: 'Title',
+			year: null,
+			poster: null,
+			blurb: null,
+			tmdbId: null,
+			addedSeq: 0,
+		};
+		for (const body of [
+			null,
+			{},
+			{ ...list, version: 0 },
+			{ ...list, sort: 'invalid' },
+			{ ...list, titles: [{ ...title, imdbId: 'bad' }] },
+			{ ...list, titles: [title, title] },
+			{ ...list, titles: [title], removed: [title] },
+			{ ...list, sources: [{}] },
+			{ ...list, titles: [{ ...title, addedSeq: Number.MAX_SAFE_INTEGER }] },
+		]) {
+			expect((await call(PUT, 'PUT', list.id, body)).status).toBe(400);
+			expect([...values]).toEqual(before);
+		}
+		expect((await call(PUT, 'PUT', 'missing', list)).status).toBe(404);
 	});
 
 	it('rejects malformed and blank names without writing and returns 404 for missing lists', async () => {
