@@ -22,3 +22,4 @@ In the editor, paste Source URLs and pull their Titles into a Draft, ready for r
 - Pasting two real URLs yields a de-duplicated Draft with posters filling in progressively
 - A 500+ Title Source enriches fully without hitting Worker limits
 - Saving persists the list and Nuvio shows the new Titles
+- Deferred from Sprint 04: full CRUD check on the deployed build with a populated list — create, rename, delete and save Titles from the GUI, refreshing the addon in Nuvio after each to confirm the Catalog appears, renames, updates and disappears

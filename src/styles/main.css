@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@plugin "@tailwindcss/typography";
+@plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -176,4 +176,134 @@
 }
 @utility flex-center {
 	@apply flex items-center justify-center;
+}
+
+/* Combined List management uses ordinary CSS over the shared theme. */
+.site-header {
+	padding: 1.25rem max(1.5rem, calc((100% - 64rem) / 2));
+	border-bottom: 1px solid var(--background-300);
+}
+.site-header a {
+	color: var(--primary);
+	font-weight: 800;
+	font-size: 1.3rem;
+	text-decoration: none;
+}
+.listio-main {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 2.5rem 1.5rem;
+}
+.page-heading {
+	margin: 1rem 0 2rem;
+}
+.page-heading h1 {
+	font-size: clamp(2rem, 5vw, 3rem);
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+.page-heading p {
+	margin-top: 0.5rem;
+}
+.panel {
+	padding: 1.5rem;
+	border: 1px solid var(--background-300);
+	border-radius: 0.75rem;
+	background: var(--background-200);
+}
+.panel h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+.panel p + p {
+	margin-top: 0.75rem;
+}
+.list-grid {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+.list-name {
+	color: var(--primary);
+	font-size: 1.4rem;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+.list-heading p {
+	margin-top: 0.25rem;
+}
+.list-actions {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+.list-actions details {
+	flex: 1;
+}
+.listio-main summary {
+	color: var(--primary);
+	cursor: pointer;
+	font-weight: 600;
+}
+.listio-main form {
+	margin-top: 1rem;
+}
+.listio-main label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+}
+.form-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+.form-row input {
+	min-width: 0;
+	flex: 1 1 12rem;
+	border: 1px solid var(--foreground);
+	border-radius: 0.4rem;
+	padding: 0.65rem 0.85rem;
+	background: var(--background);
+}
+.listio-main button {
+	border-radius: 0.4rem;
+	background: var(--primary);
+	color: var(--background);
+	padding: 0.65rem 1rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+.listio-main button.danger {
+	background: transparent;
+	color: var(--alert);
+	border: 1px solid var(--alert);
+}
+.listio-main button:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+.listio-main :is(a, button, input, summary):focus-visible {
+	outline: 2px solid var(--secondary);
+	outline-offset: 3px;
+}
+.notice {
+	padding: 1rem;
+	border-radius: 0.5rem;
+	background: var(--primary-muted);
+	margin-bottom: 1.5rem;
+}
+.error {
+	color: var(--alert);
+	margin: 1rem 0;
+}
+.empty-state {
+	margin-top: 2rem;
+}
+list-manager,
+list-editor {
+	display: block;
 }
