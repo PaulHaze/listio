@@ -371,3 +371,59 @@ list-editor {
 	padding: 0.5rem;
 	background: var(--background);
 }
+.review-controls {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 1rem;
+}
+.view-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-right: auto;
+}
+.listio-main .view-tabs button[aria-pressed='false'] {
+	background: transparent;
+	color: inherit;
+	border: 1px solid var(--primary);
+}
+.card-tools {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 0.4rem;
+}
+.card-tools input {
+	width: 1.1rem;
+	height: 1.1rem;
+}
+.listio-main .card-tools button {
+	padding: 0.25rem 0.5rem;
+}
+.grid-sentinel {
+	height: 1px;
+}
+.conflict {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+/* Room for the floating bar so it never covers the last row of cards. */
+.editor {
+	padding-bottom: 6rem;
+}
+.floating-actions {
+	position: fixed;
+	right: 1.5rem;
+	bottom: 1.5rem;
+	z-index: 10;
+	display: flex;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border-radius: 0.6rem;
+	background: var(--background);
+	box-shadow: 0 4px 20px rgb(0 0 0 / 0.25);
+}

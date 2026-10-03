@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
 	addSource,
 	applyEnrichment,
+	countChanges,
 	createDraft,
+	removeTitles,
+	restoreTitles,
 } from '../src/components/editor/draft.ts';
 import {
 	enrichmentChunks,
@@ -10,6 +13,7 @@ import {
 	enrichmentQueue,
 } from '../src/components/editor/enrichment.ts';
 import type { CombinedList, SourceRecord, Title } from '../src/domain/types.ts';
+import { sortTitles } from '../src/domain/sort.ts';
 const title = (i: number, tmdbId: number | null = null): Title => ({
 	imdbId: `tt${i}`,
 	type: 'movie',
@@ -59,7 +63,7 @@ describe('editor Draft', () => {
 		]);
 		expect([...second.draft.newIds]).toEqual(['tt3', 'tt4']);
 		expect(first.skipped).toBe(3);
-		expect(second.draft.changes).toBe(4);
+		expect(countChanges(saved, second.draft)).toBe(4);
 		expect(second.draft.nextSeq).toBe(5);
 		expect(saved.titles).toHaveLength(1);
 		const enriched = applyEnrichment(second.draft, [
@@ -69,8 +73,36 @@ describe('editor Draft', () => {
 			poster: 'https://image.tmdb.org/a.jpg',
 			addedSeq: 3,
 		});
-		expect(enriched.changes).toBe(second.draft.changes);
+		expect(countChanges(saved, enriched)).toBe(4);
 		expect(createDraft({ ...enriched }).newIds.size).toBe(0);
+	});
+	it('removes and restores Titles, keeping order and counting only net changes', () => {
+		const { draft } = addSource(createDraft(saved), source, [title(3)]);
+		const removed = removeTitles(draft, ['tt1', 'tt3']);
+		expect(removed.titles).toEqual([]);
+		expect(removed.removed.map((t) => t.imdbId)).toEqual(['tt2', 'tt1', 'tt3']);
+		// Source + new tt3 (now Removed) + tt1 removed.
+		expect(countChanges(saved, removed)).toBe(3);
+		// A removed new Title stays out when the same Source Titles arrive again.
+		const again = addSource(removed, { ...source, url: 'x' }, [title(3)]);
+		expect(again.draft.titles).toEqual([]);
+		const restored = restoreTitles(removed, ['tt1', 'tt2']);
+		expect(restored.titles.map((t) => [t.imdbId, t.addedSeq])).toEqual([
+			['tt1', 1],
+			['tt2', 2],
+		]);
+		// Year ties (here all null) keep the original order in Newest.
+		expect(sortTitles(restored.titles, 'newest').map((t) => t.imdbId)).toEqual([
+			'tt1',
+			'tt2',
+		]);
+		// Source + tt3 Removed + tt2 restored; tt1 is back to its saved state.
+		expect(countChanges(saved, restored)).toBe(3);
+		expect(countChanges(saved, { ...createDraft(saved), sort: 'az' })).toBe(1);
+		expect(removeTitles(draft, ['missing'])).toBe(draft);
+		// Enrichment still lands on a Title removed while its chunk was in flight.
+		const late = applyEnrichment(removed, [{ ...title(3), poster: 'p' }]);
+		expect(late.removed[2].poster).toBe('p');
 	});
 	it('enriches 601 Titles within the request budget and globally limits simultaneous Sources to three requests', async () => {
 		const titles = Array.from({ length: 601 }, (_, i) =>
