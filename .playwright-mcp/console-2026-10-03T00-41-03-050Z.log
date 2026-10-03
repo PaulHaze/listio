@@ -1,0 +1,6 @@
+[  718205ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:4322/@vite/client:1764
+[  718207ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://127.0.0.1:4322/src/styles/main.css:0
+[  718211ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:4322/favicon.svg:0
+[  723899ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:4322/@vite/client:1764
+[  723900ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:4322/src/styles/main.css:0
+[  723904ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:4322/favicon.svg:0

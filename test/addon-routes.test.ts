@@ -15,12 +15,10 @@ vi.mock('cloudflare:workers', () => ({
 	env: { ADDON_SECRET: 'right', LISTIO: kv },
 }));
 
-const { GET: manifest } = await import(
-	'../src/pages/addon/[secret]/manifest.json.ts'
-);
-const { GET: catalog } = await import(
-	'../src/pages/addon/[secret]/catalog/[type]/[...rest].ts'
-);
+const { GET: manifest } =
+	await import('../src/pages/addon/[secret]/manifest.json.ts');
+const { GET: catalog } =
+	await import('../src/pages/addon/[secret]/catalog/[type]/[...rest].ts');
 
 function call(
 	route: typeof manifest,
@@ -65,9 +63,9 @@ describe('addon routes', () => {
 	it('serves the manifest only for the right secret', async () => {
 		const ok = await call(manifest, { secret: 'right' });
 		expect(ok.status).toBe(200);
-		expect(((await ok.json()) as { catalogs: unknown[] }).catalogs).toHaveLength(
-			1
-		);
+		expect(
+			((await ok.json()) as { catalogs: unknown[] }).catalogs
+		).toHaveLength(1);
 		expect((await call(manifest, { secret: 'wrong' })).status).toBe(404);
 	});
 
