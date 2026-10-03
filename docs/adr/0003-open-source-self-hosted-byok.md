@@ -6,3 +6,5 @@ Listio will eventually be published as an open-source repo that anyone can deplo
 
 - Public hosted service — rejected: needs real user accounts, per-user data (likely D1 instead of KV), per-user addon tokens, a solution for shared API rate limits (MDBList's free tier alone can't serve many users), edge caching, privacy policy and ongoing operations. Too much work for the value of the project.
 - Keep it private — rejected: self-hosting costs the author nothing and others may find it useful.
+
+> **Update:** ADR 0007 proposes a public hosted _list builder only_ (no Sources, users bring their own TMDB key). The self-hosted full app below is unchanged.

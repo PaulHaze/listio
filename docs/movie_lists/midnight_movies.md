@@ -5,6 +5,7 @@ trip folders (Classic Era, Modern Head Trips, Animated Head Trips), which also
 cross-list every trippy film from the other folders.
 
 ## The Foundational Weird
+
 El Topo (1970)
 Night of the Living Dead (1968)
 Pink Flamingos (1972)
@@ -13,6 +14,7 @@ The Rocky Horror Picture Show (1975)
 Eraserhead (1977)
 
 ## Psychedelic Trips: The Classic Era
+
 The Blood of a Poet (1932)
 Meshes of the Afternoon (1943)
 Inauguration of the Pleasure Dome (1954)
@@ -83,6 +85,7 @@ Santa Sangre (1989)
 Tetsuo: The Iron Man (1989)
 
 ## Modern Head Trips
+
 Begotten (1990)
 Dreams (1990)
 Jacob's Ladder (1990)
@@ -120,35 +123,46 @@ Under the Skin (2013)
 Enemy (2013)
 Upstream Color (2013)
 The Dance of Reality (2013)
+Only God Forgives (2013)
+The Strange Color of Your Body's Tears (2013)
 Inherent Vice (2014)
 The Forbidden Room (2015)
 Endless Poetry (2016)
 We Are the Flesh (2016)
 The Neon Demon (2016)
 The Void (2016)
+Antibirth (2016)
 Kuso (2017)
 Hagazussa (2017)
+mother! (2017)
+The Endless (2017)
 Long Day's Journey Into Night (2018)
 Mandy (2018)
 Climax (2018)
 Annihilation (2018)
 Under the Silver Lake (2018)
+Luz (2018)
 Lux Æterna (2019)
 Bliss (2019)
 Color Out of Space (2019)
 Midsommar (2019)
 The Lighthouse (2019)
+Synchronic (2019)
+Jesus Shows You the Way to the Highway (2019)
 Possessor (2020)
 Strawberry Mansion (2021)
 The Green Knight (2021)
+In the Earth (2021)
 Everything Everywhere All at Once (2022)
 Enys Men (2022)
 Skinamarink (2022)
 Beau Is Afraid (2023)
 Infinity Pool (2023)
+Divinity (2023)
 I Saw the TV Glow (2024)
 
 ## Surrealist & Dream-Logic Nightmares
+
 L'Age d'Or (1930)
 The Blood of a Poet (1932)
 Meshes of the Afternoon (1943)
@@ -167,19 +181,24 @@ Enemy (2013)
 Under the Silver Lake (2018)
 
 ## Folk Horror & Eerie Dread
+
 The Wicker Man (1973)
 Messiah of Evil (1974)
 Picnic at Hanging Rock (1975)
 Kill List (2011)
 A Field in England (2013)
+The Witch (2015)
 Hagazussa (2017)
 In Fabric (2018)
 Midsommar (2019)
 The Lighthouse (2019)
 The Green Knight (2021)
+In the Earth (2021)
 Enys Men (2022)
+Men (2022)
 
 ## Body Horror & Freaky Sci-Fi
+
 Videodrome (1983)
 Society (1989)
 Tetsuo: The Iron Man (1989)
@@ -187,15 +206,23 @@ Jacob's Ladder (1990)
 Naked Lunch (1991)
 Crash (1996)
 eXistenZ (1999)
+Antiviral (2012)
+Excision (2012)
 Under the Skin (2013)
+Starry Eyes (2014)
+Tusk (2014)
 The Void (2016)
+Antibirth (2016)
+Raw (2016)
 Possessor (2020)
 Titane (2021)
 Crimes of the Future (2022)
+Hatching (2022)
 Infinity Pool (2023)
 The Substance (2024)
 
-## Cult Sci-Fi & Dystopias
+## Cult Sci-Fi, Time Travel & Dystopias
+
 2001: A Space Odyssey (1968)
 Barbarella (1968)
 A Clockwork Orange (1971)
@@ -217,9 +244,27 @@ Event Horizon (1997)
 Dark City (1998)
 Donnie Darko (2001)
 Southland Tales (2006)
+Attack the Block (2011)
 Iron Sky (2012)
+Dredd (2012)
+The Zero Theorem (2013)
+Coherence (2013)
+Turbo Kid (2015)
+High Life (2018)
+Upgrade (2018)
+Synchronic (2019)
+The Vast of Night (2019)
+Something in the Dirt (2022)
+Divinity (2023)
+Predestination
+Primer
+The Time Bandits
+Looper
+Time Crimes
+Triangle
 
 ## Drive-In Sci-Fi & Creature Features
+
 Just Imagine (1930)
 The Thing from Another World (1951)
 The Man from Planet X (1951)
@@ -237,6 +282,7 @@ Horrors of Spider Island (1960)
 The Day of the Triffids (1963)
 
 ## Splatter, Gore & Grindhouse Horror
+
 Equinox (1970)
 Flesh for Frankenstein (1973)
 The Exorcist (1973)
@@ -258,8 +304,44 @@ Braindead (1992)
 House of 1000 Corpses (2003)
 The Devil's Rejects (2005)
 The Human Centipede (First Sequence) (2009)
+Hobo with a Shotgun (2011)
+The Human Centipede 2 (Full Sequence) (2011)
+Wyrmwood: Road of the Dead (2014)
+Terrifier (2016)
+PG: Psycho Goreman (2020)
+Censor (2021)
+Terrifier 2 (2022)
+Terrifier 3 (2024)
+In a Violent Nature (2024)
+
+## New Wave Cult Horror
+
+The Cabin in the Woods (2011)
+Resolution (2012)
+V/H/S (2012)
+Cheap Thrills (2013)
+WNUF Halloween Special (2013)
+It Follows (2014)
+The Babadook (2014)
+Spring (2014)
+Bone Tomahawk (2015)
+The Devil's Candy (2015)
+The Wailing (2016)
+The Endless (2017)
+Hereditary (2018)
+Saint Maud (2019)
+Malignant (2021)
+Broadcast Signal Intrusion (2021)
+We're All Going to the World's Fair (2021)
+Barbarian (2022)
+X (2022)
+Pearl (2022)
+Deadstream (2022)
+When Evil Lurks (2023)
+Late Night with the Devil (2023)
 
 ## Giallo & Euro-Horror
+
 The Forbidden Photos of a Lady Above Suspicion (1970)
 The Fifth Cord (1971)
 Short Night of Glass Dolls (1971)
@@ -268,8 +350,14 @@ Suspiria (1977)
 The Pyjama Girl Case (1977)
 The Bloodstained Shadow (1978)
 A Blade in the Dark (1983)
+Berberian Sound Studio (2012)
+The Strange Color of Your Body's Tears (2013)
+Let the Corpses Tan (2017)
+Knife+Heart (2018)
+Luz (2018)
 
 ## Silent, Classic & Pre-Code Horror
+
 The Cabinet of Dr. Caligari (1920)
 Nosferatu (1922)
 Häxan (1922)
@@ -282,6 +370,7 @@ The Curse of Frankenstein (1957)
 Psycho (1960)
 
 ## Exploitation, Mondo & Shock
+
 Reefer Madness (1936)
 Mondo Cane (1962)
 Women of the World (1963)
@@ -304,8 +393,11 @@ The Perils of Gwendoline in the Land of the Yik Yak (1984)
 Nekromantik (1988)
 Showgirls (1995)
 The Godfathers of Mondo (2003)
+A Serbian Film (2010)
+Gone with the Pope (2010)
 
 ## Crime, Cult Action & Urban Decay
+
 Machine-Gun Kelly (1958)
 The Intruder (1962)
 Targets (1968)
@@ -321,8 +413,18 @@ Maniac Cop (1988)
 Man Bites Dog (1992)
 Pulp Fiction (1994)
 Fight Club (1999)
+I Saw the Devil (2010)
+The Raid (2011)
+Blue Ruin (2013)
+Only God Forgives (2013)
+The Raid 2 (2014)
+Green Room (2015)
+Brawl in Cell Block 99 (2017)
+The House That Jack Built (2018)
+The Night Comes for Us (2018)
 
 ## Cult Comedy & Absurdist
+
 The Little Shop of Horrors (1960)
 King of Hearts (1966)
 The Graduate (1967)
@@ -343,8 +445,14 @@ UHF (1989)
 The Big Lebowski (1998)
 Office Space (1999)
 Freddy Got Fingered (2001)
+Tucker and Dale vs. Evil (2010)
+What We Do in the Shadows (2014)
+WolfCop (2014)
+Kung Fury (2015)
+Hundreds of Beavers (2022)
 
 ## Midnight Musicals & Rock Operas
+
 Phantom of the Paradise (1974)
 Tommy (1975)
 Shock Treatment (1981)
@@ -355,23 +463,31 @@ The Adventures of Priscilla, Queen of the Desert (1994)
 Hedwig and the Angry Inch (2001)
 Repo! The Genetic Opera (2008)
 The Lure (2015)
+Anna and the Apocalypse (2017)
 
 ## Stoner Crowd-Pleasers
+
 Up in Smoke (1978)
 Friday (1995)
 Fear and Loathing in Las Vegas (1998)
 Half Baked (1998)
 Smiley Face (2007)
+The Beach Bum (2019)
 
 ## So Bad It's Good
+
 Plan 9 from Outer Space (1957)
 Miami Connection (1987)
 Troll 2 (1990)
 Samurai Cop (1991)
 The Room (2003)
 Birdemic: Shock and Terror (2010)
+Sharknado (2013)
+New York Ninja (2021)
+Winnie the Pooh: Blood and Honey (2023)
 
 ## Animated Head Trips
+
 Fantasia (1940)
 Alice in Wonderland (1951)
 Yellow Submarine (1968)
@@ -409,6 +525,7 @@ Cryptozoo (2021)
 The Spine of Night (2021)
 
 ## Asian Oddities
+
 Jigoku (1960)
 Hausu (1977)
 The Boxer's Omen (1983)
@@ -421,11 +538,18 @@ Survive Style 5+ (2004)
 Funky Forest: The First Contact (2005)
 Big Man Japan (2007)
 Symbol (2009)
+Cold Fish (2010)
+The Warped Forest (2011)
 Dead Sushi (2012)
+Why Don't You Play in Hell? (2013)
 Tokyo Tribe (2014)
+Tag (2015)
+Antiporno (2016)
 One Cut of the Dead (2017)
+First Love (2019)
 
 ## Czech & Eastern Bloc Mind-Melters
+
 The Saragossa Manuscript (1965)
 Daisies (1966)
 The Color of Pomegranates (1969)
@@ -440,23 +564,47 @@ Alice (1988)
 On the Silver Globe (1988)
 
 ## Modern Weird & New Cult
+
 Dead Man (1995)
 Bubba Ho-Tep (2002)
 Dogtooth (2009)
 Rubber (2010)
 John Dies at the End (2012)
+Spring Breakers (2012)
 Only Lovers Left Alive (2013)
 Inherent Vice (2014)
+A Girl Walks Home Alone at Night (2014)
+Reality (2014)
+The Duke of Burgundy (2014)
+Lost River (2014)
 The Lobster (2015)
+Crumbs (2015)
 Swiss Army Man (2016)
 The Greasy Strangler (2016)
+The Love Witch (2016)
+mother! (2017)
+The Killing of a Sacred Deer (2017)
+Dave Made a Maze (2017)
 Sorry to Bother You (2018)
+Come to Daddy (2019)
+Deerskin (2019)
+Greener Grass (2019)
+The Art of Self-Defense (2019)
+Jesus Shows You the Way to the Highway (2019)
+Mandibles (2020)
+Prisoners of the Ghostland (2021)
 Everything Everywhere All at Once (2022)
 Skinamarink (2022)
+Flux Gourmet (2022)
+Smoking Causes Coughing (2022)
+The People's Joker (2022)
 Poor Things (2023)
 Kinds of Kindness (2024)
+Frankie Freako (2024)
+Bugonia (2025)
 
 ## Experimental & Avant-Garde
+
 Inauguration of the Pleasure Dome (1954)
 Scorpio Rising (1963)
 Dog Star Man (1964)
@@ -474,28 +622,10 @@ Gerry (2002)
 Samsara (2011)
 
 ## Midnight Movies About Midnight Movies
+
 Midnight Movie Massacre (1988)
 Midnight Movies: From the Margin to the Mainstream (2005)
 Midnight Movie (2008)
 Jodorowsky's Dune (2013)
 The Disaster Artist (2017)
-
-
-============================================================
-## CHECK BEFORE ADDING (not a folder — likely bad matches)
-============================================================
-These look like they slipped in from an automated source rather than
-being genuine midnight movies. Cut or keep as you see fit.
-
-September Affair (1950) — romantic drama, no obvious midnight link
-Golden Salamander (1950) — British adventure
-Between Midnight and Dawn (1950) — straight police noir ("midnight" in the title)
-Blackout (1950) — several films with this title; ambiguous
-The Gunfighter (1950) — classic western
-Deadlier Than the Male (1967) — Bulldog Drummond spy caper; also ambiguous title
-Force 10 from Navarone (1978) — WWII action
-The Death Ray of Dr. Mabuse (1964) — late Mabuse sequel; the 1922/1933 Lang films are the cult ones
-Mad Love — ambiguous: Mad Love (1935, Peter Lorre horror) or L'Amour fou (1969, Rivette)
-Twin Peaks — TV series, won't go in a movie list
-The Prisoner (1967) — TV series; the "Fall Out" finale can't go in a movie list. Add the show to its own list if you want it in the collection.
-(Magick Lantern Cycle has been replaced by the individual Kenneth Anger films in Experimental & Avant-Garde.)
+Lynch/Oz (2022)
