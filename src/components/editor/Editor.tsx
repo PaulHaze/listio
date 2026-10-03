@@ -16,6 +16,8 @@ import {
 	restoreTitles,
 	type Draft,
 } from './draft.ts';
+import { addTitle } from '../../domain/merge.ts';
+import TitleDiscovery from './TitleDiscovery.tsx';
 import { enrichmentQueue } from './enrichment.ts';
 
 type SourceRow = {
@@ -373,6 +375,19 @@ export default function Editor({
 					{notice}
 				</p>
 			)}
+			<TitleDiscovery
+				draft={draft}
+				saving={saving}
+				busy={(delta) => setPending((n) => n + delta)}
+				add={(title) => {
+					const result = addTitle(draftRef.current, title);
+					if (result.status !== 'duplicate') {
+						update(() => result.draft);
+						setReview(true);
+					}
+					return result.status;
+				}}
+			/>
 			<section className="panel" aria-labelledby="sources-heading">
 				<h2 id="sources-heading">Add Sources</h2>
 				<p>
@@ -469,7 +484,7 @@ export default function Editor({
 				<p role="status">
 					{draft.titles.length} Titles · {newCount} new · {changes} unsaved{' '}
 					{changes === 1 ? 'change' : 'changes'}
-					{pending > 0 ? ' · Fetching Sources or filling posters…' : ''}
+					{pending > 0 ? ' · Finding Titles or filling posters…' : ''}
 				</p>
 				{!review && (
 					<button type="button" onClick={() => setReview(true)}>
@@ -548,7 +563,7 @@ export default function Editor({
 									? 'No new Titles in this Draft.'
 									: draft.removed.length > 0
 										? `All Titles are removed. Restore them from Removed (${draft.removed.length}).`
-										: 'No Titles yet. Add a Source to start your Draft.'}
+										: 'No Titles yet. Search for a Title, paste titles, or add a Source URL to start your Draft.'}
 						</p>
 					) : (
 						<ul className="title-grid">

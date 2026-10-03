@@ -110,7 +110,7 @@ function requestUrl(
 	return url.toString();
 }
 
-async function fetchJson(
+export async function fetchJson(
 	path: string,
 	options: TmdbEnrichOptions,
 	query: Record<string, string> = {}

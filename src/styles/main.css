@@ -459,3 +459,37 @@ list-editor {
 	background: var(--background);
 	box-shadow: 0 4px 20px rgb(0 0 0 / 0.25);
 }
+
+.discovery-panels {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+	gap: 1rem;
+	align-items: start;
+}
+.discovery-panels textarea {
+	display: block;
+	width: 100%;
+	border: 1px solid var(--color-border, #888);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	margin: 0.5rem 0;
+	background: transparent;
+}
+.search-grid {
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+.search-grid .title-card h3 {
+	font-size: 0.9rem;
+}
+.search-grid button {
+	margin: 0.5rem;
+}
+.media-badge {
+	display: inline-block;
+	padding: 0.2rem 0.5rem;
+	font-size: 0.8rem;
+}
+.match-review {
+	padding: 1rem 0;
+	border-top: 1px solid #888;
+}
