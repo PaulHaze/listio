@@ -11,7 +11,11 @@ interface Props {
 	image?: string;
 }
 
-const { title, description = 'Astro description', image } = Astro.props;
+const {
+	title,
+	description = 'Curated movie and TV Combined Lists for Nuvio.',
+	image,
+} = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const imageURL = image ? new URL(image, Astro.site) : undefined;
@@ -68,6 +72,11 @@ const imageURL = image ? new URL(image, Astro.site) : undefined;
 		<div class="absolute top-1 right-1 z-99">
 			<ThemeToggle />
 		</div>
+		<header class="site-header">
+			<a href="/" aria-label="Listio home">
+				Listio
+			</a>
+		</header>
 		<slot />
 	</body>
 </html>

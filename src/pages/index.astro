@@ -1,83 +1,180 @@
 ---
 import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
+import { getIndex } from '@/storage/lists';
 
 export const prerender = false;
-
-const kvKey = 'hello';
-let kvValue = await env.LISTIO.get(kvKey);
-let notice = '';
-
-if (Astro.request.method === 'POST') {
-	const formData = await Astro.request.formData();
-	const submittedValue = formData.get('value');
-
-	if (typeof submittedValue === 'string' && submittedValue.trim()) {
-		kvValue = submittedValue.trim();
-		await env.LISTIO.put(kvKey, kvValue);
-		notice = 'Saved to the LISTIO KV namespace.';
-	}
-}
+const lists = await getIndex(env.LISTIO);
+const changed = Astro.url.searchParams.get('changed') === '1';
 ---
 
-<Layout title="Listio" description="A curated movie and TV list builder.">
-	<main class="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 px-6 py-16">
-		<div class="space-y-3">
-			<p class="text-sm font-semibold tracking-[0.2em] text-primary uppercase">
-				Listio
+<Layout
+	title="Combined Lists · Listio"
+	description="Build curated movie and TV Combined Lists for Nuvio."
+>
+	<main class="listio-main">
+		<header class="page-heading">
+			<h1>Combined Lists</h1>
+			<p>Create and curate movie and TV lists for Nuvio.</p>
+		</header>
+		{changed && (
+			<p class="notice" role="status">
+				Refresh the Listio addon in Nuvio to see this change
 			</p>
-			<h1 class="font-bold tracking-tight">Your lists start here.</h1>
-			<p class="text-lg">
-				The app is ready for the first Combined List. This page also checks the
-				Workers KV connection used by the application.
-			</p>
-		</div>
-
-		<section
-			class="space-y-4 rounded-xl border border-foreground/15 bg-background-200 p-6"
-			aria-labelledby="kv-heading"
-		>
-			<div>
-				<h2 id="kv-heading" class="text-2xl font-bold">
-					KV round trip
-				</h2>
-				<p class="mt-1 text-sm">
-					Read from and write to the <code>LISTIO</code> namespace.
+		)}
+		<list-manager>
+			<p class="error" role="alert" hidden></p>
+			<details class="panel new-list">
+				<summary>+ New list</summary>
+				<form data-action="create">
+					<label for="new-name">Combined List name</label>
+					<div class="form-row">
+						<input
+							id="new-name"
+							name="name"
+							required
+							placeholder="Weekend favourites"
+						/>
+						<button type="submit">Create list</button>
+					</div>
+				</form>
+			</details>
+			{lists.length === 0 ? (
+				<p class="empty-state">
+					No Combined Lists yet. Create your first list to get started.
 				</p>
-			</div>
-
-			<p class="rounded-lg border border-foreground/10 bg-background-100 p-4">
-				<strong>Stored value:</strong>
-				<span>{kvValue ?? 'Nothing has been saved yet.'}</span>
-			</p>
-
-			<form method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
-				<label
-					class="flex flex-1 flex-col gap-1 text-sm font-semibold"
-					for="value"
-				>
-					Value
-					<input
-						id="value"
-						name="value"
-						value={kvValue ?? ''}
-						placeholder="Hello from Listio"
-						class="rounded-lg border border-foreground/20 bg-background-100 px-3 py-2 font-normal"
-					/>
-				</label>
-				<button
-					type="submit"
-					class="rounded-lg bg-primary px-4 py-2 font-semibold text-background"
-				>
-					Write to KV
-				</button>
-			</form>
-
-			{notice && (
-				<p role="status" class="text-sm text-success">
-					{notice}
-				</p>
+			) : (
+				<ul class="list-grid">
+					{lists.map((list) => (
+						<li class="panel">
+							<div class="list-heading">
+								<a
+									class="list-name"
+									href={`/lists/${encodeURIComponent(list.id)}`}
+								>
+									{list.name}
+								</a>
+								<p>
+									{list.count} {list.count === 1 ? 'Title' : 'Titles'}
+								</p>
+							</div>
+							<div class="list-actions">
+								<details>
+									<summary>Rename</summary>
+									<form data-action="rename" data-id={list.id}>
+										<label for={`name-${list.id}`}>Combined List name</label>
+										<div class="form-row">
+											<input
+												id={`name-${list.id}`}
+												name="name"
+												value={list.name}
+												required
+											/>
+											<button type="submit">Save name</button>
+										</div>
+									</form>
+								</details>
+								<button
+									type="button"
+									class="danger"
+									data-delete={list.id}
+									data-name={list.name}
+								>
+									Delete
+								</button>
+							</div>
+						</li>
+					))}
+				</ul>
 			)}
-		</section>
+		</list-manager>
 	</main>
 </Layout>
+
+<script>
+	class ListManager extends HTMLElement {
+		connectedCallback() {
+			this.addEventListener('submit', (event) => {
+				const form = event.target;
+				if (!(form instanceof HTMLFormElement)) return;
+				event.preventDefault();
+				const name = new FormData(form).get('name');
+				if (typeof name !== 'string' || !name.trim()) {
+					this.showError('Enter a Combined List name.');
+					return;
+				}
+				const create = form.dataset.action === 'create';
+				void this.save(
+					create
+						? '/api/lists'
+						: `/api/lists/${encodeURIComponent(form.dataset.id!)}`,
+					create ? 'POST' : 'PATCH',
+					{ name }
+				);
+			});
+			this.addEventListener('click', (event) => {
+				const button =
+					event.target instanceof Element
+						? event.target.closest<HTMLButtonElement>('[data-delete]')
+						: null;
+				if (
+					!button ||
+					!window.confirm(
+						`Delete “${button.dataset.name}”? This cannot be undone.`
+					)
+				)
+					return;
+				void this.save(
+					`/api/lists/${encodeURIComponent(button.dataset.delete!)}`,
+					'DELETE'
+				);
+			});
+		}
+
+		showError(message: string) {
+			const error = this.querySelector<HTMLElement>('[role="alert"]')!;
+			error.textContent = message;
+			error.hidden = false;
+		}
+
+		async save(url: string, method: string, body?: { name: string }) {
+			const controls = this.querySelectorAll<
+				HTMLInputElement | HTMLButtonElement
+			>('input, button');
+			if (this.hasAttribute('aria-busy')) return;
+			this.setAttribute('aria-busy', 'true');
+			controls.forEach((control) => {
+				control.disabled = true;
+			});
+			try {
+				const response = await fetch(url, {
+					method,
+					headers: { 'Content-Type': 'application/json' },
+					body: body ? JSON.stringify(body) : undefined,
+				});
+				const data =
+					response.status === 204
+						? null
+						: ((await response.json()) as { id: string; error?: string });
+				if (!response.ok)
+					throw new Error(data?.error || 'Unable to save this change.');
+				window.location.assign(
+					method === 'POST'
+						? `/lists/${encodeURIComponent(data!.id)}?created=1`
+						: '/?changed=1'
+				);
+			} catch (error) {
+				this.showError(
+					error instanceof Error
+						? error.message
+						: 'Unable to save this change. Please try again.'
+				);
+				this.removeAttribute('aria-busy');
+				controls.forEach((control) => {
+					control.disabled = false;
+				});
+			}
+		}
+	}
+	customElements.define('list-manager', ListManager);
+</script>
