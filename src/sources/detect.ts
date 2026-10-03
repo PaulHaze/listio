@@ -117,7 +117,7 @@ export function detectSource(input: string): DetectedSource {
 	}
 
 	if (
-		hostIs(parsed.hostname, 'imdb.com') &&
+		hostIs(parsed.hostname, 'imdb.com', 'm.imdb.com') &&
 		!parsed.port &&
 		!parsed.username &&
 		!parsed.password &&

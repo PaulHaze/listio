@@ -143,6 +143,9 @@ export async function fetchImdb(
 		result.titles.push(...normalized.titles);
 		result.skippedNoImdb += normalized.skippedNoImdb;
 		result.skippedInvalid += normalized.skippedInvalid;
+		// People/image lists share `ls…` ids but have no Titles; offer CSV instead.
+		if (pages === 1 && !pageInfo.hasNextPage && connection.edges.length === 0)
+			throw new Error('IMDb returned no Titles for this list.');
 		if (!pageInfo.hasNextPage) return { ...result, source, pages };
 		const cursor = nonEmptyString(pageInfo.endCursor);
 		if (!cursor || cursors.has(cursor) || connection.edges.length === 0)

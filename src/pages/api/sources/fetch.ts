@@ -53,15 +53,20 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	} catch (error) {
 		// Upstream error bodies can contain credentials; never forward them to the browser.
-		if (imdb)
+		if (imdb) {
+			// IMDb's GraphQL endpoint is unofficial; log why so breakage is visible.
+			console.warn(
+				'IMDb import failed',
+				error instanceof Error ? error.message : error
+			);
 			return json(
 				{
 					error:
 						'Unable to fetch this IMDb Source. Export the list from IMDb and upload its CSV instead.',
-					fallback: 'imdb-csv',
 				},
 				error instanceof SourceRequestBudgetError ? 422 : 502
 			);
+		}
 		if (error instanceof SourceRequestBudgetError)
 			return json({ error: error.message }, 422);
 		return error instanceof SourceDetectionError

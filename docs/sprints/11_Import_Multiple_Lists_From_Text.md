@@ -10,19 +10,86 @@ after the header, filled with the lines under it. For example,
 `docs/movie_lists/midnight_movies.md` becomes 24 lists, and the export makes one collection with
 one folder per list. Builds on Sprint 07's paste matching. Nothing new on the matching side.
 
+## Nuvio collection format (from the public API docs)
+
+Source: [Nuvio public API](https://nuvio.tv/docs) (raw: `https://nuvio.tv/docs/nuvio-public-api.md`,
+v1.3, 20 Aug 2026), Collections section. This is the sync API's format. The in-app import file may
+differ, so check it against the sample below.
+
+Each profile stores its collections as one JSON array (`collections_json`):
+
+```json
+[
+	{
+		"id": "collection-1",
+		"title": "Weekend Picks",
+		"backdropImageUrl": "https://cdn.example.com/backdrops/weekend.jpg",
+		"pinToTop": true,
+		"viewMode": "TABBED_GRID",
+		"showAllTab": true,
+		"folders": [
+			{
+				"id": "folder-1",
+				"title": "Sci-Fi",
+				"coverImageUrl": "https://cdn.example.com/folders/scifi.jpg",
+				"coverEmoji": "🚀",
+				"tileShape": "LANDSCAPE",
+				"hideTitle": false,
+				"catalogSources": [
+					{
+						"addonId": "com.example.catalog",
+						"type": "movie",
+						"catalogId": "top"
+					}
+				]
+			}
+		]
+	}
+]
+```
+
+| Object            | Field              | Type    | Notes                                    |
+| ----------------- | ------------------ | ------- | ---------------------------------------- |
+| Collection        | `id`               | string  | Unique collection ID                     |
+|                   | `title`            | string  | Collection name                          |
+|                   | `backdropImageUrl` | string  | Optional                                 |
+|                   | `pinToTop`         | boolean | Pin to top of home screen                |
+|                   | `viewMode`         | string  | `TABBED_GRID`, `ROWS` or `FOLLOW_LAYOUT` |
+|                   | `showAllTab`       | boolean | Show "All" tab in tabbed view            |
+|                   | `folders`          | array   | Folder objects, in display order         |
+| Folder            | `id`               | string  | Unique folder ID                         |
+|                   | `title`            | string  | Folder name                              |
+|                   | `coverImageUrl`    | string  | Optional                                 |
+|                   | `coverEmoji`       | string  | Optional                                 |
+|                   | `tileShape`        | string  | `POSTER`, `LANDSCAPE` or `SQUARE`        |
+|                   | `hideTitle`        | boolean | Hide the tile title text                 |
+|                   | `catalogSources`   | array   | Catalog references                       |
+| Catalog reference | `addonId`          | string  | Addon's `manifest.id`                    |
+|                   | `type`             | string  | `movie` or `series`                      |
+|                   | `catalogId`        | string  | Catalog ID                               |
+
+For Listio: `addonId` = `com.paulhaze.listio` (`src/addon/manifest.ts`), `catalogId` = the Combined
+List ID, and there's one `catalogSources` entry per type the list has. The docs' push example sends only
+`id`, `title`, `viewMode` and `folders`, so the other collection fields look optional.
+
+API notes (for a possible later direct push, still out of scope): `sync_pull_collections` /
+`sync_push_collections` (`p_profile_id`, `p_collections_json`). A push **replaces the profile's whole
+collections blob**, so anything left out is deleted. A direct push would have to pull, merge, then push.
+
 ## Open questions (owner to supply before starting)
 
 - [ ] **Sample Nuvio collection export.** Export an existing collection from Nuvio that has at least
       two folders, one holding a movie Catalog and one holding a series Catalog (or both in one
-      folder). Save it as `docs/nuvio/collection-sample.json`. Remove anything private
-- [ ] **Addon reference.** How the JSON points at an addon Catalog: by addon manifest URL, addon ID
-      (`manifest.id`) or something else. The sample should show this. If it embeds the manifest URL,
-      the export needs the secret addon slug, so confirm that's OK in a downloaded file
-- [ ] **Required vs optional fields.** Which fields Nuvio needs on import (collection name, folder
-      name, folder image/poster, IDs, order, version). If folder images are needed, say what to use
-      (blank, the first Title's poster, or something else)
+      folder). Save it as `docs/nuvio/collection-sample.json`. Remove anything private. Check whether
+      the in-app file matches the API format above (one collection object or an array)
+- [x] **Addon reference.** By addon ID (`manifest.id`), not manifest URL, so the downloaded file
+      doesn't hold the secret addon slug (see format above)
+- [ ] **Required vs optional fields.** Partly answered: the API push example needs only `id`, `title`,
+      `viewMode` and `folders`, and images/emoji are optional. Confirm what in-app import needs, and
+      pick defaults for `tileShape`/`hideTitle` (proposed: `POSTER`, `false`, no cover image)
 - [ ] **Import behaviour.** Does importing a collection with the same name create a duplicate or
-      replace the old one? Are folders shown in file order?
+      replace the old one? Are folders shown in file order? (Collections have an `id`, so a stable
+      ID across exports may let a re-import replace rather than duplicate)
 - [ ] **Where it's imported.** The Nuvio screen and steps for importing the JSON, for the runbook
 
 ## Tasks

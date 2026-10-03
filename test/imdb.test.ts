@@ -23,16 +23,17 @@ const call = () =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe('IMDb Source', () => {
-	it.each(['http://imdb.com/list/ls004285275', `${url}?sort=alpha#x`])(
-		'recognizes and canonicalizes %s',
-		(input) => {
-			expect(detectSource(input)).toEqual({
-				site: 'imdb',
-				url,
-				listId: 'ls004285275',
-			});
-		}
-	);
+	it.each([
+		'http://imdb.com/list/ls004285275',
+		'https://m.imdb.com/list/ls004285275/',
+		`${url}?sort=alpha#x`,
+	])('recognizes and canonicalizes %s', (input) => {
+		expect(detectSource(input)).toEqual({
+			site: 'imdb',
+			url,
+			listId: 'ls004285275',
+		});
+	});
 	it.each([
 		'https://imdb.com.evil.test/list/ls123',
 		'https://imdb.com/title/tt123',
@@ -123,7 +124,7 @@ describe('IMDb Source', () => {
 			})
 		).rejects.toBeInstanceOf(SourceRequestBudgetError);
 	});
-	it('returns an empty list only with a valid terminal page', async () => {
+	it('rejects an empty first page so the editor offers CSV (people/image lists)', async () => {
 		const payload = {
 			data: {
 				list: {
@@ -134,13 +135,11 @@ describe('IMDb Source', () => {
 				},
 			},
 		};
-		expect(
-			(
-				await fetchImdb(url, {
-					fetch: vi.fn().mockResolvedValue(Response.json(payload)),
-				})
-			).titles
-		).toEqual([]);
+		await expect(
+			fetchImdb(url, {
+				fetch: vi.fn().mockResolvedValue(Response.json(payload)),
+			})
+		).rejects.toThrow('no Titles');
 	});
 	it('imports CSV quoting, BOM, CRLF and extra/reordered columns without a network request', () => {
 		const result = parseImdbCsv(fixture('imdb-export.csv'));
@@ -226,7 +225,6 @@ describe('IMDb Source', () => {
 		expect(await response.json()).toEqual({
 			error:
 				'Unable to fetch this IMDb Source. Export the list from IMDb and upload its CSV instead.',
-			fallback: 'imdb-csv',
 		});
 	});
 });
