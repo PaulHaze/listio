@@ -18,6 +18,11 @@
 	}
 }
 
+/* Every size is in rem, so this scales the whole UI (90% of the browser default). */
+html {
+	font-size: 90%;
+}
+
 /* #region THEME COLOURS */
 /* Hues are based on daisyUI's Emerald theme. Lightness is tuned so each colour
    passes WCAG AA both as text on --background and as a fill with
