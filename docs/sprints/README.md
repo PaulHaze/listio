@@ -11,7 +11,7 @@ sprint's **Status** and tick its tasks as work happens.
 | 04  | [GUI: Home & list management](./04_GUI_Home_Lists.md)                                         | complete                        |
 | 05  | [GUI: Editor — adding Sources](./05_GUI_Editor_Add_Sources.md)                                | implemented; acceptance pending |
 | 06  | [GUI: Review grid](./06_GUI_Review_Grid.md)                                                   | implemented; acceptance pending |
-| 07  | [GUI: Editor — search & add Titles](./07_GUI_Editor_Search_Add_Titles.md)                     | not started                     |
+| 07  | [GUI: Editor — search & add Titles](./07_GUI_Editor_Search_Add_Titles.md)                     | implemented; acceptance pending |
 | 08  | [Cloudflare Access](./08_Cloudflare_Access.md)                                                | not started                     |
 | 09  | [IMDb Source](./09_IMDb_Source.md)                                                            | not started                     |
 | 10  | [Open-source release (BYOK)](./10_Open_Source_Release.md)                                     | not started                     |

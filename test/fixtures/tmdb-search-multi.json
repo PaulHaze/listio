@@ -1,0 +1,43 @@
+{
+	"page": 1,
+	"results": [
+		{
+			"adult": false,
+			"backdrop_path": "/1Nyjb7aeRKynWgmOl8he5ZcvWLm.jpg",
+			"id": 492,
+			"title": "Being John Malkovich",
+			"original_title": "Being John Malkovich",
+			"overview": "One day at work, unsuccessful puppeteer Craig finds a portal into the head of actor John Malkovich. The portal soon becomes a passion for anybody who enters its mad and controlling world of overtaking another human body.",
+			"poster_path": "/31FGQu3OnwdmS4COquENe0vMZc0.jpg",
+			"media_type": "movie",
+			"original_language": "en",
+			"genre_ids": [35, 18, 14],
+			"popularity": 10.0958,
+			"release_date": "1999-10-29",
+			"softcore": false,
+			"video": false,
+			"vote_average": 7.423,
+			"vote_count": 4979
+		},
+		{
+			"adult": false,
+			"backdrop_path": null,
+			"id": 887343,
+			"title": "Being Related to John Malkovich",
+			"original_title": "Biti u rodu s Johnom Malkovichem",
+			"overview": "Father and son poets embark on a quest to figure out what hides between the lines of their relationship while exploring their bloodline and an old family myth of a possible kinship with the Hollywood legend. Recollecting their past home, which now exists only in old VHS tapes, Luka and Željko take a trip down memory lane, while also setting out on a path to discovering what the future holds for them. As they connect the dots of their family tree, a mash-up of very different characters is introduced, including a book-van librarian, an old farmer, a John Malkovich double from Croatia, and people from all over the world whose last name is Malković. But, digging up one’s family history always carries a certain risk – will father and son lose their relationship while trying to improve it?",
+			"poster_path": "/mYMZVPe57ZEappzBidzEPFPpLdA.jpg",
+			"media_type": "movie",
+			"original_language": "hr",
+			"genre_ids": [99],
+			"popularity": 0.7967,
+			"release_date": "2026-04-27",
+			"softcore": false,
+			"video": false,
+			"vote_average": 0,
+			"vote_count": 0
+		}
+	],
+	"total_pages": 1,
+	"total_results": 2
+}

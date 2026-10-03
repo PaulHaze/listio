@@ -16,6 +16,9 @@ import {
 	restoreTitles,
 	type Draft,
 } from './draft.ts';
+import { addTitle } from '../../domain/merge.ts';
+import TitleDiscovery from './TitleDiscovery.tsx';
+import { api, ApiError } from './api.ts';
 import { enrichmentQueue } from './enrichment.ts';
 
 type SourceRow = {
@@ -33,39 +36,6 @@ type CardActionHandler = (
 ) => void;
 /** Cards rendered per progressive batch (plan §6). */
 const BATCH = 60;
-class ApiError extends Error {
-	constructor(
-		message: string,
-		readonly status: number
-	) {
-		super(message);
-	}
-}
-async function api<T>(
-	url: string,
-	body: unknown,
-	signal: AbortSignal,
-	method = 'POST'
-): Promise<T> {
-	const response = await fetch(url, {
-		method,
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-		signal,
-	});
-	const data = await response.json().catch(() => null);
-	if (!response.ok || !data)
-		throw new ApiError(
-			(data &&
-			typeof data === 'object' &&
-			'error' in data &&
-			typeof data.error === 'string'
-				? data.error
-				: '') || 'Unable to complete this request. Please try again.',
-			response.status
-		);
-	return data as T;
-}
 
 export default function Editor({
 	initialList,
@@ -136,9 +106,30 @@ export default function Editor({
 			event.preventDefault();
 			event.returnValue = '';
 		};
+		// <ClientRouter /> navigations (links, Back) skip beforeunload. Cancelling
+		// one makes Astro fall back to a full page load, which does trigger it.
+		const fullLoad = (event: Event) => event.preventDefault();
 		window.addEventListener('beforeunload', warn);
-		return () => window.removeEventListener('beforeunload', warn);
+		document.addEventListener('astro:before-preparation', fullLoad);
+		return () => {
+			window.removeEventListener('beforeunload', warn);
+			document.removeEventListener('astro:before-preparation', fullLoad);
+		};
 	}, [changes, pending, conflict]);
+	// KV reads can be cached for up to a minute, so the server may miss a save
+	// made in another tab. Tabs in this browser tell each other directly.
+	const savedVersion = saved.version;
+	useEffect(() => {
+		if (typeof BroadcastChannel === 'undefined') return;
+		const channel = new BroadcastChannel('listio-saves');
+		channel.onmessage = (
+			event: MessageEvent<{ id: string; version: number }>
+		) => {
+			if (event.data.id === saved.id && event.data.version > savedVersion)
+				setConflict(true);
+		};
+		return () => channel.close();
+	}, [saved.id, savedVersion]);
 
 	async function fetchSource(id: number, input: string) {
 		if (!input.trim() || saving) return;
@@ -170,7 +161,7 @@ export default function Editor({
 				titles: SourceTitle[];
 				source: SourceRecord;
 				skippedInvalid: number;
-			}>('/api/sources/fetch', { url }, controller.current.signal);
+			}>('/api/sources/fetch', controller.current.signal, { url });
 			const merged = addSource(draftRef.current, result.source, result.titles);
 			update(() => merged.draft);
 			const { titleCount, skippedNoImdb } = result.source;
@@ -191,8 +182,8 @@ export default function Editor({
 				try {
 					const enriched = await api<{ titles: Title[] }>(
 						'/api/titles/enrich',
-						{ titles: chunk },
-						controller.current.signal
+						controller.current.signal,
+						{ titles: chunk }
 					);
 					if (!controller.current.signal.aborted)
 						update((draft) => applyEnrichment(draft, enriched.titles));
@@ -232,6 +223,7 @@ export default function Editor({
 			const current = draftRef.current;
 			const list = await api<CombinedList>(
 				`/api/lists/${encodeURIComponent(saved.id)}`,
+				controller.current.signal,
 				{
 					version: saved.version,
 					sort: current.sort,
@@ -239,10 +231,14 @@ export default function Editor({
 					removed: current.removed,
 					sources: current.sources,
 				},
-				controller.current.signal,
 				'PUT'
 			);
 			setSaved(list);
+			if (typeof BroadcastChannel !== 'undefined') {
+				const channel = new BroadcastChannel('listio-saves');
+				channel.postMessage({ id: list.id, version: list.version });
+				channel.close();
+			}
 			update(() => createDraft(list));
 			setSelection(new Set());
 			setNotice(
@@ -347,6 +343,19 @@ export default function Editor({
 					{notice}
 				</p>
 			)}
+			<TitleDiscovery
+				draft={draft}
+				saving={saving}
+				busy={(delta) => setPending((n) => n + delta)}
+				add={(title) => {
+					const result = addTitle(draftRef.current, title);
+					if (result.status !== 'duplicate') {
+						update(() => result.draft);
+						setReview(true);
+					}
+					return result.status;
+				}}
+			/>
 			<section className="panel" aria-labelledby="sources-heading">
 				<h2 id="sources-heading">Add Sources</h2>
 				<p>
@@ -443,7 +452,7 @@ export default function Editor({
 				<p role="status">
 					{draft.titles.length} Titles · {newCount} new · {changes} unsaved{' '}
 					{changes === 1 ? 'change' : 'changes'}
-					{pending > 0 ? ' · Fetching Sources or filling posters…' : ''}
+					{pending > 0 ? ' · Finding Titles or filling posters…' : ''}
 				</p>
 				{!review && (
 					<button type="button" onClick={() => setReview(true)}>
@@ -522,7 +531,7 @@ export default function Editor({
 									? 'No new Titles in this Draft.'
 									: draft.removed.length > 0
 										? `All Titles are removed. Restore them from Removed (${draft.removed.length}).`
-										: 'No Titles yet. Add a Source to start your Draft.'}
+										: 'No Titles yet. Search for a Title, paste titles, or add a Source URL to start your Draft.'}
 						</p>
 					) : (
 						<ul className="title-grid">
@@ -551,7 +560,17 @@ export default function Editor({
 							className="danger"
 							disabled={saving}
 							onClick={() => {
-								focusNext.current = 'heading';
+								// Focus a nearby remaining card so the page keeps its place.
+								const first = titles.findIndex((t) => selection.has(t.imdbId));
+								const next =
+									titles
+										.slice(first + 1)
+										.find((t) => !selection.has(t.imdbId)) ??
+									titles
+										.slice(0, first)
+										.reverse()
+										.find((t) => !selection.has(t.imdbId));
+								focusNext.current = next ? next.imdbId : 'heading';
 								remove([...selection]);
 							}}
 						>

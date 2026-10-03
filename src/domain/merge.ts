@@ -126,3 +126,25 @@ export function mergeIntoList(
 		newIds: result.newIds,
 	};
 }
+
+/** Explicit addition overrides removal; duplicate additions leave the Draft untouched. */
+export function addTitle<T extends CombinedList & { newIds: Set<string> }>(
+	draft: T,
+	input: Title
+): { draft: T; status: 'added' | 'duplicate' | 'restored' } {
+	const id = input.imdbId.trim().toLowerCase();
+	if (draft.titles.some((t) => t.imdbId.toLowerCase() === id))
+		return { draft, status: 'duplicate' };
+	const removed = draft.removed.find((t) => t.imdbId.toLowerCase() === id);
+	const title = removed ?? titleFromInput(input, deriveNextSeq(draft));
+	return {
+		status: removed ? 'restored' : 'added',
+		draft: {
+			...draft,
+			titles: [...draft.titles, title].sort((a, b) => a.addedSeq - b.addedSeq),
+			removed: draft.removed.filter((t) => t.imdbId.toLowerCase() !== id),
+			nextSeq: removed ? draft.nextSeq : title.addedSeq + 1,
+			newIds: new Set([...draft.newIds, id]),
+		},
+	};
+}
