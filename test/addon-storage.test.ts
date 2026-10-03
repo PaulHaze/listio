@@ -99,6 +99,19 @@ describe('KV repository', () => {
 		await deleteList(kv, 'missing');
 		expect((await getIndex(kv)).length).toBe(1);
 	});
+	it('writes the index before the list so a failed save can be retried', async () => {
+		const { kv, values } = memoryStore();
+		const put = kv.put.bind(kv);
+		kv.put = (async (key: string, value: string) => {
+			if (key.startsWith('list:')) throw new Error('network');
+			return put(key, value);
+		}) as typeof kv.put;
+		await expect(putList(kv, list())).rejects.toThrow('network');
+		expect(values.has('list:test')).toBe(false);
+		kv.put = put;
+		expect((await putList(kv, list())).version).toBe(1);
+		expect((await getIndex(kv)).map((entry) => entry.id)).toEqual(['test']);
+	});
 	it('rejects an invalid version for a new list before writing', async () => {
 		const { kv, values } = memoryStore();
 		await expect(putList(kv, { ...list(), version: 3 })).rejects.toBeInstanceOf(

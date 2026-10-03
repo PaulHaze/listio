@@ -1,6 +1,6 @@
 # Sprint 03 — Storage & Nuvio addon
 
-**Status:** implementation deployed; independent audit and on-device acceptance pending
+**Status:** complete — audited (Astra + Opus), audit fixes applied, on-device acceptance passed
 
 ## Goal
 
@@ -19,11 +19,11 @@ before building any GUI.
 
 ## Done when
 
-- Addon installed in Nuvio from the deployed URL
-- The seeded list appears as a row with posters, correct order, and pages beyond 100 Titles load
-- A mixed movie/show list appears as two Catalogs
-- A Catalog can be added to a Nuvio collection folder
-- Wrong secret returns 404
+- [x] Addon installed in Nuvio from the deployed URL
+- [x] The seeded list appears as a row with posters, correct order, and pages beyond 100 Titles load
+- [x] A mixed movie/show list appears as two Catalogs
+- [x] A Catalog can be added to a Nuvio collection folder
+- [x] Wrong secret returns 404
 
 ## Needs from Paul
 
@@ -46,20 +46,24 @@ before building any GUI.
 - The secret-bearing install URL is in the ignored local file
   `.wrangler/sprint-03-install.txt`; it is deliberately absent from tracked docs.
 
-## Remaining acceptance
+## Device acceptance
 
-Paul must install the addon from that private URL and confirm that posters and
-order render correctly, scrolling loads beyond 100 Titles, both movie and series
-Catalogs appear, and a Catalog can be added to a Nuvio collection folder.
-These checks have not been performed. Sprint 03 remains pending until they and the
-independent audit are complete.
+Passed on the Nuvio Mac app (2026-10-03). The addon was installed from the private
+URL and both `pipeline-proof` Catalogs (movies, series) appeared on Home in source
+order with posters. The series grid scrolled through all 307 Titles, and the
+poster-less Title rendered. All 15 movies, including the last one, appeared once
+the Catalog was opened from a collection; the Mac Home row offers no "See all" for
+a short row. Three collections were built from the Catalogs (combined, movies only,
+series only) and all worked.
 
 ## Storage limitation
 
 The version check rejects an observed stale Draft, but KV has no transactional
 compare-and-swap. Simultaneous saves or writes during KV propagation can still race,
 and the list/index writes are not atomic. This follows the planned KV design;
-callers must not treat it as a strong concurrency guarantee.
+callers must not treat it as a strong concurrency guarantee. The index is written
+before the list, so a save that fails halfway leaves an index entry that serves
+an empty Catalog and can be retried, never an invisible list that blocks a retry.
 
 ## Seed CLI
 

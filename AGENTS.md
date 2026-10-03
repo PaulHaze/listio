@@ -27,6 +27,40 @@
 - Audit report filename: `sprint-NN-audit-astra.md`, with `NN` replaced by the
   two-digit sprint number
 
+### `/audit-commit` context (Claude / Opus)
+
+Used by Claude Code's `/audit-commit`, `/audit-sum`, `/audit-action` and
+`/summary`. The `$audit-commit` block above is Astra's (Codex); this one is
+Opus's.
+
+- Branch convention: `sprint-{nn}` (two-digit). `{nn}` is the sprint number.
+- Task doc: the file in `docs/sprints/` whose two-digit prefix matches `{nn}`
+  (e.g. `sprint-03` → `docs/sprints/03_Storage_Nuvio_Addon.md`). The whole
+  file is the task scope; there are no `Task NN` headings to match.
+- Audits directory: `docs/audits/`
+- Claude audit filename: `sprint-{nn}-audit-opus.md`
+- After writing the Opus audit, `/audit-commit` runs `/audit-sum` if
+  `docs/audits/sprint-{nn}-audit-astra.md` exists; otherwise it skips with a
+  one-line note.
+
+### `$audit-sum` context
+
+- Audits directory: `docs/audits/`
+- Claude audit (input): `sprint-{nn}-audit-opus.md`. Auditor label: **Opus**.
+- Counterpart audit (input, read-only, owned by Astra):
+  `sprint-{nn}-audit-astra.md`. Auditor label: **Astra** (use this wherever
+  the skill says `Sol`/`GPT`).
+- Consolidated summary (output): `sprint-{nn}-audit-summary.md`
+- Summary heading line: `Combined findings of Astra and Opus audits:`
+- Completeness rule: every finding in the Astra audit must appear in the
+  summary with all its information: severity, `file:line` references,
+  reasoning, evidence, and Astra's suggested fix. The same applies to every
+  Opus finding. Never drop, merge or shorten away an auditor's details. Put
+  Astra's proposed fix in the `Suggested fix:` line, and add an alternative
+  only as a clearly labelled extra. Include any Astra notes that aren't
+  findings (verification run, coverage notes, positive observations) in a
+  short `Auditor notes` section at the end, attributed by auditor.
+
 ### `$new-task` context
 
 - Parent branch: `main`

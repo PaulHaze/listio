@@ -15,9 +15,12 @@ export const GET: APIRoute = async ({ params }) => {
 	if (!validSecret(params.secret, env.ADDON_SECRET)) return addonNotFound();
 	const path = parseCatalogPath(params.rest);
 	if (!path) return addonNotFound();
-	if (!['movie', 'series'].includes(params.type ?? ''))
-		return addonResponse({ metas: [] });
+	// buildCatalog turns an unknown type into { metas: [] }.
 	return addonResponse(
-		buildCatalog(await getList(env.LISTIO, path.id), params.type!, path.skip)
+		buildCatalog(
+			await getList(env.LISTIO, path.id),
+			params.type ?? '',
+			path.skip
+		)
 	);
 };

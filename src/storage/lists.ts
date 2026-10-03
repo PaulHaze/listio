@@ -42,6 +42,9 @@ export function indexEntry(list: CombinedList): ListIndexEntry {
 /** Version 0 creates a list; subsequent saves submit the last saved version.
  * KV is eventually consistent and has no atomic compare-and-swap: this detects
  * observed stale drafts, but cannot serialize simultaneous writers.
+ * The index is written first: an index entry without its list degrades to an
+ * empty Catalog and is repaired by retrying, whereas an unindexed list would be
+ * invisible and block a version-0 retry.
  */
 export async function putList(
 	kv: ListStore,
@@ -60,8 +63,8 @@ export async function putList(
 	const position = index.findIndex((item) => item.id === saved.id);
 	if (position === -1) index.push(entry);
 	else index[position] = entry;
-	await kv.put(`list:${saved.id}`, JSON.stringify(saved));
 	await kv.put('index', JSON.stringify(index));
+	await kv.put(`list:${saved.id}`, JSON.stringify(saved));
 	return saved;
 }
 

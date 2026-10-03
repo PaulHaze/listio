@@ -8,12 +8,7 @@ export function buildCatalog(
 	type: string,
 	skip = 0
 ) {
-	if (
-		!list ||
-		!['movie', 'series'].includes(type) ||
-		!Number.isSafeInteger(skip) ||
-		skip < 0
-	) {
+	if (!list || !['movie', 'series'].includes(type) || skip < 0) {
 		return { metas: [] };
 	}
 	return {

@@ -9,11 +9,8 @@ import { detectSource } from '../src/sources/detect.ts';
 import { fetchTrakt } from '../src/sources/trakt.ts';
 import { fetchMdbList } from '../src/sources/mdblist.ts';
 import { putList, type ListStore } from '../src/storage/lists.ts';
-import {
-	enrichSourceTitles,
-	readDevVars,
-	requiredValue,
-} from './probe-utils.ts';
+import { enrichTitles } from '../src/tmdb/enrich.ts';
+import { readDevVars, requiredValue } from './probe-utils.ts';
 
 // Wrangler's CLI uses existing login/config. Never put API secrets in arguments.
 function wrangler(args: string[]): string {
@@ -30,7 +27,7 @@ async function remoteStore(): Promise<ListStore> {
 	// Expose cleanup to the caller without writing seed data into the repository.
 	cleanup = () => rm(dir, { recursive: true, force: true });
 	return {
-		async get(key: string) {
+		async get(key: string, type?: 'text' | 'json') {
 			// Read with the REST API through Wrangler; missing keys are null.
 			let raw: string;
 			try {
@@ -44,15 +41,13 @@ async function remoteStore(): Promise<ListStore> {
 					'--remote',
 				]);
 			} catch (error) {
-				if (
-					error instanceof Error &&
-					/values\/[^\s]+ - 404: Not Found/.test(error.message)
-				)
+				// Wrangler's wording varies by version; any 404/not-found is a miss.
+				if (error instanceof Error && /\b404\b|not found/i.test(error.message))
 					return null;
 				throw error;
 			}
-			if (!raw.trim() || raw.trim() === 'Value not found') return null;
-			return JSON.parse(raw);
+			if (!raw.trim() || /^value not found$/i.test(raw.trim())) return null;
+			return type === 'json' ? JSON.parse(raw) : raw;
 		},
 		async put(key: string, value: string) {
 			await writeFile(valuePath, value, { mode: 0o600 });
@@ -119,15 +114,11 @@ try {
 		if (!result)
 			throw new Error('The seed script supports Trakt and MDBList Sources.');
 		const merged = mergeTitles(list, result.titles);
-		const enriched = await enrichSourceTitles(
+		// newTitles already carry the addedSeq assigned across all Sources.
+		const titles = await enrichTitles(
 			merged.newTitles,
 			requiredValue('TMDB_API_KEY', vars)
 		);
-		// Preserve the sequence numbers assigned across all Sources.
-		const titles = enriched.map((title, index) => ({
-			...title,
-			addedSeq: merged.newTitles[index].addedSeq,
-		}));
 		list = {
 			...list,
 			titles: [...list.titles, ...titles],
