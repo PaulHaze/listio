@@ -1,0 +1,56 @@
+{
+	"data": {
+		"list": {
+			"titleListItemSearch": {
+				"edges": [
+					{
+						"title": {
+							"id": "tt0111161",
+							"titleText": {
+								"text": "The Shawshank Redemption"
+							},
+							"releaseYear": {
+								"year": 1994
+							},
+							"titleType": {
+								"id": "movie"
+							}
+						}
+					},
+					{
+						"title": {
+							"id": "tt0903747",
+							"titleText": {
+								"text": "Breaking Bad"
+							},
+							"releaseYear": {
+								"year": 2008
+							},
+							"titleType": {
+								"id": "tvSeries"
+							}
+						}
+					},
+					{
+						"title": {
+							"id": "nm0001",
+							"titleText": {
+								"text": "A person"
+							},
+							"releaseYear": {
+								"year": null
+							},
+							"titleType": {
+								"id": "movie"
+							}
+						}
+					}
+				],
+				"pageInfo": {
+					"hasNextPage": true,
+					"endCursor": "cursor-1"
+				}
+			}
+		}
+	}
+}

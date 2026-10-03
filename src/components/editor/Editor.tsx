@@ -7,6 +7,7 @@ import type {
 } from '../../domain/types.ts';
 import { sortTitles } from '../../domain/sort.ts';
 import { detectSource } from '../../sources/detect.ts';
+import { parseImdbCsv } from '../../sources/imdb.ts';
 import {
 	addSource,
 	applyEnrichment,
@@ -26,6 +27,7 @@ type SourceRow = {
 	url: string;
 	state: 'idle' | 'fetching' | 'done' | 'error';
 	message: string;
+	csvFallback?: boolean;
 };
 type View = 'all' | 'new' | 'removed';
 type CardAction = 'remove' | 'restore' | 'toggle';
@@ -131,11 +133,16 @@ export default function Editor({
 		return () => channel.close();
 	}, [saved.id, savedVersion]);
 
-	async function fetchSource(id: number, input: string) {
+	async function fetchSource(id: number, input: string, csv?: File) {
 		if (!input.trim() || saving) return;
 		let url: string;
+		let site: string;
 		try {
-			url = detectSource(input).url;
+			const source = detectSource(input);
+			url = source.url;
+			site = source.site;
+			if (csv && (site !== 'imdb' || csv.size > 5 * 1024 * 1024))
+				throw new Error('Choose an IMDb CSV export up to 5 MB.');
 		} catch (error) {
 			rowStatus(id, {
 				state: 'error',
@@ -152,16 +159,40 @@ export default function Editor({
 			return;
 		}
 		requested.add(url);
-		rowStatus(id, { url, state: 'fetching', message: 'Fetching…' });
+		rowStatus(id, {
+			url,
+			state: 'fetching',
+			csvFallback: false,
+			message: csv ? 'Reading CSV…' : 'Fetching…',
+		});
 		setPending((n) => n + 1);
 		setError('');
 		setNotice('');
 		try {
-			const result = await api<{
+			let result: {
 				titles: SourceTitle[];
 				source: SourceRecord;
 				skippedInvalid: number;
-			}>('/api/sources/fetch', controller.current.signal, { url });
+			};
+			if (csv) {
+				const parsed = parseImdbCsv(await csv.text());
+				result = {
+					...parsed,
+					source: {
+						url,
+						site: 'imdb-csv',
+						addedAt: new Date().toISOString(),
+						titleCount: parsed.titles.length,
+						skippedNoImdb: parsed.skippedNoImdb,
+					},
+				};
+			} else
+				result = await api<typeof result>(
+					'/api/sources/fetch',
+					controller.current.signal,
+					{ url }
+				);
+			if (controller.current.signal.aborted) return;
 			const merged = addSource(draftRef.current, result.source, result.titles);
 			update(() => merged.draft);
 			const { titleCount, skippedNoImdb } = result.source;
@@ -204,6 +235,7 @@ export default function Editor({
 			if (!controller.current.signal.aborted)
 				rowStatus(id, {
 					state: 'error',
+					csvFallback: site === 'imdb',
 					message:
 						error instanceof Error
 							? error.message
@@ -359,8 +391,8 @@ export default function Editor({
 			<section className="panel" aria-labelledby="sources-heading">
 				<h2 id="sources-heading">Add Sources</h2>
 				<p>
-					Paste public Trakt or MDBList list URLs. Titles stay in your Draft
-					until you save.
+					Paste public Trakt, MDBList or IMDb list URLs. Titles stay in your
+					Draft until you save.
 				</p>
 				{rows.map((row) => (
 					<form
@@ -386,6 +418,7 @@ export default function Editor({
 										url: event.target.value,
 										state: 'idle',
 										message: '',
+										csvFallback: false,
 									})
 								}
 								onPaste={(event) => {
@@ -415,6 +448,28 @@ export default function Editor({
 						>
 							{row.message}
 						</p>
+						{row.csvFallback && (
+							<div>
+								<p>
+									Open this list on IMDb while logged in, choose Export, then
+									upload the downloaded CSV.
+								</p>
+								<label htmlFor={`csv-${row.id}`}>
+									IMDb CSV export (up to 5 MB)
+								</label>
+								<input
+									id={`csv-${row.id}`}
+									type="file"
+									accept=".csv,text/csv"
+									disabled={saving || row.state === 'fetching'}
+									onChange={(event) => {
+										const file = event.target.files?.[0];
+										event.target.value = '';
+										if (file) void fetchSource(row.id, row.url, file);
+									}}
+								/>
+							</div>
+						)}
 					</form>
 				))}
 				<button

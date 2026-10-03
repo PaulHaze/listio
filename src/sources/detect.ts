@@ -13,7 +13,14 @@ export type MdbListDetectedSource = {
 	slug: string;
 };
 
-export type DetectedSource = TraktDetectedSource | MdbListDetectedSource;
+export type ImdbDetectedSource = {
+	site: 'imdb';
+	url: string;
+	listId: string;
+};
+
+export type DetectedSource =
+	TraktDetectedSource | MdbListDetectedSource | ImdbDetectedSource;
 
 export class SourceDetectionError extends Error {
 	readonly code = 'UNSUPPORTED_SOURCE_URL';
@@ -57,7 +64,7 @@ export function detectSource(input: string): DetectedSource {
 		parsed = new URL(input.trim());
 	} catch {
 		throw new SourceDetectionError(
-			`Unsupported source URL: “${input}”. Paste a Trakt or MDBList list URL.`
+			`Unsupported source URL: “${input}”. Paste a Trakt, MDBList or IMDb list URL.`
 		);
 	}
 
@@ -109,10 +116,27 @@ export function detectSource(input: string): DetectedSource {
 		};
 	}
 
+	if (
+		hostIs(parsed.hostname, 'imdb.com', 'm.imdb.com') &&
+		!parsed.port &&
+		!parsed.username &&
+		!parsed.password &&
+		segments.length === 2 &&
+		segments[0] === 'list' &&
+		/^ls\d+$/.test(segments[1])
+	) {
+		return {
+			site: 'imdb',
+			url: `https://www.imdb.com/list/${segments[1]}/`,
+			listId: segments[1],
+		};
+	}
+
 	throw new SourceDetectionError(
 		`Unsupported source URL “${input}”. Expected a Trakt list ` +
 			`(trakt.tv/users/{user}/lists/{slug} or trakt.tv/lists/{id}) ` +
-			`or an MDBList list (mdblist.com/lists/{user}/{slug}).`
+			`an MDBList list (mdblist.com/lists/{user}/{slug}), ` +
+			`or an IMDb list (imdb.com/list/ls…).`
 	);
 }
 
