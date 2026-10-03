@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
+import { savedDraft } from '../../../api/validate.ts';
 import { apiError, json, NAME_ERROR, readName } from '../../../api/http.ts';
 import {
 	deleteList,
@@ -41,6 +42,25 @@ export const DELETE: APIRoute = async ({ params }) => {
 			status: 204,
 			headers: { 'Cache-Control': 'no-store' },
 		});
+	} catch (error) {
+		return apiError(error);
+	}
+};
+
+export const PUT: APIRoute = async ({ request, params }) => {
+	const body: unknown = await request.json().catch(() => null);
+	try {
+		const current = params.id ? await getList(env.LISTIO, params.id) : null;
+		if (!current) return json({ error: 'Combined List not found.' }, 404);
+		const draft = savedDraft(body, current);
+		if (!draft)
+			return json(
+				{
+					error: 'Invalid Draft. Check Titles, Sources and sort before saving.',
+				},
+				400
+			);
+		return json(await putList(env.LISTIO, draft));
 	} catch (error) {
 		return apiError(error);
 	}

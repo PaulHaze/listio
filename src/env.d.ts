@@ -6,5 +6,8 @@ declare namespace Cloudflare {
 	interface Env {
 		LISTIO: KVNamespace;
 		ADDON_SECRET: string;
+		TRAKT_CLIENT_ID: string;
+		MDBLIST_API_KEY: string;
+		TMDB_API_KEY: string;
 	}
 }

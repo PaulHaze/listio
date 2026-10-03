@@ -11,6 +11,15 @@ import {
 
 const MDBLIST_API_URL = 'https://api.mdblist.com';
 const DEFAULT_PAGE_SIZE = 100;
+
+export class SourceRequestBudgetError extends Error {
+	constructor(maxPages: number) {
+		super(
+			`This Source needs more than ${maxPages} API pages. No Titles were imported.`
+		);
+		this.name = 'SourceRequestBudgetError';
+	}
+}
 const SERIES_TYPES = [
 	'show',
 	'series',
@@ -37,6 +46,8 @@ export type MdbListFetchOptions = {
 	pageSize?: number;
 	/** Optional cap on accepted Titles. Lists have no size cap by default. */
 	maxItems?: number;
+	/** Fail instead of silently truncating when a Worker request budget is spent. */
+	maxPages?: number;
 	signal?: AbortSignal;
 };
 
@@ -283,6 +294,8 @@ export async function fetchMdbList(
 	let offset = 0;
 
 	for (let page = 1; titles.length < maxItems; page += 1) {
+		if (options.maxPages !== undefined && page > options.maxPages)
+			throw new SourceRequestBudgetError(options.maxPages);
 		const response = await request(
 			buildMdbListItemsUrl(source, options.apiKey, {
 				limit,
