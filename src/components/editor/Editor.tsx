@@ -136,9 +136,30 @@ export default function Editor({
 			event.preventDefault();
 			event.returnValue = '';
 		};
+		// <ClientRouter /> navigations (links, Back) skip beforeunload. Cancelling
+		// one makes Astro fall back to a full page load, which does trigger it.
+		const fullLoad = (event: Event) => event.preventDefault();
 		window.addEventListener('beforeunload', warn);
-		return () => window.removeEventListener('beforeunload', warn);
+		document.addEventListener('astro:before-preparation', fullLoad);
+		return () => {
+			window.removeEventListener('beforeunload', warn);
+			document.removeEventListener('astro:before-preparation', fullLoad);
+		};
 	}, [changes, pending, conflict]);
+	// KV reads can be cached for up to a minute, so the server may miss a save
+	// made in another tab. Tabs in this browser tell each other directly.
+	const savedVersion = saved.version;
+	useEffect(() => {
+		if (typeof BroadcastChannel === 'undefined') return;
+		const channel = new BroadcastChannel('listio-saves');
+		channel.onmessage = (
+			event: MessageEvent<{ id: string; version: number }>
+		) => {
+			if (event.data.id === saved.id && event.data.version > savedVersion)
+				setConflict(true);
+		};
+		return () => channel.close();
+	}, [saved.id, savedVersion]);
 
 	async function fetchSource(id: number, input: string) {
 		if (!input.trim() || saving) return;
@@ -243,6 +264,11 @@ export default function Editor({
 				'PUT'
 			);
 			setSaved(list);
+			if (typeof BroadcastChannel !== 'undefined') {
+				const channel = new BroadcastChannel('listio-saves');
+				channel.postMessage({ id: list.id, version: list.version });
+				channel.close();
+			}
 			update(() => createDraft(list));
 			setSelection(new Set());
 			setNotice(
@@ -551,7 +577,17 @@ export default function Editor({
 							className="danger"
 							disabled={saving}
 							onClick={() => {
-								focusNext.current = 'heading';
+								// Focus a nearby remaining card so the page keeps its place.
+								const first = titles.findIndex((t) => selection.has(t.imdbId));
+								const next =
+									titles
+										.slice(first + 1)
+										.find((t) => !selection.has(t.imdbId)) ??
+									titles
+										.slice(0, first)
+										.reverse()
+										.find((t) => !selection.has(t.imdbId));
+								focusNext.current = next ? next.imdbId : 'heading';
 								remove([...selection]);
 							}}
 						>
