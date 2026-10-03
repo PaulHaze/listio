@@ -1,12 +1,12 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { apiError, json, readName } from '../../../api/http.ts';
+import { apiError, json, NAME_ERROR, readName } from '../../../api/http.ts';
 import { uniqueSlug } from '../../../domain/slug.ts';
 import { getIndex, getList, putList } from '../../../storage/lists.ts';
 
 export const POST: APIRoute = async ({ request }) => {
 	const name = await readName(request);
-	if (!name) return json({ error: 'Enter a Combined List name.' }, 400);
+	if (!name) return json({ error: NAME_ERROR }, 400);
 	try {
 		const taken = new Set((await getIndex(env.LISTIO)).map((list) => list.id));
 		let id = uniqueSlug(name, taken);

@@ -141,4 +141,41 @@ describe('Combined List API', () => {
 			(await call(GET, 'GET', 'missing')).headers.get('Cache-Control')
 		).toBe('no-store');
 	});
+
+	it('rejects names over 100 characters without writing', async () => {
+		const long = 'a'.repeat(101);
+		expect((await call(POST, 'POST', undefined, { name: long })).status).toBe(
+			400
+		);
+		expect(values.size).toBe(0);
+		const list = await create('a'.repeat(100));
+		expect((await call(PATCH, 'PATCH', list.id, { name: long })).status).toBe(
+			400
+		);
+		expect(JSON.parse(values.get(`list:${list.id}`)!).name).toHaveLength(100);
+	});
+
+	it('deletes an index entry whose list write never landed', async () => {
+		const list = await create();
+		values.delete(`list:${list.id}`);
+		expect((await call(DELETE, 'DELETE', list.id)).status).toBe(204);
+		expect(JSON.parse(values.get('index')!)).toEqual([]);
+		expect((await call(DELETE, 'DELETE', list.id)).status).toBe(404);
+	});
+
+	it('finishes a delete whose index write failed', async () => {
+		const list = await create();
+		const put = kv.put;
+		kv.put = async () => {
+			throw new Error('KV unavailable');
+		};
+		try {
+			expect((await call(DELETE, 'DELETE', list.id)).status).toBe(500);
+		} finally {
+			kv.put = put;
+		}
+		expect(values.has(`list:${list.id}`)).toBe(false);
+		expect((await call(DELETE, 'DELETE', list.id)).status).toBe(204);
+		expect(JSON.parse(values.get('index')!)).toEqual([]);
+	});
 });

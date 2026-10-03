@@ -31,6 +31,9 @@ pnpm-debug.log*
 .dev.vars.*
 !.dev.vars.example
 
+# Playwright MCP session logs
+.playwright-mcp/
+
 # editor
 .vscode/*
 !.vscode/extensions.json

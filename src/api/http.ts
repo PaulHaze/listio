@@ -10,13 +10,18 @@ export function json(body: unknown, status = 200): Response {
 	});
 }
 
+/** Keeps the derived `list:{id}` KV key well under Workers KV's 512-byte limit. */
+export const MAX_NAME_LENGTH = 100;
+
+export const NAME_ERROR = `Enter a Combined List name of ${MAX_NAME_LENGTH} characters or fewer.`;
+
 export async function readName(request: Request): Promise<string | null> {
 	try {
 		const body: unknown = await request.json();
 		if (!body || typeof body !== 'object' || !('name' in body)) return null;
-		return typeof body.name === 'string' && body.name.trim()
-			? body.name.trim()
-			: null;
+		if (typeof body.name !== 'string') return null;
+		const name = body.name.trim();
+		return name && name.length <= MAX_NAME_LENGTH ? name : null;
 	} catch {
 		return null;
 	}

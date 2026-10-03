@@ -52,6 +52,12 @@ const created = Astro.url.searchParams.get('created') === '1';
 	import type { CombinedList } from '@/domain/types';
 	class ListEditor extends HTMLElement {
 		connectedCallback() {
+			// Show the refresh notice once, not again on reload or from a bookmark.
+			const url = new URL(window.location.href);
+			if (url.searchParams.has('created')) {
+				url.searchParams.delete('created');
+				history.replaceState(history.state, '', url);
+			}
 			void this.load();
 		}
 		async load() {
@@ -59,11 +65,10 @@ const created = Astro.url.searchParams.get('created') === '1';
 				const response = await fetch(
 					`/api/lists/${encodeURIComponent(this.dataset.id!)}`
 				);
-				const list = (await response.json()) as CombinedList & {
-					error?: string;
-				};
-				if (!response.ok)
-					throw new Error(list.error || 'Unable to load this Combined List.');
+				const list = (await response.json().catch(() => null)) as
+					(CombinedList & { error?: string }) | null;
+				if (!response.ok || !list)
+					throw new Error(list?.error || 'Unable to load this Combined List.');
 				this.querySelector('[data-count]')!.textContent =
 					`${list.titles.length} ${list.titles.length === 1 ? 'Title' : 'Titles'}`;
 			} catch (error) {
