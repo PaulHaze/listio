@@ -145,7 +145,7 @@ validates shape, writes `list:{id}` then updates `index`. Response returns the s
 ## 5. Addon endpoints
 
 - `GET /addon/{secret}/manifest.json`
-  - `id: "com.paulhaze.listio"`, `name: "Listio"`, `resources: ["catalog"]`, `types: ["movie","series"]`
+  - `id: "org.listio.addon"`, `name: "Listio"`, `resources: ["catalog"]`, `types: ["movie","series"]`
   - `catalogs`: for each index entry, one per type present:
     `{ type, id: listId, name: listName, extra: [{ name: "skip" }] }`
 - `GET /addon/{secret}/catalog/{type}/{id}.json` and `…/{id}/skip={n}.json`

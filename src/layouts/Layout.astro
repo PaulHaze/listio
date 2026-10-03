@@ -17,8 +17,8 @@ const {
 	image,
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const imageURL = image ? new URL(image, Astro.site) : undefined;
+const canonicalURL = new URL(Astro.url.pathname, Astro.url.origin);
+const imageURL = image ? new URL(image, Astro.url.origin) : undefined;
 ---
 
 <!doctype html>
@@ -27,7 +27,6 @@ const imageURL = image ? new URL(image, Astro.site) : undefined;
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="sitemap" href="/sitemap-index.xml" />
 		<meta name="generator" content={Astro.generator} />
 
 		<title>{title}</title>
@@ -78,5 +77,14 @@ const imageURL = image ? new URL(image, Astro.site) : undefined;
 			</a>
 		</header>
 		<slot />
+		<footer class="site-credits" aria-label="Credits">
+			<h2>Credits</h2>
+			<a href="https://www.themoviedb.org">
+				<img src="/tmdb-logo.svg" alt="The Movie Database (TMDB)" width="80" />
+			</a>
+			<p>
+				This product uses the TMDB API but is not endorsed or certified by TMDB.
+			</p>
+		</footer>
 	</body>
 </html>

@@ -184,6 +184,20 @@ html {
 }
 
 /* Combined List management uses ordinary CSS over the shared theme. */
+.site-credits {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 1.5rem;
+	border-top: 1px solid var(--background-300);
+	font-size: 0.85rem;
+}
+.site-credits h2 {
+	font-size: 1rem;
+	font-weight: 600;
+}
+.site-credits img {
+	margin: 0.75rem 0;
+}
 .site-header {
 	padding: 1.25rem max(1.5rem, calc((100% - 64rem) / 2));
 	border-bottom: 1px solid var(--background-300);

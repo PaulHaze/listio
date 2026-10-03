@@ -22,7 +22,7 @@ IMDb lists as a Source: paste the URL; if that fails, upload the CSV instead.
 ## Implementation and verification
 
 Verified on 4 October 2026 (Australia/Sydney) at
-`https://listio.listio.workers.dev`, deployment version
+the owner’s configured Worker URL, deployment version
 `83dd8bbb-17b7-47bf-910d-cbd25c8499fc`:
 
 - Authenticated `POST /api/sources/fetch` for the real public IMDb list

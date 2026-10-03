@@ -3,7 +3,6 @@ import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@astrojs/react';
-import sitemap from '@astrojs/sitemap';
 import icon from 'astro-icon';
 import { fileURLToPath } from 'node:url';
 
@@ -24,7 +23,6 @@ export default defineConfig({
 			}),
 	// Unused; stops the adapter auto-provisioning a SESSION KV namespace.
 	session: false,
-	site: 'https://listio.listio.workers.dev',
 	vite: {
 		plugins: [tailwindcss()],
 		resolve: nodeDev
@@ -37,7 +35,7 @@ export default defineConfig({
 				}
 			: {},
 	},
-	integrations: [react(), sitemap(), icon()],
+	integrations: [react(), icon()],
 	// Downloaded at build time and self-hosted, with size-adjusted fallbacks to
 	// avoid layout shift while the web font loads.
 	fonts: [

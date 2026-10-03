@@ -68,7 +68,7 @@ Each profile stores its collections as one JSON array (`collections_json`):
 |                   | `type`             | string  | `movie` or `series`                      |
 |                   | `catalogId`        | string  | Catalog ID                               |
 
-For Listio: `addonId` = `com.paulhaze.listio` (`src/addon/manifest.ts`), `catalogId` = the Combined
+For Listio: `addonId` = `org.listio.addon` (`src/addon/manifest.ts`), `catalogId` = the Combined
 List ID, and there's one `catalogSources` entry per type the list has. The docs' push example sends only
 `id`, `title`, `viewMode` and `folders`, so the other collection fields look optional.
 

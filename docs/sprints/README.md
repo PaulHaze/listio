@@ -14,7 +14,7 @@ sprint's **Status** and tick its tasks as work happens.
 | 07  | [GUI: Editor — search & add Titles](./07_GUI_Editor_Search_Add_Titles.md)                                               | implemented; acceptance pending |
 | 08  | [Login: Basic Auth](./08_Login_Basic_Auth.md)                                                                           | complete                        |
 | 09  | [IMDb Source](./09_IMDb_Source.md)                                                                                      | complete                        |
-| 10  | [Open-source release (BYOK)](./10_Open_Source_Release.md)                                                               | not started                     |
+| 10  | [Open-source release (BYOK)](./10_Open_Source_Release.md)                                                               | implemented; acceptance pending |
 | 11  | [Import several lists from one text file + Nuvio collection export](./11_Import_Multiple_Lists_From_Text.md) (optional) | not started                     |
 | —   | Public list builder, BYOK TMDB (future, see [ADR 0007](../adr/0007-public-list-builder-byok.md))                        | proposed                        |
 
