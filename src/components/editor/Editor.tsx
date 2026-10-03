@@ -10,7 +10,10 @@ import { detectSource } from '../../sources/detect.ts';
 import {
 	addSource,
 	applyEnrichment,
+	countChanges,
 	createDraft,
+	removeTitles,
+	restoreTitles,
 	type Draft,
 } from './draft.ts';
 import { enrichmentQueue } from './enrichment.ts';
@@ -21,6 +24,17 @@ type SourceRow = {
 	state: 'idle' | 'fetching' | 'done' | 'error';
 	message: string;
 };
+type View = 'all' | 'new' | 'removed';
+/** Cards rendered per progressive batch (plan §6). */
+const BATCH = 60;
+class ApiError extends Error {
+	constructor(
+		message: string,
+		readonly status: number
+	) {
+		super(message);
+	}
+}
 async function api<T>(
 	url: string,
 	body: unknown,
@@ -35,13 +49,14 @@ async function api<T>(
 	});
 	const data = await response.json().catch(() => null);
 	if (!response.ok || !data)
-		throw new Error(
+		throw new ApiError(
 			(data &&
 			typeof data === 'object' &&
 			'error' in data &&
 			typeof data.error === 'string'
 				? data.error
-				: '') || 'Unable to complete this request. Please try again.'
+				: '') || 'Unable to complete this request. Please try again.',
+			response.status
 		);
 	return data as T;
 }
@@ -62,7 +77,12 @@ export default function Editor({
 	const rowId = useRef(1);
 	const [pending, setPending] = useState(0);
 	const [saving, setSaving] = useState(false);
-	const [review, setReview] = useState(false);
+	const [review, setReview] = useState(initialList.titles.length > 0);
+	const [view, setView] = useState<View>('all');
+	const [selection, setSelection] = useState<Set<string>>(() => new Set());
+	const [visible, setVisible] = useState(BATCH);
+	const sentinel = useRef<HTMLDivElement>(null);
+	const [conflict, setConflict] = useState(false);
 	const [error, setError] = useState('');
 	const [notice, setNotice] = useState(
 		created ? 'Refresh the Listio addon in Nuvio to see this change' : ''
@@ -82,8 +102,7 @@ export default function Editor({
 	);
 	const [schedule] = useState(enrichmentQueue);
 	const [controller] = useState(() => ({ current: new AbortController() }));
-	// Sort is compared with the saved list so switching back is not a change.
-	const changes = draft.changes + (draft.sort !== saved.sort ? 1 : 0);
+	const changes = useMemo(() => countChanges(saved, draft), [saved, draft]);
 	function update(change: (draft: Draft) => Draft) {
 		draftRef.current = change(draftRef.current);
 		setDraft(draftRef.current);
@@ -195,8 +214,9 @@ export default function Editor({
 		}
 	}
 	async function save() {
-		if (saving || pending || !changes) return;
-		if (!window.confirm(`Save ${changes} changes to ${saved.name}?`)) return;
+		if (saving || pending || !changes || conflict) return;
+		const noun = changes === 1 ? 'change' : 'changes';
+		if (!window.confirm(`Save ${changes} ${noun} to ${saved.name}?`)) return;
 		setSaving(true);
 		setError('');
 		try {
@@ -215,21 +235,70 @@ export default function Editor({
 			);
 			setSaved(list);
 			update(() => createDraft(list));
+			setSelection(new Set());
 			setNotice(
 				'Saved. Refresh the Listio addon in Nuvio to see new Catalogs. Title updates can take up to a minute.'
 			);
 		} catch (error) {
-			setError(
-				error instanceof Error ? error.message : 'Unable to save this Draft.'
-			);
+			if (error instanceof ApiError && error.status === 409) setConflict(true);
+			else
+				setError(
+					error instanceof Error ? error.message : 'Unable to save this Draft.'
+				);
 		} finally {
 			setSaving(false);
 		}
 	}
-	const titles = useMemo(
-		() => (review ? sortTitles(draft.titles, draft.sort) : []),
-		[review, draft.titles, draft.sort]
+	const newCount = useMemo(
+		() => draft.titles.filter((title) => draft.newIds.has(title.imdbId)).length,
+		[draft.titles, draft.newIds]
 	);
+	const titles = useMemo(() => {
+		if (!review) return [];
+		const shown =
+			view === 'removed'
+				? draft.removed
+				: view === 'new'
+					? draft.titles.filter((title) => draft.newIds.has(title.imdbId))
+					: draft.titles;
+		return sortTitles(shown, draft.sort);
+	}, [review, view, draft.titles, draft.removed, draft.newIds, draft.sort]);
+	useEffect(() => setVisible(BATCH), [view, draft.sort]);
+	// Re-observing after each batch re-checks a sentinel that is still in view.
+	useEffect(() => {
+		const element = sentinel.current;
+		if (!element) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting))
+					setVisible((n) => n + BATCH);
+			},
+			{ rootMargin: '1200px 0px' }
+		);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [review, visible, titles.length]);
+	function remove(ids: string[]) {
+		update((draft) => removeTitles(draft, ids));
+		setSelection((selection) => {
+			if (!ids.some((id) => selection.has(id))) return selection;
+			const next = new Set(selection);
+			for (const id of ids) next.delete(id);
+			return next;
+		});
+	}
+	function toggle(id: string, checked: boolean) {
+		setSelection((selection) => {
+			const next = new Set(selection);
+			if (checked) next.add(id);
+			else next.delete(id);
+			return next;
+		});
+	}
+	function showView(next: View) {
+		setView(next);
+		setSelection(new Set());
+	}
 	return (
 		<div className="editor">
 			{notice && (
@@ -331,23 +400,28 @@ export default function Editor({
 			</section>
 			<div className="editor-actions">
 				<p role="status">
-					{draft.titles.length} Titles · {draft.newIds.size} new · {changes}{' '}
-					unsaved changes
+					{draft.titles.length} Titles · {newCount} new · {changes} unsaved{' '}
+					{changes === 1 ? 'change' : 'changes'}
 					{pending > 0 ? ' · Fetching Sources or filling posters…' : ''}
 				</p>
-				<button type="button" onClick={() => setReview(true)}>
-					Review List
-				</button>
-				{changes > 0 && (
-					<button
-						type="button"
-						disabled={saving || pending > 0}
-						onClick={() => void save()}
-					>
-						{saving ? 'Saving…' : 'Save'}
+				{!review && (
+					<button type="button" onClick={() => setReview(true)}>
+						Review List
 					</button>
 				)}
 			</div>
+			{conflict && (
+				<div className="error conflict" role="alert">
+					<p>
+						This Combined List was saved somewhere else (another tab or device)
+						after you opened it, so this Draft can’t be saved. Reload to get the
+						latest version, then redo your changes.
+					</p>
+					<button type="button" onClick={() => window.location.reload()}>
+						Reload
+					</button>
+				</div>
+			)}
 			{error && (
 				<p className="error" role="alert">
 					{error}
@@ -356,50 +430,155 @@ export default function Editor({
 			{review && (
 				<section aria-labelledby="review-heading">
 					<h2 id="review-heading">Review List</h2>
-					<label htmlFor="sort">Sort</label>
-					<select
-						id="sort"
-						value={draft.sort}
-						disabled={saving}
-						onChange={(event) => {
-							const sort = event.target.value as Draft['sort'];
-							update((draft) => ({ ...draft, sort }));
-						}}
-					>
-						<option value="newest">Newest</option>
-						<option value="oldest">Oldest</option>
-						<option value="az">A–Z</option>
-						<option value="added">Order added</option>
-					</select>
+					<div className="review-controls">
+						<div className="view-tabs" role="group" aria-label="Show">
+							<button
+								type="button"
+								aria-pressed={view === 'all'}
+								onClick={() => showView('all')}
+							>
+								All ({draft.titles.length})
+							</button>
+							<button
+								type="button"
+								aria-pressed={view === 'new'}
+								onClick={() => showView(view === 'new' ? 'all' : 'new')}
+							>
+								Show only new ({newCount})
+							</button>
+							<button
+								type="button"
+								aria-pressed={view === 'removed'}
+								onClick={() => showView('removed')}
+							>
+								Removed ({draft.removed.length})
+							</button>
+						</div>
+						<label htmlFor="sort">Sort</label>
+						<select
+							id="sort"
+							value={draft.sort}
+							disabled={saving}
+							onChange={(event) => {
+								const sort = event.target.value as Draft['sort'];
+								update((draft) => ({ ...draft, sort }));
+							}}
+						>
+							<option value="newest">Newest</option>
+							<option value="oldest">Oldest</option>
+							<option value="az">A–Z</option>
+							<option value="added">Order added</option>
+						</select>
+					</div>
 					{titles.length === 0 ? (
 						<p className="empty-state">
-							No Titles yet. Add a Source to start your Draft.
+							{view === 'removed'
+								? 'No Removed Titles.'
+								: view === 'new'
+									? 'No new Titles in this Draft.'
+									: 'No Titles yet. Add a Source to start your Draft.'}
 						</p>
 					) : (
 						<ul className="title-grid">
-							{titles.map((title) => (
-								<li key={title.imdbId} className="title-card">
-									{title.poster ? (
-										<img
-											src={title.poster}
-											alt=""
-											width="185"
-											height="278"
-											loading="lazy"
-										/>
-									) : (
-										<div className="poster-placeholder">No poster</div>
-									)}
-									<h3>
-										{title.name}
-										{title.year !== null ? ` (${title.year})` : ''}
-									</h3>
-									{title.blurb && <p title={title.blurb}>{title.blurb}</p>}
-								</li>
-							))}
+							{titles.slice(0, visible).map((title) => {
+								const label = `${title.name}${title.year !== null ? ` (${title.year})` : ''}`;
+								return (
+									<li key={title.imdbId} className="title-card">
+										{title.poster ? (
+											<img
+												src={title.poster}
+												alt=""
+												width="185"
+												height="278"
+												loading="lazy"
+												decoding="async"
+											/>
+										) : (
+											<div className="poster-placeholder">No poster</div>
+										)}
+										<div className="card-tools">
+											{view === 'removed' ? (
+												<button
+													type="button"
+													disabled={saving}
+													onClick={() =>
+														update((draft) =>
+															restoreTitles(draft, [title.imdbId])
+														)
+													}
+												>
+													Restore
+												</button>
+											) : (
+												<>
+													<input
+														type="checkbox"
+														aria-label={`Select ${label}`}
+														checked={selection.has(title.imdbId)}
+														disabled={saving}
+														onChange={(event) =>
+															toggle(title.imdbId, event.target.checked)
+														}
+													/>
+													<button
+														type="button"
+														className="trash"
+														aria-label={`Remove ${label}`}
+														title="Remove"
+														disabled={saving}
+														onClick={() => remove([title.imdbId])}
+													>
+														<svg
+															viewBox="0 0 24 24"
+															width="18"
+															height="18"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															aria-hidden="true"
+														>
+															<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+														</svg>
+													</button>
+												</>
+											)}
+										</div>
+										<h3>{label}</h3>
+										{title.blurb && <p title={title.blurb}>{title.blurb}</p>}
+									</li>
+								);
+							})}
 						</ul>
 					)}
+					{visible < titles.length && (
+						<div ref={sentinel} className="grid-sentinel" aria-hidden="true" />
+					)}
 				</section>
+			)}
+			{(selection.size > 0 || changes > 0) && (
+				<div className="floating-actions">
+					{selection.size > 0 && (
+						<button
+							type="button"
+							className="danger"
+							disabled={saving}
+							onClick={() => remove([...selection])}
+						>
+							Remove selected ({selection.size})
+						</button>
+					)}
+					{changes > 0 && (
+						<button
+							type="button"
+							disabled={saving || pending > 0 || conflict}
+							onClick={() => void save()}
+						>
+							{saving ? 'Saving…' : 'Save'}
+						</button>
+					)}
+				</div>
 			)}
 		</div>
 	);
