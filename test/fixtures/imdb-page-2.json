@@ -1,0 +1,70 @@
+{
+	"data": {
+		"list": {
+			"titleListItemSearch": {
+				"edges": [
+					{
+						"title": {
+							"id": "tt0185906",
+							"titleText": {
+								"text": "Band of Brothers"
+							},
+							"releaseYear": {
+								"year": 2001
+							},
+							"titleType": {
+								"id": "tvMiniSeries"
+							}
+						}
+					},
+					{
+						"title": {
+							"id": "tt123",
+							"titleText": {
+								"text": "A, \"quoted\"\nTitle"
+							},
+							"releaseYear": {
+								"year": null
+							},
+							"titleType": {
+								"id": "short"
+							}
+						}
+					},
+					{
+						"title": {
+							"id": "tt999",
+							"titleText": {
+								"text": "An episode"
+							},
+							"releaseYear": {
+								"year": 2020
+							},
+							"titleType": {
+								"id": "tvEpisode"
+							}
+						}
+					},
+					{
+						"title": {
+							"id": "tt888",
+							"titleText": {
+								"text": ""
+							},
+							"releaseYear": {
+								"year": 2000
+							},
+							"titleType": {
+								"id": "movie"
+							}
+						}
+					}
+				],
+				"pageInfo": {
+					"hasNextPage": false,
+					"endCursor": null
+				}
+			}
+		}
+	}
+}

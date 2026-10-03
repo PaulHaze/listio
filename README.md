@@ -12,7 +12,7 @@ Other people's lists are full of things you don't want. Listio is a **curate-onc
 2. **Add Sources** by pasting list URLs:
    - [Trakt](https://trakt.tv) public lists
    - [MDBList](https://mdblist.com) lists
-   - [IMDb](https://www.imdb.com) lists (planned next, with CSV upload as a fallback)
+   - [IMDb](https://www.imdb.com) lists, with CSV upload as a fallback
 3. **Review** the merged result in a poster grid (artwork and descriptions from [TMDB](https://www.themoviedb.org)). Titles are de-duplicated by IMDb ID. Trash anything you don't want, one at a time or in bulk.
 4. **Save.** Nothing reaches Nuvio until you save. Removed titles are remembered, so adding more Sources later never brings them back.
 5. **Watch in Nuvio.** Listio is a Stremio-protocol catalog addon: each Combined List appears as a movie and/or series catalog.
