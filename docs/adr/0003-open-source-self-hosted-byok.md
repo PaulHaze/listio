@@ -1,6 +1,6 @@
 # Open source, self-hosted, bring-your-own-keys — no public hosted service
 
-Listio will eventually be published as an open-source repo that anyone can deploy to their own Cloudflare account with their own API keys (Trakt, MDBList, TMDB), their own KV namespace, their own Cloudflare Access policy and their own addon secret. There will be no public hosted version (e.g. a `listio.net` with sign-ups). Each deployment stays single-user, so the existing design is unchanged; the only obligations are that nothing user-specific (keys, email, KV IDs, hostnames) is hard-coded — all of it comes from `wrangler` config and secrets — and that the repo ships a detailed README explaining how to build and deploy it yourself.
+Listio will eventually be published as an open-source repo that anyone can deploy to their own Cloudflare account with their own API keys (Trakt, MDBList, TMDB), their own KV namespace, their own Basic Auth login (ADR 0006) and their own addon secret. There will be no public hosted version (e.g. a `listio.net` with sign-ups). Each deployment stays single-user, so the existing design is unchanged; the only obligations are that nothing user-specific (keys, email, KV IDs, hostnames) is hard-coded — all of it comes from `wrangler` config and secrets — and that the repo ships a detailed README explaining how to build and deploy it yourself.
 
 ## Considered Options
 

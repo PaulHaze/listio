@@ -1,6 +1,6 @@
 # Sprint 08 — Login: Basic Auth
 
-**Status:** implemented; acceptance pending
+**Status:** complete
 
 ## Goal
 
@@ -18,9 +18,9 @@ Originally planned as Cloudflare Access. Replaced with HTTP Basic Auth in the ap
 - [x] Tests: `test/basic-auth.test.ts` (UI and `/api/*` challenged, right credentials pass, wrong
       user/password and malformed headers rejected, addon and robots.txt open, unset secrets → 503)
 - [x] Update spec, implementation plan and README; remove the Cloudflare Access runbook
-- [ ] Set the secrets live: `pnpm wrangler secret put ADMIN_USER` and
+- [x] Set the secrets live: `pnpm wrangler secret put ADMIN_USER` and
       `pnpm wrangler secret put ADMIN_PASSWORD` (long random password), then `pnpm deploy`
-- [ ] Add the same two values to local `.dev.vars`
+- [x] Add the same two values to local `.dev.vars`
 
 ## Done when
 
@@ -33,5 +33,9 @@ Originally planned as Cloudflare Access. Replaced with HTTP Basic Auth in the ap
 Local, 2026-10-03: `pnpm exec vitest run` passed (11 files, 89 tests, including the 5 new
 Basic Auth tests and the existing addon wrong-secret 404 tests); `astro check` reported 0 errors.
 
-Live verification record: **pending**. Record the date and the results of the done-when checks
-here; leave out the username, password and addon secret.
+Live, 2026-10-04 (owner): secrets set and deployed; Basic Auth confirmed working on the live
+Worker. The addon also loads in xperience by adding its manifest URL as an addon, so Listio
+catalogs work beyond Nuvio.
+
+Audit note: `docs/audits/sprint-08-audit-astra.md` reviewed the dropped Cloudflare Access runbook
+(`e32369b`). Its FAIL is superseded by the switch to Basic Auth (ADR 0006) and needs no action.

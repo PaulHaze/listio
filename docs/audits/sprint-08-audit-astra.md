@@ -1,3 +1,5 @@
+> **Superseded (2026-10-04):** this audit covers the Cloudflare Access runbook, which was dropped in favour of HTTP Basic Auth in the app ([ADR 0006](../adr/0006-basic-auth-instead-of-cloudflare-access.md), commit `af95a52`). Its findings no longer apply.
+
 # Commit audit
 
 ## Audit target
