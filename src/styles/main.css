@@ -387,9 +387,7 @@ list-editor {
 .listio-main .view-tabs button[aria-pressed='false'] {
 	background: transparent;
 	color: inherit;
-}
-.title-card {
-	position: relative;
+	border: 1px solid var(--primary);
 }
 .card-tools {
 	display: flex;
@@ -412,6 +410,10 @@ list-editor {
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 1rem;
+}
+/* Room for the floating bar so it never covers the last row of cards. */
+.editor {
+	padding-bottom: 6rem;
 }
 .floating-actions {
 	position: fixed;

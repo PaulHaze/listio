@@ -72,7 +72,8 @@ export function restoreTitles(draft: Draft, ids: Iterable<string>): Draft {
 	if (!moved.length) return draft;
 	return {
 		...draft,
-		titles: [...draft.titles, ...moved],
+		// Sorts break ties by array index, so keep `titles` in `addedSeq` order.
+		titles: [...draft.titles, ...moved].sort((a, b) => a.addedSeq - b.addedSeq),
 		removed: draft.removed.filter((title) => !set.has(title.imdbId)),
 	};
 }

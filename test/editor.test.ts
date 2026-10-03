@@ -13,6 +13,7 @@ import {
 	enrichmentQueue,
 } from '../src/components/editor/enrichment.ts';
 import type { CombinedList, SourceRecord, Title } from '../src/domain/types.ts';
+import { sortTitles } from '../src/domain/sort.ts';
 const title = (i: number, tmdbId: number | null = null): Title => ({
 	imdbId: `tt${i}`,
 	type: 'movie',
@@ -87,8 +88,13 @@ describe('editor Draft', () => {
 		expect(again.draft.titles).toEqual([]);
 		const restored = restoreTitles(removed, ['tt1', 'tt2']);
 		expect(restored.titles.map((t) => [t.imdbId, t.addedSeq])).toEqual([
-			['tt2', 2],
 			['tt1', 1],
+			['tt2', 2],
+		]);
+		// Year ties (here all null) keep the original order in Newest.
+		expect(sortTitles(restored.titles, 'newest').map((t) => t.imdbId)).toEqual([
+			'tt1',
+			'tt2',
 		]);
 		// Source + tt3 Removed + tt2 restored; tt1 is back to its saved state.
 		expect(countChanges(saved, restored)).toBe(3);

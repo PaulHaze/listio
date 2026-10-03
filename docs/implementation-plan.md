@@ -166,7 +166,7 @@ State held in the island:
 
 ```
 saved: CombinedList            // last saved
-draft: { titles, removed, sources, sort, newIds:Set, changes:number }
+draft: { titles, removed, sources, sort, newIds:Set } (unsaved `changes` is derived by `countChanges` against the saved list)
 selection: Set<imdbId>
 view: 'all' | 'new' | 'removed'
 ```

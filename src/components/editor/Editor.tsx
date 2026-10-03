@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
 	CombinedList,
 	SourceRecord,
@@ -25,6 +25,12 @@ type SourceRow = {
 	message: string;
 };
 type View = 'all' | 'new' | 'removed';
+type CardAction = 'remove' | 'restore' | 'toggle';
+type CardActionHandler = (
+	kind: CardAction,
+	id: string,
+	checked?: boolean
+) => void;
 /** Cards rendered per progressive batch (plan §6). */
 const BATCH = 60;
 class ApiError extends Error {
@@ -77,7 +83,9 @@ export default function Editor({
 	const rowId = useRef(1);
 	const [pending, setPending] = useState(0);
 	const [saving, setSaving] = useState(false);
-	const [review, setReview] = useState(initialList.titles.length > 0);
+	const [review, setReview] = useState(
+		initialList.titles.length + initialList.removed.length > 0
+	);
 	const [view, setView] = useState<View>('all');
 	const [selection, setSelection] = useState<Set<string>>(() => new Set());
 	const [visible, setVisible] = useState(BATCH);
@@ -122,14 +130,15 @@ export default function Editor({
 		return () => controller.current.abort();
 	}, []);
 	useEffect(() => {
-		if (!changes && !pending) return;
+		// After a 409 the Draft can't be saved, so Reload shouldn't prompt.
+		if ((!changes && !pending) || conflict) return;
 		const warn = (event: BeforeUnloadEvent) => {
 			event.preventDefault();
 			event.returnValue = '';
 		};
 		window.addEventListener('beforeunload', warn);
 		return () => window.removeEventListener('beforeunload', warn);
-	}, [changes, pending]);
+	}, [changes, pending, conflict]);
 
 	async function fetchSource(id: number, input: string) {
 		if (!input.trim() || saving) return;
@@ -263,7 +272,25 @@ export default function Editor({
 					: draft.titles;
 		return sortTitles(shown, draft.sort);
 	}, [review, view, draft.titles, draft.removed, draft.newIds, draft.sort]);
-	useEffect(() => setVisible(BATCH), [view, draft.sort]);
+	// Where focus goes after a card unmounts: a card id or the grid heading.
+	const focusNext = useRef<string | null>(null);
+	useEffect(() => {
+		const id = focusNext.current;
+		if (!id) return;
+		focusNext.current = null;
+		const element =
+			id === 'heading'
+				? document.getElementById('review-heading')
+				: document.querySelector<HTMLElement>(
+						`[data-id="${CSS.escape(id)}"] .card-tools button`
+					);
+		element?.focus();
+	}, [titles]);
+	function focusAfter(id: string) {
+		const i = titles.findIndex((title) => title.imdbId === id);
+		const next = titles[i + 1] ?? titles[i - 1];
+		focusNext.current = next ? next.imdbId : 'heading';
+	}
 	// Re-observing after each batch re-checks a sentinel that is still in view.
 	useEffect(() => {
 		const element = sentinel.current;
@@ -295,8 +322,22 @@ export default function Editor({
 			return next;
 		});
 	}
+	// Stable across renders so memoised cards only re-render when their own props change.
+	const action = useRef<CardActionHandler>(() => {});
+	action.current = (kind, id, checked) => {
+		if (kind === 'toggle') return toggle(id, checked ?? false);
+		focusAfter(id);
+		if (kind === 'remove') remove([id]);
+		else update((draft) => restoreTitles(draft, [id]));
+	};
+	const onAction = useCallback<CardActionHandler>(
+		(kind, id, checked) => action.current(kind, id, checked),
+		[]
+	);
 	function showView(next: View) {
+		if (next === view) return;
 		setView(next);
+		setVisible(BATCH);
 		setSelection(new Set());
 	}
 	return (
@@ -413,9 +454,9 @@ export default function Editor({
 			{conflict && (
 				<div className="error conflict" role="alert">
 					<p>
-						This Combined List was saved somewhere else (another tab or device)
-						after you opened it, so this Draft can’t be saved. Reload to get the
-						latest version, then redo your changes.
+						This Combined List changed after you opened it (for example in
+						another tab), so this Draft can’t be saved. Reload to get the latest
+						version, then redo your changes.
 					</p>
 					<button type="button" onClick={() => window.location.reload()}>
 						Reload
@@ -429,7 +470,9 @@ export default function Editor({
 			)}
 			{review && (
 				<section aria-labelledby="review-heading">
-					<h2 id="review-heading">Review List</h2>
+					<h2 id="review-heading" tabIndex={-1}>
+						Review List
+					</h2>
 					<div className="review-controls">
 						<div className="view-tabs" role="group" aria-label="Show">
 							<button
@@ -462,6 +505,7 @@ export default function Editor({
 							onChange={(event) => {
 								const sort = event.target.value as Draft['sort'];
 								update((draft) => ({ ...draft, sort }));
+								setVisible(BATCH);
 							}}
 						>
 							<option value="newest">Newest</option>
@@ -476,80 +520,22 @@ export default function Editor({
 								? 'No Removed Titles.'
 								: view === 'new'
 									? 'No new Titles in this Draft.'
-									: 'No Titles yet. Add a Source to start your Draft.'}
+									: draft.removed.length > 0
+										? `All Titles are removed. Restore them from Removed (${draft.removed.length}).`
+										: 'No Titles yet. Add a Source to start your Draft.'}
 						</p>
 					) : (
 						<ul className="title-grid">
-							{titles.slice(0, visible).map((title) => {
-								const label = `${title.name}${title.year !== null ? ` (${title.year})` : ''}`;
-								return (
-									<li key={title.imdbId} className="title-card">
-										{title.poster ? (
-											<img
-												src={title.poster}
-												alt=""
-												width="185"
-												height="278"
-												loading="lazy"
-												decoding="async"
-											/>
-										) : (
-											<div className="poster-placeholder">No poster</div>
-										)}
-										<div className="card-tools">
-											{view === 'removed' ? (
-												<button
-													type="button"
-													disabled={saving}
-													onClick={() =>
-														update((draft) =>
-															restoreTitles(draft, [title.imdbId])
-														)
-													}
-												>
-													Restore
-												</button>
-											) : (
-												<>
-													<input
-														type="checkbox"
-														aria-label={`Select ${label}`}
-														checked={selection.has(title.imdbId)}
-														disabled={saving}
-														onChange={(event) =>
-															toggle(title.imdbId, event.target.checked)
-														}
-													/>
-													<button
-														type="button"
-														className="trash"
-														aria-label={`Remove ${label}`}
-														title="Remove"
-														disabled={saving}
-														onClick={() => remove([title.imdbId])}
-													>
-														<svg
-															viewBox="0 0 24 24"
-															width="18"
-															height="18"
-															fill="none"
-															stroke="currentColor"
-															strokeWidth="2"
-															strokeLinecap="round"
-															strokeLinejoin="round"
-															aria-hidden="true"
-														>
-															<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-														</svg>
-													</button>
-												</>
-											)}
-										</div>
-										<h3>{label}</h3>
-										{title.blurb && <p title={title.blurb}>{title.blurb}</p>}
-									</li>
-								);
-							})}
+							{titles.slice(0, visible).map((title) => (
+								<TitleCard
+									key={title.imdbId}
+									title={title}
+									removedView={view === 'removed'}
+									selected={selection.has(title.imdbId)}
+									saving={saving}
+									onAction={onAction}
+								/>
+							))}
 						</ul>
 					)}
 					{visible < titles.length && (
@@ -564,7 +550,10 @@ export default function Editor({
 							type="button"
 							className="danger"
 							disabled={saving}
-							onClick={() => remove([...selection])}
+							onClick={() => {
+								focusNext.current = 'heading';
+								remove([...selection]);
+							}}
 						>
 							Remove selected ({selection.size})
 						</button>
@@ -583,3 +572,83 @@ export default function Editor({
 		</div>
 	);
 }
+
+const TitleCard = memo(function TitleCard({
+	title,
+	removedView,
+	selected,
+	saving,
+	onAction,
+}: {
+	title: Title;
+	removedView: boolean;
+	selected: boolean;
+	saving: boolean;
+	onAction: CardActionHandler;
+}) {
+	const label = `${title.name}${title.year !== null ? ` (${title.year})` : ''}`;
+	return (
+		<li className="title-card" data-id={title.imdbId}>
+			{title.poster ? (
+				<img
+					src={title.poster}
+					alt=""
+					width="185"
+					height="278"
+					loading="lazy"
+					decoding="async"
+				/>
+			) : (
+				<div className="poster-placeholder">No poster</div>
+			)}
+			<div className="card-tools">
+				{removedView ? (
+					<button
+						type="button"
+						aria-label={`Restore ${label}`}
+						disabled={saving}
+						onClick={() => onAction('restore', title.imdbId)}
+					>
+						Restore
+					</button>
+				) : (
+					<>
+						<input
+							type="checkbox"
+							aria-label={`Select ${label}`}
+							checked={selected}
+							disabled={saving}
+							onChange={(event) =>
+								onAction('toggle', title.imdbId, event.target.checked)
+							}
+						/>
+						<button
+							type="button"
+							className="trash"
+							aria-label={`Remove ${label}`}
+							title="Remove"
+							disabled={saving}
+							onClick={() => onAction('remove', title.imdbId)}
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="18"
+								height="18"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+							</svg>
+						</button>
+					</>
+				)}
+			</div>
+			<h3>{label}</h3>
+			{title.blurb && <p title={title.blurb}>{title.blurb}</p>}
+		</li>
+	);
+});
