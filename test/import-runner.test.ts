@@ -177,15 +177,17 @@ describe('resumable single-list import', () => {
 		).toHaveLength(2);
 	});
 
-	it('reconciles an uncertain create and never repeats POST while the outcome is unknown', async () => {
-		let visible = false;
+	it('replays an uncertain create using the same token without adopting a name match', async () => {
+		const tokens: string[] = [];
 		const fetcher = vi.fn(async (url: string, init: RequestInit) => {
 			if (url.endsWith('/match'))
 				return response([{ status: 'matched', title: title(1) }]);
-			if (url === '/api/lists' && init.method === 'GET')
-				return response(visible ? [{ id: 'test', name: 'Test' }] : []);
-			if (init.method === 'POST') throw new Error('Lost create response');
-			if (init.method === 'GET') return response(empty);
+			if (url === '/api/lists' && init.method === 'GET') return response([]);
+			if (init.method === 'POST') {
+				tokens.push(JSON.parse(init.body as string).creationId);
+				if (tokens.length === 1) throw new Error('Lost create response');
+				return response(empty);
+			}
 			return response({
 				...empty,
 				...JSON.parse(init.body as string),
@@ -196,14 +198,11 @@ describe('resumable single-list import', () => {
 		const run = new ImportListRun('Test', pasteLines('One'));
 		await run.continue(signal());
 		await run.continue(signal());
-		expect(run.state.error).toContain('outcome is still unknown');
-		visible = true;
-		await run.continue(signal());
 		expect(run.state.phase).toBe('completed');
+		expect(tokens).toHaveLength(2);
+		expect(tokens[0]).toBe(tokens[1]);
 		expect(
-			fetcher.mock.calls.filter(
-				([url, init]) => url === '/api/lists' && init.method === 'POST'
-			)
+			fetcher.mock.calls.filter(([url]) => url.endsWith('/match'))
 		).toHaveLength(1);
 	});
 	it('rechecks names before creation and directs an existing list to its editor', async () => {
@@ -232,9 +231,11 @@ describe('resumable single-list import', () => {
 			await run.continue(signal());
 			expect(run.state.phase).toBe('empty');
 			expect(run.state.list).toBeNull();
-			expect(run.state.error).toContain('Check the list format');
-			if (result.reason === 'TMDB unavailable')
+			if (result.reason === 'TMDB unavailable') {
 				expect(run.state.error).toContain('TMDB unavailable');
+				expect(run.state.error).toContain('Try again shortly');
+				expect(run.state.error).not.toContain('format');
+			} else expect(run.state.error).toContain('Check the list format');
 			expect(
 				fetcher.mock.calls.every(([url]) => url === '/api/titles/match')
 			).toBe(true);

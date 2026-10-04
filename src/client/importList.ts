@@ -3,10 +3,14 @@ import type { PasteLine } from '../domain/pasteLines.ts';
 import { validateImportName } from '../domain/pasteSections.ts';
 import type { ListIndexEntry } from '../storage/lists.ts';
 import { addTitle } from '../domain/merge.ts';
-import { createDraft } from '../components/editor/draft.ts';
-import type { ReviewLine } from '../components/titles/TitleControls.tsx';
-import { api } from './api.ts';
+import type { ReviewLine } from './review.ts';
+import { api, ApiError } from './api.ts';
 import { matchLines, type CompletedMatch } from './matchLines.ts';
+
+const createDraft = (list: CombinedList) => ({
+	...list,
+	newIds: new Set<string>(),
+});
 
 export type ImportState = {
 	phase:
@@ -15,6 +19,7 @@ export type ImportState = {
 		| 'creating'
 		| 'saving'
 		| 'stopped'
+		| 'rejected'
 		| 'empty'
 		| 'completed';
 	progress: string;
@@ -26,7 +31,7 @@ export type ImportState = {
 };
 /** One snapshot / one list. Kept in memory; callers can reuse this for each section. */
 export class ImportListRun {
-	readonly name: string;
+	name: string;
 	readonly lines: PasteLine[];
 	state: ImportState = {
 		phase: 'idle',
@@ -39,6 +44,7 @@ export class ImportListRun {
 	};
 	private active = false;
 	private uncertainCreate = false;
+	private creationId = crypto.randomUUID();
 	private adding = false;
 	constructor(
 		name: string,
@@ -51,6 +57,13 @@ export class ImportListRun {
 	private update(change: Partial<ImportState>) {
 		this.state = { ...this.state, ...change };
 		this.changed(this.state);
+	}
+	rename(name: string) {
+		if (this.state.phase !== 'rejected' || this.uncertainCreate || this.active)
+			return;
+		this.name = name.trim();
+		this.creationId = crypto.randomUUID();
+		this.update({ error: '' });
 	}
 	async continue(signal: AbortSignal): Promise<void> {
 		if (
@@ -88,13 +101,16 @@ export class ImportListRun {
 				const reason = review.find(
 					(row) =>
 						row.result.status !== 'matched' &&
-						row.result.reason &&
-						row.result.reason !== 'No match'
+						((row.result.status === 'none' && row.result.retry) ||
+							(row.result.reason && row.result.reason !== 'No match'))
 				);
 				this.update({
 					phase: 'empty',
 					progress: '',
-					error: `${reason && reason.result.status !== 'matched' ? reason.result.reason + ' ' : ''}No titles were found. Check the list format and try again.`,
+					error:
+						reason && reason.result.status !== 'matched'
+							? `${reason.result.reason || 'Matching is temporarily unavailable.'} Try again shortly.`
+							: 'No titles were found. Check the list format and try again.',
 				});
 				return;
 			}
@@ -105,33 +121,35 @@ export class ImportListRun {
 			});
 			if (!this.state.list) {
 				this.update({ phase: 'creating', progress: 'Checking saved lists…' });
-				const index = await api<ListIndexEntry[]>('/api/lists', signal);
-				const sameName = index.filter(
-					(entry) => entry.name.trim().toLowerCase() === this.name.toLowerCase()
-				);
-				if (this.uncertainCreate) {
-					if (sameName.length !== 1)
-						throw new Error(
-							'The create response was lost. Its outcome is still unknown. Continue to check saved lists again before creating anything else.'
-						);
-					this.update({
-						list: await api<CombinedList>(
-							`/api/lists/${encodeURIComponent(sameName[0].id)}`,
-							signal
-						),
-					});
-				} else {
+				if (!this.uncertainCreate) {
+					const index = await api<ListIndexEntry[]>('/api/lists', signal);
 					const error = validateImportName(this.name, index);
-					if (error)
-						throw new Error(error + ' Open the existing list from Home.');
-					this.update({ progress: 'Creating list…' });
-					// Any failed response can hide a successful write, so never blindly repeat POST.
-					this.uncertainCreate = true;
+					if (error) {
+						this.update({ phase: 'rejected' });
+						throw new Error(error + ' Choose another name.');
+					}
+				}
+				this.update({ progress: 'Creating list…' });
+				const previouslyUncertain = this.uncertainCreate;
+				this.uncertainCreate = true;
+				try {
 					const list = await api<CombinedList>('/api/lists', signal, {
 						name: this.name,
+						creationId: this.creationId,
 					});
 					this.update({ list });
 					this.uncertainCreate = false;
+				} catch (error) {
+					if (
+						!previouslyUncertain &&
+						error instanceof ApiError &&
+						error.status >= 400 &&
+						error.status < 500
+					) {
+						this.uncertainCreate = false;
+						this.update({ phase: 'rejected' });
+					}
+					throw error;
 				}
 			} else {
 				// Reconcile a save whose response was lost; use the latest version and preserve Titles.
@@ -153,7 +171,7 @@ export class ImportListRun {
 			this.update({ list: saved, phase: 'completed', progress: '' });
 		} catch (error) {
 			this.update({
-				phase: 'stopped',
+				phase: this.state.phase === 'rejected' ? 'rejected' : 'stopped',
 				progress: this.state.list
 					? 'List created; saving Titles is pending. Continue fills this same list.'
 					: 'Import stopped; no completed result.',

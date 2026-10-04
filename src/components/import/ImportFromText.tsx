@@ -11,6 +11,8 @@ export default function ImportFromText({
 }) {
 	const [name, setName] = useState('');
 	const [text, setText] = useState('');
+	const [nameTouched, setNameTouched] = useState(false);
+	const [textTouched, setTextTouched] = useState(false);
 	const [fileError, setFileError] = useState('');
 	const [reading, setReading] = useState(false);
 	const [copyMessage, setCopyMessage] = useState('');
@@ -28,6 +30,10 @@ export default function ImportFromText({
 	}, []);
 	const parsed = parseImport(text, 'single');
 	const nameError = validateImportName(name, initialLists);
+	const existing = initialLists.find(
+		(list) => list.name.trim().toLowerCase() === name.trim().toLowerCase()
+	);
+	const rejected = state?.phase === 'rejected';
 	const active =
 		!!state && ['matching', 'creating', 'saving'].includes(state.phase);
 	const locked = !!state && state.phase !== 'empty';
@@ -48,6 +54,7 @@ export default function ImportFromText({
 		};
 	}, [unresolved, active, state?.phase, state?.list]);
 	async function upload(file: File) {
+		setTextTouched(true);
 		const id = ++readId.current;
 		setFileError('');
 		if (!/\.(txt|md)$/i.test(file.name)) {
@@ -69,6 +76,8 @@ export default function ImportFromText({
 		}
 	}
 	function start() {
+		setNameTouched(true);
+		setTextTouched(true);
 		if (
 			active ||
 			locked ||
@@ -90,24 +99,21 @@ export default function ImportFromText({
 				<input
 					id="import-name"
 					value={name}
-					disabled={locked || reading}
+					disabled={(locked && !rejected) || reading}
 					onChange={(event) => {
+						setNameTouched(true);
 						setName(event.target.value);
-						setState(null);
+						if (rejected) run.current?.rename(event.target.value);
+						else setState(null);
 					}}
 				/>
-				{nameError && (
+				{nameTouched && nameError && (
 					<p className="error" role="alert">
 						{nameError}
-						{initialLists.some(
-							(list) =>
-								list.name.trim().toLowerCase() === name.trim().toLowerCase()
-						) && (
+						{existing && (
 							<>
 								{' '}
-								<a
-									href={`/lists/${encodeURIComponent(initialLists.find((list) => list.name.trim().toLowerCase() === name.trim().toLowerCase())!.id)}`}
-								>
+								<a href={`/lists/${encodeURIComponent(existing.id)}`}>
 									Open existing list
 								</a>
 							</>
@@ -123,6 +129,7 @@ export default function ImportFromText({
 					value={text}
 					disabled={locked || reading}
 					onChange={(event) => {
+						setTextTouched(true);
 						setText(event.target.value);
 						setFileError('');
 						setState(null);
@@ -150,7 +157,7 @@ export default function ImportFromText({
 						{error.message}
 					</p>
 				))}
-				{!parsed.lines.length && (
+				{textTouched && !parsed.lines.length && (
 					<p className="error" role="alert">
 						Paste at least one title.
 					</p>
@@ -179,9 +186,10 @@ export default function ImportFromText({
 							{state.error}
 						</p>
 					)}
-					{state.phase === 'stopped' && (
+					{(state.phase === 'stopped' || rejected) && (
 						<button
 							type="button"
+							disabled={rejected && !!nameError}
 							onClick={() =>
 								void run.current?.continue(controller.current.signal)
 							}

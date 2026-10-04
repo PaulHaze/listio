@@ -153,4 +153,5 @@ one parsed title. Nothing is created from invalid input.
 - `pnpm build`: passes; Astro reports the browser `beforeunload.returnValue` deprecation hints in the editor and import warning handlers.
 - `pnpm lint:check`: passes.
 - Runtime acceptance with real TMDB and Nuvio on the deployed Worker remains pending.
-- Run state and unresolved lines remain page-local. Uncertain creation is reconciled by name against the saved index; if it is still absent or ambiguous, Continue only checks again and does not issue another create. KV consistency can delay reconciliation.
+- Run state and unresolved lines remain page-local. Import creation now uses a per-run UUID and a server-side index reservation plus an initial snapshot. Continue reconciles and repairs that same identity; it never adopts an unrelated list by name. Replayed creation writes only the initial snapshot, leaving later saved Titles untouched even after a missing read. Definite rejections allow a name change while retaining matched results.
+- Audit fixes cover both creation storage boundaries through real list routes, stale creation reads, unrelated identities, rejected/name-collision rename recovery, no-match wording and touched validation. The ordinary KV index and save operations remain eventually consistent rather than transactional across concurrent writers.

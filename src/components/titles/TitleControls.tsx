@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Title } from '../../domain/types.ts';
-import type { PasteLine } from '../../domain/pasteLines.ts';
-import type { MatchResult } from '../../tmdb/match.ts';
+import type { ReviewLine } from '../../client/review.ts';
+export type { ReviewLine } from '../../client/review.ts';
 import type { Candidate } from '../../tmdb/search.ts';
 import { api } from '../../client/api.ts';
 import {
@@ -14,7 +14,6 @@ import {
 
 export type AddStatus = 'added' | 'duplicate' | 'restored';
 export type AddTitle = (title: Title) => AddStatus | Promise<AddStatus>;
-export type ReviewLine = PasteLine & { result: MatchResult; resolved: boolean };
 
 export function Search({
 	initialQuery = '',

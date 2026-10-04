@@ -203,3 +203,64 @@ it('zero confident matches create nothing and allow input correction', async () 
 	await fill('#import-text', 'Corrected');
 	expect(host.textContent).not.toContain('No titles were found');
 });
+
+it('keeps an untouched form quiet and validates each edited field', async () => {
+	await render(<ImportFromText initialLists={[]} />);
+	expect(host.querySelectorAll('[role="alert"]')).toHaveLength(0);
+	expect(button('Import').disabled).toBe(true);
+	await fill('#import-name', ' ');
+	expect(host.textContent).toContain('Enter a list name');
+	expect(host.textContent).not.toContain('Paste at least one title');
+	await fill('#import-text', ' ');
+	expect(host.textContent).toContain('Paste at least one title');
+});
+it.each(['collision', 'rejected'])(
+	'retains matching results while renaming after %s',
+	async (failure) => {
+		let first = true;
+		const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+			if (url.endsWith('/match'))
+				return response([{ status: 'matched', title: title(1) }]);
+			if (init.method === 'GET') {
+				if (failure === 'collision' && first) {
+					first = false;
+					return response([{ id: 'old', name: 'Test' }]);
+				}
+				return response([]);
+			}
+			if (init.method === 'POST') {
+				if (first && failure === 'rejected') {
+					first = false;
+					return new Response(JSON.stringify({ error: 'Name rejected' }), {
+						status: 400,
+					});
+				}
+				return response({
+					...empty,
+					name: JSON.parse(init.body as string).name,
+				});
+			}
+			return response({
+				...empty,
+				name: 'Renamed',
+				...JSON.parse(init.body as string),
+				version: 2,
+			});
+		});
+		vi.stubGlobal('fetch', fetcher);
+		await render(<ImportFromText initialLists={[]} />);
+		await fill('#import-name', 'Test');
+		await fill('#import-text', 'One');
+		await click('Import');
+		expect(host.querySelector<HTMLInputElement>('#import-name')!.disabled).toBe(
+			false
+		);
+		await fill('#import-name', 'Renamed');
+		await click('Continue import');
+		expect(host.textContent).toContain('1 Titles saved');
+		expect(host.textContent).toContain('Renamed');
+		expect(
+			fetcher.mock.calls.filter(([url]) => url.endsWith('/match'))
+		).toHaveLength(1);
+	}
+);
