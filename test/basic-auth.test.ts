@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe('basic auth middleware', () => {
 	it('challenges the UI and API without credentials', async () => {
-		for (const path of ['/', '/lists/abc', '/api/lists']) {
+		for (const path of ['/', '/import', '/lists/abc', '/api/lists']) {
 			const res = await call(path);
 			expect(res.status).toBe(401);
 			expect(res.headers.get('WWW-Authenticate')).toMatch(/^Basic /);

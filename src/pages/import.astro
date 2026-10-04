@@ -1,0 +1,19 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '@/layouts/Layout.astro';
+import { getIndex } from '@/storage/lists';
+import ImportFromText from '@/components/import/ImportFromText';
+export const prerender = false;
+const lists = await getIndex(env.LISTIO);
+---
+
+<Layout title="Import from text · Listio">
+	<main class="listio-main">
+		<a href="/">← Combined Lists</a>
+		<header class="page-heading">
+			<h1>Import from text</h1>
+			<p>Create one saved Combined List from movie and TV titles.</p>
+		</header>
+		<ImportFromText client:load initialLists={lists} />
+	</main>
+</Layout>

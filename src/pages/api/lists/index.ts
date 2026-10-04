@@ -4,6 +4,14 @@ import { apiError, json, NAME_ERROR, readName } from '../../../api/http.ts';
 import { uniqueSlug } from '../../../domain/slug.ts';
 import { getIndex, getList, putList } from '../../../storage/lists.ts';
 
+export const GET: APIRoute = async () => {
+	try {
+		return json(await getIndex(env.LISTIO));
+	} catch (error) {
+		return apiError(error);
+	}
+};
+
 export const POST: APIRoute = async ({ request }) => {
 	const name = await readName(request);
 	if (!name) return json({ error: NAME_ERROR }, 400);

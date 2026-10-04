@@ -1,6 +1,6 @@
 # Sprint 12 — Import one list from text
 
-**Status:** not started — depends on Sprint 11; owner questions below to answer before implementation
+**Status:** implemented; deployed acceptance pending
 
 ## Goal
 
@@ -38,15 +38,22 @@ The editor's paste behaviour keeps ignoring `#` and `//` comments.
 
 ## Owner questions
 
-- [ ] **QUESTION — Lines beginning with `//`.** The previous brief says every other non-blank line is
+- [x] **QUESTION — Lines beginning with `//`.** The previous brief says every other non-blank line is
       a title, but `pasteLines` currently ignores `//` comments. Should import ignore them like the
       editor, or send them to matching as title lines? This choice applies to both import modes
-- [ ] **QUESTION — No confident matches.** If all lines need a look, should import create an empty
+
+**ANSWER** Ignore lines with // in. A text list should be ONLY movie titles or a list heading which is prefaced by ##. Bulletpoints, -'s, and numbers before movie titles are fine and should be stripped. Anything else is an error and a error message should point out the issue and ask for it to be formatted correctly. IN the first version of this its only me using it so I am going to know how to format my lists
+
+- [x] **QUESTION — No confident matches.** If all lines need a look, should import create an empty
       saved list and let you resolve the lines on the results page, or wait until you pick the first
       Title before creating the list? The previous brief's create-and-save sequence permits the former,
       while its "without ... empty lists" acceptance wording could suggest the latter
 
-Record the answers here and update the behaviour and acceptance below before implementing those cases.
+**ANSWER** If ALL lines need a look then there is something wrong with the list. If its clear what the issue is then let the user know. Dont create an empty list as there is no point. If the error isnt clear just state that no titles can be found and to check the list format as maybe it is incorrect.
+
+Recorded policy: ignore any line containing `//` (including inline comments). Single mode rejects all headings, including `##`; bullets and numbers are stripped. Other title text, including unknown spellings and year syntax, goes through TMDB matching. Structural errors are reported with source line numbers; title spelling is not guessed or validated.
+
+If every line needs a look, create no list. Show a specific matching error when available; otherwise say that no titles were found and ask the user to check the list format.
 
 ## Format errors
 
@@ -73,7 +80,7 @@ one parsed title. Nothing is created from invalid input.
 3. Only after matching completes, create the list with `POST /api/lists`, then save the confidently
    matched Titles with `PUT /api/lists/{id}`, using the editor's Draft-to-saved conversion and Title
    addition rules. Keep the matching output until that save succeeds. The zero-match case follows
-   the owner's answer above.
+   recorded policy above: create nothing and report the matching issue or ask the user to check the format.
 4. Results show the list name linked to its editor, Titles saved, duplicates skipped and Need a look.
    Candidate picks and no-match searches use the shared controls; each addition is saved straight to
    this list. A failed save shows an error and leaves the line available to retry. Serialize additions
@@ -94,27 +101,27 @@ one parsed title. Nothing is created from invalid input.
 
 ## Tasks
 
-- [ ] `domain/pasteSections.ts`: introduce a pure `parseImport(text, mode)` parser for single mode,
+- [x] `domain/pasteSections.ts`: introduce a pure `parseImport(text, mode)` parser for single mode,
       returning parsed `PasteLine[]` and all structural errors with source line numbers. Reuse
       `pasteLines` title parsing after checking headings and applying the agreed `//` policy.
       Keep name validation separate so Sprint 13 can validate renamed/selected sections
-- [ ] Name validation: trim, require 1–100 characters, and reject an existing name case-insensitively.
+- [x] Name validation: trim, require 1–100 characters, and reject an existing name case-insensitively.
       Read the existing list index through the established server/page pattern and recheck it when
       retrying creation after a failure
-- [ ] Home action and `/import` page: name, text, `.txt`/`.md` upload, file-read errors, live validation,
+- [x] Home action and `/import` page: name, text, `.txt`/`.md` upload, file-read errors, live validation,
       and disabled Import during errors, empty input or an active run
-- [ ] Single-list import runner: matching snapshot → create → save, progress, Title deduplication,
+- [x] Single-list import runner: matching snapshot → create → save, progress, Title deduplication,
       stopped/pending/completed state and Continue. Retain the created ID and matching output across
       save retries. Use the existing list APIs; make the per-list operation reusable by Sprint 13
-- [ ] Results: counts, editor link, shared Need a look with save-on-pick, save errors/retry, Copy
+- [x] Results: counts, editor link, shared Need a look with save-on-pick, save errors/retry, Copy
       unresolved lines, and the `beforeunload` warning
-- [ ] Unit tests for single-mode parsing and name validation: all errors together and separately,
+- [x] Unit tests for single-mode parsing and name validation: all errors together and separately,
       bullets/blanks/years, repeated lines, source line numbers, the agreed `//` policy, absurd/noir
       valid as single, and midnight rejected because it contains headers
-- [ ] Runner integration tests with mocked APIs: match before create, persist confident Titles,
+- [x] Runner integration tests with mocked APIs: match before create, persist confident Titles,
       deduplicate different lines matching the same IMDb ID, stop before creation on request failure,
       resume without repeated additions, retry a failed save on the same ID, and prevent repeated submits
-- [ ] Review integration checks: a pick is resolved only after persistence, failed saves remain retryable,
+- [x] Review integration checks: a pick is resolved only after persistence, failed saves remain retryable,
       successive picks preserve all Titles, copied lines exclude resolved/dismissed rows, and the
       zero-match case follows the agreed answer
 
@@ -126,6 +133,8 @@ one parsed title. Nothing is created from invalid input.
 - Need a look picks save to the right list and remain available if saving fails
 - An interrupted run can be continued; a pending save is retried on the existing list
 - No duplicate list is created by repeated clicks or retrying a known successful create
+- Lines containing `//` are ignored; all headings are rejected with source line numbers
+- When there are no confident matches, no list is created and the user sees a matching issue or a request to check the format
 - The two owner questions have documented answers and corresponding checks
 - `pnpm test`, `pnpm build` and `pnpm lint:check` pass
 
@@ -137,3 +146,11 @@ one parsed title. Nothing is created from invalid input.
 - Storing unresolved lines or import progress for recovery after closing/reloading the page
 - Changing the editor's paste comment handling or TMDB matching rules
 - Checking title-line syntax (e.g. `Title 1970` instead of `Title (1970)`)
+
+## Implementation verification
+
+- `pnpm test`: 168 tests passing across 18 test files, including single parsing/name checks, runner recovery and persisted review integration.
+- `pnpm build`: passes; Astro reports the browser `beforeunload.returnValue` deprecation hints in the editor and import warning handlers.
+- `pnpm lint:check`: passes.
+- Runtime acceptance with real TMDB and Nuvio on the deployed Worker remains pending.
+- Run state and unresolved lines remain page-local. Uncertain creation is reconciled by name against the saved index; if it is still absent or ambiguous, Continue only checks again and does not issue another create. KV consistency can delay reconciliation.
