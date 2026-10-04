@@ -1,0 +1,29 @@
+[
+  {
+    "id": "reference-collection",
+    "title": "Reference collection",
+    "pinToTop": false,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "folders": [
+      {
+        "id": "reference-folder",
+        "title": "Mixed list",
+        "tileShape": "POSTER",
+        "hideTitle": false,
+        "catalogSources": [
+          {
+            "addonId": "org.listio.addon",
+            "type": "movie",
+            "catalogId": "mixed"
+          },
+          {
+            "addonId": "org.listio.addon",
+            "type": "series",
+            "catalogId": "mixed"
+          }
+        ]
+      }
+    ]
+  }
+]

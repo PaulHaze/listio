@@ -1,8 +1,9 @@
 import type { ListIndexEntry } from '../storage/lists.ts';
+import { DEFAULT_ADDON_ID } from '../domain/nuvioCollection.ts';
 
 export function buildManifest(
 	index: readonly ListIndexEntry[],
-	addonId = 'org.listio.addon'
+	addonId = DEFAULT_ADDON_ID
 ) {
 	return {
 		id: addonId,

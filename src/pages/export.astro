@@ -1,0 +1,28 @@
+---
+import { env } from 'cloudflare:workers';
+import Layout from '@/layouts/Layout.astro';
+import { getIndex } from '@/storage/lists';
+import { DEFAULT_ADDON_ID } from '@/domain/nuvioCollection';
+import ExportCollection from '@/components/export/ExportCollection';
+export const prerender = false;
+const lists = await getIndex(env.LISTIO);
+---
+
+<Layout title="Export collection · Listio">
+	<main class="listio-main">
+		<a href="/">← Combined Lists</a>
+		<header class="page-heading">
+			<h1>Export collection</h1>
+			<p>
+				Download one Nuvio collection with a folder for each chosen Combined
+				List.
+			</p>
+		</header>
+		<ExportCollection
+			client:load
+			lists={lists}
+			addonId={env.ADDON_ID?.trim() || DEFAULT_ADDON_ID}
+			initialSelected={Astro.url.searchParams.getAll('list')}
+		/>
+	</main>
+</Layout>

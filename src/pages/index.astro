@@ -25,6 +25,8 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 		)}
 		<p>
 			<a href="/import">Import from text</a>
+			{' · '}
+			<a href="/export">Export collection</a>
 		</p>
 		<list-manager>
 			<p class="error" role="alert" hidden></p>

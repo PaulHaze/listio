@@ -18,7 +18,7 @@ sprint's **Status** and tick its tasks as work happens.
 | 11  | [Shared title matching and review controls](./11_Shared_Title_Matching_Review.md)                | implemented; acceptance pending |
 | 12  | [Import one list from text](./12_Import_Single_List_From_Text.md)                                | implemented; acceptance pending |
 | 13  | [Import several lists from text](./13_Import_Multiple_Lists_From_Text.md)                        | implemented; acceptance pending |
-| 14  | [Nuvio collection export](./14_Nuvio_Collection_Export.md) (optional)                            | not started (blocked)           |
+| 14  | [Nuvio collection export](./14_Nuvio_Collection_Export.md) (optional)                            | implemented; acceptance pending |
 | —   | Public list builder, BYOK TMDB (future, see [ADR 0007](../adr/0007-public-list-builder-byok.md)) | proposed                        |
 
 Design references: [spec](../../list-combiner-spec.md) · [implementation plan](../implementation-plan.md) ·

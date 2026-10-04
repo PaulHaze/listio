@@ -1,6 +1,6 @@
 # Sprint 14 — Nuvio collection export (optional)
 
-**Status:** not started — blocked on the open questions below
+**Status:** implemented; owner sample and live Nuvio acceptance pending
 
 ## Goal
 
@@ -74,7 +74,22 @@ API notes (for a possible later direct push, still out of scope): `sync_pull_col
 `sync_push_collections` (`p_profile_id`, `p_collections_json`). A push **replaces the profile's whole
 collections blob**, so anything left out is deleted. A direct push would have to pull, merge, then push.
 
-## Open questions (owner to supply before starting)
+## Format verification
+
+Implemented against the official Nuvio TV importer/exporter at commit
+`4a91028b3e7ef44187ec25d598930da92b07c017`, checked on 5 October 2026. See
+[the runbook](../nuvio/import-collection.md) for pinned source links and acceptance
+steps. The importer accepts a JSON array and the legacy `catalogSources` shape
+from this brief. Defaults are explicit: `TABBED_GRID`, `showAllTab: true`,
+`pinToTop: false`, `POSTER`, `hideTitle: false`, no artwork. IDs remain stable for
+the same addon ID and exact trimmed collection name; folder IDs follow list IDs.
+
+No owner-exported sample has been supplied. The source-derived
+[reference fixture](../nuvio/collection-reference.json) is hand-authored, not a
+Nuvio-exported sample. Actual target-client import compatibility remains an
+acceptance check, not a claim based on unit tests.
+
+## Open questions and source-backed decisions
 
 - [ ] **QUESTION — Sample Nuvio collection export.** Export an existing collection from Nuvio that has at least
       two folders, one holding a movie Catalog and one holding a series Catalog (or both in one
@@ -82,35 +97,44 @@ collections blob**, so anything left out is deleted. A direct push would have to
       the in-app file matches the API format above (one collection object or an array)
 - [x] **Addon reference.** By addon ID (`manifest.id`), not manifest URL, so the downloaded file
       doesn't hold the secret addon slug
-- [ ] **QUESTION — Required vs optional fields.** Partly answered: the API push example needs only `id`, `title`,
-      `viewMode` and `folders`, and images/emoji are optional. Confirm what in-app import needs, and
-      pick defaults for `tileShape`/`hideTitle` (proposed: `POSTER`, `false`, no cover image)
-- [ ] **QUESTION — Import behaviour.** Does importing a collection with the same name create a duplicate or
-      replace the old one? Are folders shown in file order? (Collections have an `id`, so a stable
-      ID across exports may let a re-import replace rather than duplicate)
-- [ ] **QUESTION — Where it's imported.** The Nuvio screen and steps for importing the JSON, for the runbook
+- [x] **Required vs optional fields.** Nuvio TV validates collection/folder IDs, titles,
+      folders and sources; artwork is optional. Defaults are declared above and in the runbook.
+- [x] **Import behaviour (Nuvio TV source).** Imports replace by ID, append new IDs,
+      and preserve folder order. Listio IDs are stable across exports of the same name/addon,
+      so that client replaces the prior Listio collection rather than matching by display name.
+- [x] **Where it's imported.** TV Collections management supports file/paste/URL import; the documented entry point and steps are in the runbook. Target-client labels still need live acceptance.
 
 ## Tasks
 
-- [ ] `domain/nuvioCollection.ts`: pure builder that takes a collection name and an ordered list of
+- [x] `domain/nuvioCollection.ts`: pure builder that takes a collection name and an ordered list of
       `{ listId, name, types }` and returns the Nuvio collection JSON. One folder per list, named after the
       list, holding that list's movie and/or series Catalog (Catalog ID = Combined List ID). The exact shape
-      follows `docs/nuvio/collection-sample.json`
-- [ ] Home **Export collection** action: tick existing lists, set a collection name and the folder order, then
+      follows the verified official importer schema; compare against the owner sample when supplied
+- [x] Home **Export collection** action: tick existing lists, set a collection name and the folder order, then
       download `{name}.json`. A list's Catalog types come from its saved Titles. Lists with 0 saved Titles
       can't be ticked
-- [ ] Sprints 12–13 import results: an **Export these as a Nuvio collection** shortcut that opens the export with
+- [x] Sprints 12–13 import results: an **Export these as a Nuvio collection** shortcut that opens the export with
       the imported lists ticked, in file order, and the collection name blank
-- [ ] Runbook `docs/nuvio/import-collection.md`: how to import the JSON in Nuvio, and the refresh/reinstall
+- [x] Runbook `docs/nuvio/import-collection.md`: how to import the JSON in Nuvio, and the refresh/reinstall
       needed when lists are new
-- [ ] Unit tests for `nuvioCollection`: movie-only, series-only and mixed lists, folder order, and that the
-      output matches the sample's shape
+- [x] Unit tests for `nuvioCollection`: movie-only, series-only and mixed lists, folder order, and that the
+      output matches the source-derived reference shape. UI tests cover selection, ordering, download,
+      empty lists and import shortcuts. Owner-sample comparison remains pending.
 
 ## Done when
 
 - The downloaded collection JSON imports into Nuvio and shows one folder per list, in the chosen order,
   each opening that list's Catalog(s)
 - All tests pass
+
+## Verification
+
+- `pnpm test`: 22 test files, 205 tests passed.
+- `pnpm build`: passed with zero errors; two existing `BeforeUnloadEvent.returnValue`
+  deprecation hints remain in the editor/import components.
+- `pnpm lint:check`: passed.
+- `git diff --check`: passed.
+- Live Nuvio import and owner-sample comparison: pending, with steps in the runbook.
 
 ## Not in this sprint
 

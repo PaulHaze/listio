@@ -158,6 +158,12 @@ it('saves picks before resolving, retries failed saves, preserves successive add
 	await fill('#import-text', 'Confident\nSecond\nThird\nSkipped');
 	await click('Import');
 	expect(host.textContent).toContain('1 Titles saved');
+	const exportLink = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(exportLink.href).searchParams.getAll('list')).toEqual([
+		'test',
+	]);
 	expect(warn()).toBe(true);
 	const rows = () => host.querySelectorAll('.match-review');
 	fail = true;
@@ -196,12 +202,41 @@ it('zero confident matches create nothing and allow input correction', async () 
 	expect(host.textContent).toContain(
 		'No titles were found. Check the list format'
 	);
+	expect(host.textContent).not.toContain('Export these as a Nuvio collection');
 	expect(fetcher.mock.calls.map(([url]) => url)).toEqual(['/api/titles/match']);
 	expect(host.querySelector<HTMLInputElement>('#import-name')!.disabled).toBe(
 		false
 	);
 	await fill('#import-text', 'Corrected');
 	expect(host.textContent).not.toContain('No titles were found');
+});
+
+it('offers the collection shortcut only after a pending initial save completes', async () => {
+	let fail = true;
+	vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+		if (url.endsWith('/match'))
+			return response([{ status: 'matched', title: title(1) }]);
+		if (url === '/api/lists' && init.method === 'GET') return response([]);
+		if (init.method === 'POST' || init.method === 'GET') return response(empty);
+		if (fail) throw new Error('Save unavailable');
+		return response({
+			...empty,
+			...JSON.parse(init.body as string),
+			version: 2,
+		});
+	});
+	await render(<ImportFromText initialLists={[]} />);
+	await fill('#import-name', 'Test');
+	await fill('#import-text', 'Confident');
+	await click('Import');
+	expect(host.textContent).toContain('save pending');
+	expect(host.textContent).not.toContain('Export these as a Nuvio collection');
+	fail = false;
+	await click('Continue import');
+	const shortcut = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(shortcut.href).searchParams.getAll('list')).toEqual(['test']);
 });
 
 it('keeps an untouched form quiet and validates each edited field', async () => {
@@ -448,6 +483,14 @@ it('renames only a rejected queue section, gates invalid edits and continues wit
 	await click('Continue import');
 	expect(creates).toEqual(['A', 'Renamed', 'C']);
 	expect(host.textContent).toContain('Import complete.');
+	const shortcut = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(shortcut.href).searchParams.getAll('list')).toEqual([
+		'A',
+		'Renamed',
+		'C',
+	]);
 });
 it('skips an empty section in the UI and retains completed review while continuing later sections', async () => {
 	const { creates } = multipleServer('empty');
@@ -458,11 +501,22 @@ it('skips an empty section in the UI and retains completed review while continui
 	expect(host.textContent).toContain('Skipped; no list created.');
 	await click('Continue import');
 	expect(creates).toEqual(['A', 'C']);
+	const shortcut = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(shortcut.href).searchParams.getAll('list')).toEqual([
+		'A',
+		'C',
+	]);
 	expect(first.querySelectorAll('.match-review')).toHaveLength(1);
 });
 it('saves a finished list review pick while a later section is still matching', async () => {
 	const { lists, release } = multipleServer('delayed');
 	await startMultiple();
+	const exportLink = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(exportLink.href).searchParams.getAll('list')).toEqual(['A']);
 	const first = host.querySelector('[aria-label="Result: A"]')!;
 	expect(button('Add', first).disabled).toBe(false);
 	await click('Add', first);

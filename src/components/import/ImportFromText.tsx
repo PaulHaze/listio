@@ -10,6 +10,7 @@ import {
 import { ImportListRun } from '../../client/importList.ts';
 import { ImportQueue } from '../../client/importQueue.ts';
 import { NeedALook } from '../titles/TitleControls.tsx';
+import { collectionExportUrl } from '../../domain/nuvioCollection.ts';
 
 export default function ImportFromText({
 	initialLists,
@@ -49,6 +50,12 @@ export default function ImportFromText({
 		runs.some((run) =>
 			['matching', 'creating', 'saving'].includes(run.state.phase)
 		);
+	const exportIds = runs
+		.filter(
+			(run) =>
+				run.state.phase === 'completed' && run.state.list!.titles.length > 0
+		)
+		.map((run) => run.state.list!.id);
 	const locked =
 		!!queue.current || runs.some((run) => run.state.phase !== 'empty');
 	const rejected = single.current?.state.phase === 'rejected';
@@ -336,6 +343,13 @@ export default function ImportFromText({
 						to finish a list awaiting its save.
 					</p>
 				</section>
+			)}
+			{exportIds.length > 0 && (
+				<p>
+					<a href={collectionExportUrl(exportIds)}>
+						Export these as a Nuvio collection
+					</a>
+				</p>
 			)}
 			{runs.map((run, index) => (
 				<ImportResult
