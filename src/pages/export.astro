@@ -2,7 +2,7 @@
 import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import { getIndex } from '@/storage/lists';
-import { DEFAULT_ADDON_ID } from '@/domain/nuvioCollection';
+import { resolveAddonId } from '@/domain/addonId';
 import ExportCollection from '@/components/export/ExportCollection';
 export const prerender = false;
 const lists = await getIndex(env.LISTIO);
@@ -21,7 +21,7 @@ const lists = await getIndex(env.LISTIO);
 		<ExportCollection
 			client:load
 			lists={lists}
-			addonId={env.ADDON_ID?.trim() || DEFAULT_ADDON_ID}
+			addonId={resolveAddonId(env.ADDON_ID)}
 			initialSelected={Astro.url.searchParams.getAll('list')}
 		/>
 	</main>

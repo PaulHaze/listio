@@ -19,13 +19,14 @@
    minute to appear because addon responses are cached and KV propagates.
 
 Listio uses stable collection IDs derived from the configured addon ID and the
-exact trimmed collection name. The verified TV importer replaces an existing
+trimmed collection name (ignoring case). The verified TV importer replaces an existing
 collection with the same ID and appends a different ID; it does not match by
 name. Re-exporting the same name therefore updates that Listio collection,
 including its folder choices/order. A different name or addon ID creates a
 different collection. Back up collections before importing when using another
-client whose import behavior has not been checked. Folder IDs follow Combined
-List IDs, so renaming a list does not change its folder identity.
+client whose import behavior has not been checked. Folder IDs follow the
+collection ID and Combined List IDs, so renaming a list does not change its
+folder identity.
 
 ## Format evidence and acceptance
 

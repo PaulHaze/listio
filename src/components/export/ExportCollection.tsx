@@ -15,13 +15,16 @@ export default function ExportCollection({
 	initialSelected?: string[];
 }) {
 	const [name, setName] = useState('');
-	const [selected, setSelected] = useState(() =>
-		[...new Set(initialSelected)].filter((id) =>
+	const [initial] = useState(() => {
+		const requested = [...new Set(initialSelected)];
+		const available = requested.filter((id) =>
 			lists.some(
 				(list) => list.id === id && list.count > 0 && list.types.length > 0
 			)
-		)
-	);
+		);
+		return { available, unavailable: requested.length - available.length };
+	});
+	const [selected, setSelected] = useState(initial.available);
 	const [message, setMessage] = useState('');
 	const [error, setError] = useState('');
 	const chosen = selected.map((id) => lists.find((list) => list.id === id)!);
@@ -80,9 +83,18 @@ export default function ExportCollection({
 				onChange={(event) => setName(event.target.value)}
 			/>
 			<p>
-				Re-exporting the same name uses the same collection ID. Importing it can
-				replace that collection in Nuvio.
+				Re-exporting the same name (ignoring capitals) uses the same collection
+				ID. Importing it can replace that collection in Nuvio.
 			</p>
+			{initial.unavailable > 0 && (
+				<p role="status">
+					{initial.unavailable === 1
+						? '1 imported list isn’t'
+						: `${initial.unavailable} imported lists aren’t`}{' '}
+					available to export yet. Saved lists can take a minute to appear, so
+					reload this page shortly.
+				</p>
+			)}
 			<fieldset>
 				<legend>Choose Combined Lists</legend>
 				{lists.length === 0 && <p>No Combined Lists yet.</p>}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import reference from '../docs/nuvio/collection-reference.json';
+import { resolveAddonId } from '../src/domain/addonId.ts';
 import {
 	buildNuvioCollection,
 	collectionExportUrl,
@@ -57,6 +58,19 @@ describe('Nuvio collection JSON', () => {
 				'org.listio.custom'
 			)[0].folders.map((folder) => folder.id)
 		);
+	});
+	it('builds punctuation-free IDs, scopes folder IDs to the collection and ignores name case', () => {
+		const list = { listId: 'a/b', name: 'A', types: ['movie'] as const };
+		const [weird] = buildNuvioCollection('Q? "1"/#2 & 🎬', [list]);
+		for (const id of [weird.id, weird.folders[0].id])
+			expect(id).toMatch(/^[\w.!~*'()%:-]+$/);
+		const [lower] = buildNuvioCollection('weekend', [list]);
+		const [upper] = buildNuvioCollection(' WEEKEND ', [list]);
+		expect(upper.id).toBe(lower.id);
+		const [other] = buildNuvioCollection('Other', [list]);
+		expect(other.folders[0].id).not.toBe(lower.folders[0].id);
+		expect(resolveAddonId(' ')).toBe('org.listio.addon');
+		expect(resolveAddonId(' custom.id ')).toBe('custom.id');
 	});
 	it('matches the source-derived reference shape (not an owner-exported sample)', () => {
 		const actual = buildNuvioCollection('Reference collection', [

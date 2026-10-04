@@ -1,5 +1,5 @@
 import type { ListIndexEntry } from '../storage/lists.ts';
-import { DEFAULT_ADDON_ID } from '../domain/nuvioCollection.ts';
+import { DEFAULT_ADDON_ID } from '../domain/addonId.ts';
 
 export function buildManifest(
 	index: readonly ListIndexEntry[],

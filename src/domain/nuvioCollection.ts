@@ -1,6 +1,5 @@
+import { DEFAULT_ADDON_ID } from './addonId.ts';
 import type { TitleType } from './types.ts';
-
-export const DEFAULT_ADDON_ID = 'org.listio.addon';
 
 export type CollectionList = {
 	listId: string;
@@ -8,9 +7,13 @@ export type CollectionList = {
 	types: readonly TitleType[];
 };
 
+const idPart = (value: string) => encodeURIComponent(value);
+
 /** Legacy catalogSources remains supported by Nuvio's collection importer.
- * IDs use an unambiguous tuple, so changing order or list contents preserves
- * collection identity. A different collection name creates a new identity.
+ * IDs are made of percent-encoded parts joined by `:`, so they are unambiguous
+ * and free of path/JSON punctuation. Changing order or list contents preserves
+ * collection identity. A different collection name (ignoring case) or addon ID
+ * creates a new identity. Folder IDs are scoped to their collection.
  */
 export function buildNuvioCollection(
 	name: string,
@@ -22,9 +25,10 @@ export function buildNuvioCollection(
 	if (!addonId.trim()) throw new Error('An addon ID is required.');
 	if (!lists.length) throw new Error('Choose at least one Combined List.');
 	const seen = new Set<string>();
+	const collectionId = `listio:${idPart(addonId)}:${idPart(title.toLowerCase())}`;
 	return [
 		{
-			id: `listio:${JSON.stringify([addonId, title])}`,
+			id: collectionId,
 			title,
 			pinToTop: false,
 			viewMode: 'TABBED_GRID',
@@ -39,7 +43,7 @@ export function buildNuvioCollection(
 				if (!types.length)
 					throw new Error('Each Combined List must have saved Titles.');
 				return {
-					id: `listio-folder:${JSON.stringify([addonId, list.listId])}`,
+					id: `listio-folder:${idPart(collectionId)}:${idPart(list.listId)}`,
 					title: list.name,
 					tileShape: 'POSTER',
 					hideTitle: false,

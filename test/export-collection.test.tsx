@@ -120,6 +120,32 @@ it('preselects imported lists in order, excludes unknown/empty IDs, reorders and
 	).toBe(true);
 });
 
+it('says when imported lists are not available to export yet', async () => {
+	await act(async () =>
+		root.render(
+			<ExportCollection
+				lists={lists}
+				addonId="org.listio.custom"
+				initialSelected={['movies', 'missing', 'empty']}
+			/>
+		)
+	);
+	expect(host.querySelector('[role="status"]')?.textContent).toContain(
+		'2 imported lists aren’t available to export yet'
+	);
+	await act(async () =>
+		root.render(
+			<ExportCollection
+				key="all-available"
+				lists={lists}
+				addonId="org.listio.custom"
+				initialSelected={['movies']}
+			/>
+		)
+	);
+	expect(host.querySelector('[role="status"]')).toBeNull();
+});
+
 it('keeps failed browser downloads retryable and shows an error', async () => {
 	vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
 		throw new Error('Download unavailable');

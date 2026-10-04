@@ -82,7 +82,8 @@ Implemented against the official Nuvio TV importer/exporter at commit
 steps. The importer accepts a JSON array and the legacy `catalogSources` shape
 from this brief. Defaults are explicit: `TABBED_GRID`, `showAllTab: true`,
 `pinToTop: false`, `POSTER`, `hideTitle: false`, no artwork. IDs remain stable for
-the same addon ID and exact trimmed collection name; folder IDs follow list IDs.
+the same addon ID and trimmed collection name (ignoring case); folder IDs follow the collection ID
+and list ID. IDs are percent-encoded parts joined by `:`, so they hold no path or JSON punctuation.
 
 No owner-exported sample has been supplied. The source-derived
 [reference fixture](../nuvio/collection-reference.json) is hand-authored, not a

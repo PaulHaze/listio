@@ -6,11 +6,12 @@ import {
 	addonResponse,
 	validSecret,
 } from '../../../addon/http.ts';
+import { resolveAddonId } from '../../../domain/addonId.ts';
 import { getIndex } from '../../../storage/lists.ts';
 
 export const GET: APIRoute = async ({ params }) => {
 	if (!validSecret(params.secret, env.ADDON_SECRET)) return addonNotFound();
 	return addonResponse(
-		buildManifest(await getIndex(env.LISTIO), env.ADDON_ID?.trim() || undefined)
+		buildManifest(await getIndex(env.LISTIO), resolveAddonId(env.ADDON_ID))
 	);
 };
