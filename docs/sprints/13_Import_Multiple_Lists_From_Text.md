@@ -1,6 +1,6 @@
 # Sprint 13 — Import several lists from text
 
-**Status:** not started — depends on Sprint 12
+**Status:** implemented; deployed acceptance pending
 
 ## Goal
 
@@ -78,26 +78,26 @@ the other eligible. Keep source line/section identity independent of its editabl
 
 ## Tasks
 
-- [ ] Extend `domain/pasteSections.ts` with multiple mode, preserving source line numbers and stable
+- [x] Extend `domain/pasteSections.ts` with multiple mode, preserving source line numbers and stable
       section identity. Split on `## ` headers and return section titles plus structural errors;
       retain section association on errors so the page can exclude unticked sections
-- [ ] Validate edited names with Sprint 12's rules, adding duplicate names among selected sections.
+- [x] Validate edited names with Sprint 12's rules, adding duplicate names among selected sections.
       Keep validation of source structure separate from preview names and selection
-- [ ] `/import` mode toggle and live multiple-list preview: tick/untick, rename, counts and all active
+- [x] `/import` mode toggle and live multiple-list preview: tick/untick, rename, counts and all active
       errors. Update single-mode header errors to suggest switching to Multiple lists
-- [ ] Queue runner around Sprint 12's per-list operation: section-order snapshot, one list at a time,
+- [x] Queue runner around Sprint 12's per-list operation: section-order snapshot, one list at a time,
       list/Title progress, per-list results, stop on failure, and Continue from the first unfinished list
-- [ ] Isolate per-list review and saves. Keep completed results after interruption and apply the
+- [x] Isolate per-list review and saves. Keep completed results after interruption and apply the
       unload warning across all unresolved lines
-- [ ] Unit tests for multiple parsing/preview validation: every table error, several errors together,
+- [x] Unit tests for multiple parsing/preview validation: every table error, several errors together,
       empty/blank/long/repeated headers, names with `:` `&` `'`, repeated titles within/across lists,
       source line numbers, unticked sections and renames clearing the correct errors
-- [ ] File fixtures: midnight valid as multiple with 25 lists, expected per-list parsed counts and the
+- [x] File fixtures: midnight valid as multiple with 25 lists, expected per-list parsed counts and the
       TV section; absurd/noir rejected as multiple. Keep Sprint 12's single-mode fixture checks passing
-- [ ] Queue integration tests: checked lists saved in file order, unchecked lists untouched, interruption
+- [x] Queue integration tests: checked lists saved in file order, unchecked lists untouched, interruption
       preserves completed lists, Continue skips completed sections, and create-success/save-failure
       retries the same ID before starting the next section
-- [ ] Review integration checks: picks persist to the correct list, the same title can be saved in
+- [x] Review integration checks: picks persist to the correct list, the same title can be saved in
       different lists, a failed pick stays unresolved, and unfinished review survives a queue failure
 
 ## Done when
@@ -118,3 +118,13 @@ the other eligible. Keep source line/section identity independent of its editabl
 - Re-importing text to update or add to existing lists
 - Storing unresolved lines or run state for recovery after closing/reloading the page
 - New TMDB matching logic or changes to title-line syntax rules
+
+## Implementation verification
+
+- `pnpm test`: 187 tests passing across 20 files. Coverage includes all selected-section structural/name errors, editable names and source identity, exact parsed counts for all 25 midnight sections, ordered queue saves, skipped sections, stopped matching, no-match retry, same-ID pending-save retry, and independent persisted review with unload warnings. Sprint 12's single-mode checks remain passing.
+- `pnpm build`: passes with only the existing browser `beforeunload.returnValue` deprecation hints in the editor and import handlers.
+- `pnpm lint:check`: passes.
+- `docs/movie_lists/midnight_movies.md` now ends with its intended TV section. Its invalid `### NEW TITLES TO FOLD INTO THE ABOVE LIST:` scratch appendix and every associated Title are preserved in [midnight_movies_additions.md](../movie_lists/midnight_movies_additions.md), awaiting assignment to sections. The parser still rejects such headings; fixture acceptance has not relaxed the format rules.
+- Blank `##` headers retain source identity and can be repaired by editing their preview names. Changes to names and selection preserve other preview edits; replacing text rebuilds the preview. Each checked section runs through the existing safe creation and save operation before the next starts. A zero-match section creates nothing, stops the queue, and can be matched again with Continue.
+- Real TMDB matching coverage (mostly matched), creation of the 25 saved lists on the deployed Worker, and the final series Catalog in Nuvio remain pending deployed acceptance. Local API mocks verify sequence and recovery, not live external matching or Catalog visibility.
+- Queue and review state remain page-local as scoped. After closing/reloading, re-paste and untick completed sections; use the existing editor for a list awaiting its save. Storage retains Sprint 12's eventual-consistency limitations across concurrent writers.

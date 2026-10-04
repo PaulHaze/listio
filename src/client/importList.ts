@@ -65,6 +65,13 @@ export class ImportListRun {
 		this.creationId = crypto.randomUUID();
 		this.update({ error: '' });
 	}
+	get completed() {
+		return this.state.phase === 'completed';
+	}
+	retryEmpty() {
+		if (this.state.phase === 'empty' && !this.active)
+			this.update({ phase: 'idle', matches: [], review: [], error: '' });
+	}
 	async continue(signal: AbortSignal): Promise<void> {
 		if (
 			this.active ||

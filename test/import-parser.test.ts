@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	parseImport,
 	validateImportName,
+	validateImportSections,
 } from '../src/domain/pasteSections.ts';
 
 describe('single import parsing', () => {
@@ -72,5 +73,125 @@ describe('independent list name validation', () => {
 		expect(validateImportName(' noir ', [{ name: ' Noir ' }])).toBe(
 			'A list named "noir" already exists.'
 		);
+	});
+});
+
+describe('multiple import parsing and preview validation', () => {
+	it('keeps source identity, punctuation and titles scoped to sections', () => {
+		const parsed = parseImport(
+			" // ignored\n  ## A: & 'B'  \n- Brick (2005)\n1. BRICK (2005)\n## Second\nBrick (2005)\nTwin Peaks (1990)",
+			'multiple'
+		);
+		expect(parsed.errors).toEqual([]);
+		expect(
+			parsed.sections.map((section) => [
+				section.id,
+				section.line,
+				section.name,
+				section.lines.length,
+			])
+		).toEqual([
+			['section-2', 2, "A: & 'B'", 1],
+			['section-5', 5, 'Second', 2],
+		]);
+		expect(parsed.sections[0].lines[0]).toEqual(parsed.sections[1].lines[0]);
+	});
+	it('reports every structural and name error, then clears only errors repaired or unticked', () => {
+		const parsed = parseImport(
+			'Brick\n### Extras\n## \n#Foo\n## ' +
+				'x'.repeat(101) +
+				'\n## Existing\nTitle\n## Same\nTitle\n## same\nTitle',
+			'multiple'
+		);
+		let preview = parsed.sections.map((section) => ({
+			...section,
+			selected: true,
+		}));
+		const existing = [{ name: ' existing ' }];
+		const errors = validateImportSections(parsed, preview, existing);
+		expect(errors.map((error) => error.line)).toEqual([
+			1, 2, 4, 3, 3, 5, 5, 6, 10,
+		]);
+		expect(errors.map((error) => error.message).join(' ')).toContain(
+			'Lines 8 and 10'
+		);
+		preview = preview.map((section) =>
+			section.line === 3 || section.line === 5 || section.line === 10
+				? { ...section, selected: false }
+				: section.line === 6
+					? { ...section, name: "Renamed: & 'OK'" }
+					: section
+		);
+		expect(
+			validateImportSections(parsed, preview, existing).map(
+				(error) => error.line
+			)
+		).toEqual([1, 2]);
+		expect(parsed.sections[2].name).toBe('Existing');
+	});
+	it('renames blank, long, duplicate and existing headers independently of structure', () => {
+		const parsed = parseImport(
+			'##\nTitle\n## ' +
+				'x'.repeat(101) +
+				'\nTitle\n## Same\nTitle\n## same\nTitle\n## Existing\nTitle',
+			'multiple'
+		);
+		const preview = parsed.sections.map((section, index) => ({
+			...section,
+			selected: true,
+			name: `Good ${index}`,
+		}));
+		expect(
+			validateImportSections(parsed, preview, [{ name: 'Existing' }])
+		).toEqual([]);
+		for (const line of ['#', '###', '#Foo', '##Foo', '- ## Hidden']) {
+			expect(
+				parseImport(`## Valid\nTitle\n${line}`, 'multiple').errors[0]
+			).toMatchObject({ line: 3, sectionId: 'section-1' });
+		}
+	});
+	it('keeps missing headers and text before a header global even with every section unticked', () => {
+		const absent = parseImport('Brick\n// note', 'multiple');
+		expect(absent.errors.map((error) => error.message).join(' ')).toContain(
+			'No "## "'
+		);
+		expect(absent.errors.map((error) => error.line)).toEqual([1, 1]);
+		const parsed = parseImport('Title\n## List\n#Bad', 'multiple');
+		expect(
+			validateImportSections(
+				parsed,
+				parsed.sections.map((section) => ({ ...section, selected: false })),
+				[]
+			)
+		).toEqual([parsed.errors[0]]);
+	});
+	it('accepts all 25 midnight sections with fixed per-list counts and final TV Titles; rejects single-list fixtures', () => {
+		const parsed = parseImport(
+			readFileSync('docs/movie_lists/midnight_movies.md', 'utf8'),
+			'multiple'
+		);
+		expect(parsed.sections).toHaveLength(25);
+		expect(
+			validateImportSections(
+				parsed,
+				parsed.sections.map((section) => ({ ...section, selected: true })),
+				[]
+			)
+		).toEqual([]);
+		expect(parsed.sections.map((section) => section.lines.length)).toEqual([
+			6, 70, 78, 15, 19, 14, 23, 14, 26, 6, 10, 22, 108, 26, 11, 6, 9, 35, 21,
+			12, 18, 38, 15, 6, 58,
+		]);
+		expect(parsed.sections.at(-1)?.name).toBe('Midnight Tv Shows');
+		expect(
+			parsed.sections.at(-1)?.lines.some((line) => line.name === 'Twin Peaks')
+		).toBe(true);
+		for (const file of ['absurd_movies', 'noir_not_noir'])
+			expect(
+				parseImport(
+					readFileSync(`docs/movie_lists/${file}.md`, 'utf8'),
+					'multiple'
+				).errors.length
+			).toBeGreaterThan(1);
 	});
 });

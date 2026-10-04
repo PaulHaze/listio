@@ -264,3 +264,105 @@ it.each(['collision', 'rejected'])(
 		).toHaveLength(1);
 	}
 );
+
+it('multiple preview keeps edits and selections, repairs errors, and rebuilds when text is replaced', async () => {
+	await render(
+		<ImportFromText
+			initialLists={[{ id: 'old', name: 'Existing', count: 0, types: [] }]}
+		/>
+	);
+	await fill(
+		'#import-text',
+		'## Existing\nTitle\n## Same\nTitle\n## same\n#Bad'
+	);
+	await click('Multiple lists');
+	expect(host.querySelector('#import-name')).toBeNull();
+	expect(button('Import').disabled).toBe(true);
+	await fill('#name-section-1', 'Renamed');
+	await act(async () =>
+		host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[2].click()
+	);
+	expect(button('Import').disabled).toBe(false);
+	await fill('#name-section-3', "Names: & 'Fine'");
+	expect(host.querySelector<HTMLInputElement>('#name-section-1')!.value).toBe(
+		'Renamed'
+	);
+	expect(
+		host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[2].checked
+	).toBe(false);
+	expect(host.textContent).not.toContain('valid header');
+	await fill('#import-text', '## Fresh\nNew Title');
+	expect(host.querySelectorAll('input[type="checkbox"]')).toHaveLength(1);
+	expect(host.querySelector<HTMLInputElement>('#name-section-1')!.value).toBe(
+		'Fresh'
+	);
+	expect(
+		host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked
+	).toBe(true);
+});
+
+it('multiple completed review survives interruption, warns on leaving and saves identical picks to the correct lists', async () => {
+	const lists = new Map<string, CombinedList>();
+	let matching = 0;
+	let failPick = true;
+	vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+		if (url.endsWith('/match')) {
+			matching++;
+			if (matching === 2) throw new Error('Queue offline');
+			return response([
+				{ status: 'matched', title: title(1) },
+				{ status: 'ambiguous', candidates: [title(2)] },
+			]);
+		}
+		if (url.endsWith('/lookup')) return response(title(2));
+		if (url === '/api/lists' && init.method === 'GET')
+			return response([...lists.values()]);
+		if (init.method === 'POST') {
+			const name = JSON.parse(init.body as string).name;
+			const list = { ...empty, id: name, name };
+			lists.set(name, list);
+			return response(list);
+		}
+		const id = url.split('/').at(-1)!;
+		if (init.method === 'GET') return response(lists.get(id));
+		const body = JSON.parse(init.body as string);
+		if (body.titles.length === 2 && failPick) {
+			failPick = false;
+			throw new Error('Pick failed');
+		}
+		const list = {
+			...lists.get(id)!,
+			...body,
+			version: lists.get(id)!.version + 1,
+		};
+		lists.set(id, list);
+		return response(list);
+	});
+	await render(<ImportFromText initialLists={[]} />);
+	await click('Multiple lists');
+	await fill('#import-text', '## A\nShared\nReview\n## B\nShared\nReview');
+	await click('Import');
+	expect(host.textContent).toContain('Queue offline');
+	expect(host.textContent).toContain('B (2 of 2)');
+	expect(warn()).toBe(true);
+	const result = (name: string) =>
+		host.querySelector(`[aria-label="Result: ${name}"]`)!;
+	await click('Add', result('A'));
+	expect(result('A').textContent).toContain('Pick failed');
+	expect(result('A').querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Continue import');
+	expect(result('A').querySelectorAll('.match-review')).toHaveLength(1);
+	expect(result('B').querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Add', result('A'));
+	expect(result('B').querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Add', result('B'));
+	expect(lists.get('A')!.titles.map((title) => title.imdbId)).toEqual([
+		'tt1',
+		'tt2',
+	]);
+	expect(lists.get('B')!.titles.map((title) => title.imdbId)).toEqual([
+		'tt1',
+		'tt2',
+	]);
+	expect(warn()).toBe(false);
+});
