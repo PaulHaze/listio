@@ -1,4 +1,4 @@
-# Public hosted list builder, bring-your-own TMDB key (proposed, after Sprint 11)
+# Public hosted list builder, bring-your-own TMDB key (proposed, after Sprint 14)
 
 **Status:** proposed — a nice-to-have, not a commitment. Not scheduled. Partly reopens ADR 0003.
 
