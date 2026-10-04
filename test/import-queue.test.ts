@@ -179,3 +179,50 @@ it('same Title picks save independently, failed picks remain unresolved and copy
 	]);
 	expect(saved.get('C')!.titles.map((title) => title.imdbId)).toEqual(['tt1']);
 });
+
+it.each(['empty', 'match'] as const)(
+	'skips a %s failure and preserves earlier review while importing the rest',
+	async (failure) => {
+		const { queue, saved, events } = setup(failure);
+		await queue.continue(signal());
+		expect(queue.skipUnfinished()).toBe(true);
+		expect(queue.entries[1].run.state.phase).toBe('skipped');
+		expect(queue.progress).toContain('C (3 of 3)');
+		await queue.continue(signal());
+		expect([...saved.keys()]).toEqual(['A', 'C']);
+		expect(events.filter((event) => event === 'create A')).toHaveLength(1);
+		expect(queue.entries[0].run.unresolvedText()).toBe('Review');
+		expect(queue.unfinished).toBeUndefined();
+	}
+);
+it('refuses to skip a known created list with its initial save pending', async () => {
+	const { queue } = setup('save');
+	await queue.continue(signal());
+	expect(queue.unfinished?.run.canSkip).toBe(false);
+	expect(queue.skipUnfinished()).toBe(false);
+	expect(queue.unfinished?.run.name).toBe('B');
+});
+it('refuses to skip an active run or an uncertain creation', async () => {
+	const { queue } = setup();
+	let release!: () => void;
+	vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+		if (url.endsWith('/match'))
+			return response([
+				{ status: 'matched', title: title(1) },
+				{ status: 'none', reason: 'No match' },
+			]);
+		if (init.method === 'GET') return response([]);
+		await new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		throw new Error('Lost creation response');
+	});
+	const pending = queue.continue(signal());
+	await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+	expect(queue.skipUnfinished()).toBe(false);
+	release();
+	await pending;
+	expect(queue.unfinished?.run.state.phase).toBe('stopped');
+	expect(queue.unfinished?.run.canSkip).toBe(false);
+	expect(queue.skipUnfinished()).toBe(false);
+});

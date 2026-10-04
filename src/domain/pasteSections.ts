@@ -49,18 +49,28 @@ export function parseImport(
 	return { lines, errors };
 }
 
+export const nameLengthOk = (value: string) => {
+	const length = value.trim().length;
+	return length > 0 && length <= 100;
+};
+export function findExistingName<T extends { name: string }>(
+	value: string,
+	existing: readonly T[]
+): T | undefined {
+	const name = value.trim().toLowerCase();
+	return name
+		? existing.find((list) => list.name.trim().toLowerCase() === name)
+		: undefined;
+}
+
 export function validateImportName(
 	value: string,
 	existing: readonly { name: string }[]
 ): string | null {
 	const name = value.trim();
-	if (!name || name.length > 100)
+	if (!nameLengthOk(name))
 		return 'Enter a list name of 100 characters or fewer.';
-	if (
-		existing.some(
-			(list) => list.name.trim().toLowerCase() === name.toLowerCase()
-		)
-	)
+	if (findExistingName(name, existing))
 		return `A list named "${name}" already exists.`;
 	return null;
 }
@@ -75,7 +85,6 @@ function parseMultiple(text: string): MultipleImport {
 		titles = [];
 	};
 	text.split(/\r?\n/).forEach((raw, index) => {
-		if (raw.includes('//')) return;
 		const line = raw.trim();
 		const sourceLine = index + 1;
 		// A bare ## is a blank name that can be repaired in the preview.
@@ -88,8 +97,15 @@ function parseMultiple(text: string): MultipleImport {
 				lines: [],
 			};
 			sections.push(current);
+			if (line.includes('//'))
+				errors.push({
+					line: sourceLine,
+					sectionId: current.id,
+					message: `Line ${sourceLine}: "${line}" contains "//". Remove the comment from the header.`,
+				});
 			return;
 		}
+		if (raw.includes('//')) return;
 		if (!line) return;
 		const titleLine = line.replace(/^(?:[-*]\s+|\d+\.\s+)/, '').trim();
 		if (titleLine.startsWith('#')) {
@@ -133,19 +149,16 @@ export function validateImportSections(
 			errors.push({
 				line: section.line,
 				sectionId: section.id,
-				message: `Line ${section.line}: "## ${name}" has no titles.`,
+				message: `Line ${section.line}: ${name ? `"## ${name}" has` : 'this section has'} no titles.`,
 			});
-		if (!name || name.length > 100)
+		if (!nameLengthOk(name))
 			errors.push({
 				line: section.line,
 				sectionId: section.id,
 				message: `Line ${section.line}: list names must be 1–100 characters.`,
 			});
-		if (
-			existing.some(
-				(list) => list.name.trim().toLowerCase() === name.toLowerCase()
-			)
-		)
+		if (!name) continue;
+		if (findExistingName(name, existing))
 			errors.push({
 				line: section.line,
 				sectionId: section.id,

@@ -19,15 +19,20 @@ export class ImportQueue {
 			}));
 	}
 	get unfinished() {
-		return this.entries.find((entry) => entry.run.state.phase !== 'completed');
+		return this.entries.find(
+			(entry) => !['completed', 'skipped'].includes(entry.run.state.phase)
+		);
 	}
 	get progress() {
-		const index = this.entries.findIndex(
-			(entry) => entry.run.state.phase !== 'completed'
-		);
-		if (index < 0) return 'Import complete.';
-		const run = this.entries[index].run;
+		const entry = this.unfinished;
+		if (!entry) return 'Import complete.';
+		const index = this.entries.indexOf(entry);
+		const { run } = entry;
 		return `${run.name} (${index + 1} of ${this.entries.length}): ${run.state.progress || 'Not started'}`;
+	}
+	skipUnfinished() {
+		if (this.active) return false;
+		return this.unfinished?.run.skip() ?? false;
 	}
 	async continue(signal: AbortSignal) {
 		if (this.active) return;
@@ -35,7 +40,7 @@ export class ImportQueue {
 		this.changed();
 		try {
 			for (const { run } of this.entries) {
-				if (run.completed) continue;
+				if (run.completed || run.state.phase === 'skipped') continue;
 				run.retryEmpty();
 				await run.continue(signal);
 				if (!run.completed) break;

@@ -12,7 +12,7 @@ Matching, saving and Need a look reuse the shared controls and per-list import o
 Sprints 11–12. The single-list flow stays available and is the default mode.
 Collection export follows in [Sprint 14](./14_Nuvio_Collection_Export.md).
 
-Test file: `docs/movie_lists/midnight_movies.md` — 25 sections, the last one TV series.
+Acceptance fixture: `test/fixtures/midnight_movies.md` — the original 25 sections from implementation commit `8259fc5`, the last one TV series. The curated `docs/movie_lists/midnight_movies.md` is checked for structure and a final TV section, without fixed counts.
 
 ## The format
 
@@ -31,7 +31,7 @@ Twin Peaks (1990)
 Use Sprint 12's title parsing, whitespace, bullet, year and comment rules. A repeated title within
 one section is kept once. The same title may appear in several lists. Title spelling and year syntax
 are not validated. Headers are recognized after trimming surrounding whitespace; other `#` lines
-are errors rather than silently ignored comments.
+are errors rather than silently ignored comments. In multiple mode, recognize `## ` headers before the `//` comment rule: a header containing `//` is a section-scoped error. Remove the comment from the source header or untick that section; its titles must never join the preceding list.
 
 ## Format errors
 
@@ -66,13 +66,13 @@ the other eligible. Keep source line/section identity independent of its editabl
    the next. Show progress such as `Modern Head Trips (3 of 25): 40 / 61`.
 4. Show per-list results using Sprint 12's counts, editor links, Need a look, Copy unresolved lines
    and save-on-pick. Keep each list's Titles, pending additions and review choices separate. Resolving
-   one list cannot alter another, even when both contain the same title text or IMDb ID.
+   one list cannot alter another, even when both contain the same title text or IMDb ID. Finished-list review remains available while later sections import.
 5. A failed section stops the queue. Finished lists stay saved; show the pending section and those
    not started. **Continue import** resumes the first unfinished section, then the remaining selected
    sections. Reuse Sprint 12's pending match/save state: a known successful create is never repeated,
-   and a failed save is retried on the same list ID.
+   and a failed save is retried on the same list ID. While stopped, **Skip this list** skips the first unfinished section when no list has been created and no creation response is uncertain; completed review stays intact. Continue then imports the rest. A known created list or uncertain creation must finish recovery before the queue can move on.
 6. Unresolved review lines from finished lists survive a queue interruption while the page remains
-   open. Warn before leaving while any remain. Closing/reloading loses import state; re-paste the
+   open. Warn before leaving while any remain, while importing or saving, or while a stopped queue has unfinished sections. Closing/reloading loses import state; re-paste the
    file, untick already-created sections, and import the rest. A list awaiting its save can be
    completed through its editor if the page state has been lost.
 
@@ -102,7 +102,7 @@ the other eligible. Keep source line/section identity independent of its editabl
 
 ## Done when
 
-- Importing `midnight_movies.md` creates 25 saved lists in section order, each mostly matched,
+- Importing `test/fixtures/midnight_movies.md` creates 25 saved lists in section order, each mostly matched,
   including the final TV section as a series Catalog in Nuvio
 - Every format/name error blocks import for the selected sections and shows its source line number
 - Unticking or renaming resolves the appropriate errors without changing the source text
@@ -121,10 +121,10 @@ the other eligible. Keep source line/section identity independent of its editabl
 
 ## Implementation verification
 
-- `pnpm test`: 187 tests passing across 20 files. Coverage includes all selected-section structural/name errors, editable names and source identity, exact parsed counts for all 25 midnight sections, ordered queue saves, skipped sections, stopped matching, no-match retry, same-ID pending-save retry, and independent persisted review with unload warnings. Sprint 12's single-mode checks remain passing.
+- `pnpm test`: 198 tests passing across 20 files. Coverage includes all selected-section structural/name errors, editable names and source identity, exact parsed counts for all 25 midnight sections, ordered queue saves, skipped sections, stopped matching, no-match retry, same-ID pending-save retry, independent persisted review while later sections import, safe skipping before creation, rejected-name recovery, commented-header boundaries, and stopped-queue unload warnings. Sprint 12's single-mode checks remain passing.
 - `pnpm build`: passes with only the existing browser `beforeunload.returnValue` deprecation hints in the editor and import handlers.
 - `pnpm lint:check`: passes.
-- `docs/movie_lists/midnight_movies.md` now ends with its intended TV section. Its invalid `### NEW TITLES TO FOLD INTO THE ABOVE LIST:` scratch appendix and every associated Title are preserved in [midnight_movies_additions.md](../movie_lists/midnight_movies_additions.md), awaiting assignment to sections. The parser still rejects such headings; fixture acceptance has not relaxed the format rules.
-- Blank `##` headers retain source identity and can be repaired by editing their preview names. Changes to names and selection preserve other preview edits; replacing text rebuilds the preview. Each checked section runs through the existing safe creation and save operation before the next starts. A zero-match section creates nothing, stops the queue, and can be matched again with Continue.
+- Exact 25-section and per-list count assertions use the frozen `test/fixtures/midnight_movies.md`. The curated source retains its current content and receives structural checks only, including its final TV section; invalid headings still fail validation.
+- Blank `##` headers retain source identity and can be repaired by editing their preview names. Changes to names and selection preserve other preview edits; replacing text rebuilds the preview. Each checked section runs through the existing safe creation and save operation before the next starts. A zero-match section creates nothing, stops the queue, and can be matched again with Continue or skipped while keeping completed review.
 - Real TMDB matching coverage (mostly matched), creation of the 25 saved lists on the deployed Worker, and the final series Catalog in Nuvio remain pending deployed acceptance. Local API mocks verify sequence and recovery, not live external matching or Catalog visibility.
 - Queue and review state remain page-local as scoped. After closing/reloading, re-paste and untick completed sections; use the existing editor for a list awaiting its save. Storage retains Sprint 12's eventual-consistency limitations across concurrent writers.

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ListIndexEntry } from '../../storage/lists.ts';
 import {
 	parseImport,
+	findExistingName,
 	validateImportName,
 	validateImportSections,
 	type SectionPreview,
@@ -36,8 +37,8 @@ export default function ImportFromText({
 			readId.current++;
 		};
 	}, []);
-	const parsed = parseImport(text, 'single');
-	const multiple = parseImport(text, 'multiple');
+	const parsed = useMemo(() => parseImport(text, 'single'), [text]);
+	const multiple = useMemo(() => parseImport(text, 'multiple'), [text]);
 	const runs = queue.current
 		? queue.current.entries.map((entry) => entry.run)
 		: single.current
@@ -52,9 +53,7 @@ export default function ImportFromText({
 		!!queue.current || runs.some((run) => run.state.phase !== 'empty');
 	const rejected = single.current?.state.phase === 'rejected';
 	const nameError = validateImportName(name, initialLists);
-	const existing = initialLists.find(
-		(list) => list.name.trim().toLowerCase() === name.trim().toLowerCase()
-	);
+	const existing = findExistingName(name, initialLists);
 	const errors =
 		mode === 'single'
 			? parsed.errors
@@ -71,8 +70,9 @@ export default function ImportFromText({
 	const pendingSave = runs.some(
 		(run) => run.state.phase === 'stopped' && run.state.list
 	);
+	const unfinishedQueue = !!queue.current?.unfinished;
 	useEffect(() => {
-		if (!unresolved && !active && !pendingSave) return;
+		if (!unfinishedQueue && !unresolved && !active && !pendingSave) return;
 		const warn = (event: BeforeUnloadEvent) => {
 			event.preventDefault();
 			event.returnValue = '';
@@ -84,7 +84,7 @@ export default function ImportFromText({
 			window.removeEventListener('beforeunload', warn);
 			document.removeEventListener('astro:before-preparation', fullLoad);
 		};
-	}, [unresolved, active, pendingSave]);
+	}, [unresolved, active, pendingSave, unfinishedQueue]);
 	function replaceText(content: string) {
 		setText(content);
 		setPreview(
@@ -245,7 +245,7 @@ export default function ImportFromText({
 										)
 									}
 								/>
-								Import section on line {section.line}
+								Import “{section.name || 'Unnamed list'}” (line {section.line})
 							</label>
 							<label htmlFor={`name-${section.id}`}>
 								List name (line {section.line})
@@ -315,6 +315,21 @@ export default function ImportFromText({
 							Continue import
 						</button>
 					)}
+					{!active &&
+						queue.current.unfinished &&
+						(queue.current.unfinished.run.canSkip ? (
+							<button
+								type="button"
+								onClick={() => queue.current?.skipUnfinished()}
+							>
+								Skip this list
+							</button>
+						) : (
+							<p>
+								Continue this list before moving on: its creation or save is
+								pending.
+							</p>
+						))}
 					<p>
 						Keep this page open to continue. After closing or reloading,
 						re-paste the file and untick already-created lists. Use the editor
@@ -324,10 +339,10 @@ export default function ImportFromText({
 			)}
 			{runs.map((run, index) => (
 				<ImportResult
-					key={index}
+					key={queue.current?.entries[index].sectionId ?? 'single'}
 					run={run}
 					signal={controller.current.signal}
-					active={active}
+					active={['matching', 'creating', 'saving'].includes(run.state.phase)}
 					onContinue={
 						!queue.current && ['stopped', 'rejected'].includes(run.state.phase)
 							? () => void run.continue(controller.current.signal)

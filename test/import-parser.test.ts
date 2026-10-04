@@ -167,7 +167,7 @@ describe('multiple import parsing and preview validation', () => {
 	});
 	it('accepts all 25 midnight sections with fixed per-list counts and final TV Titles; rejects single-list fixtures', () => {
 		const parsed = parseImport(
-			readFileSync('docs/movie_lists/midnight_movies.md', 'utf8'),
+			readFileSync('test/fixtures/midnight_movies.md', 'utf8'),
 			'multiple'
 		);
 		expect(parsed.sections).toHaveLength(25);
@@ -194,4 +194,64 @@ describe('multiple import parsing and preview validation', () => {
 				).errors.length
 			).toBeGreaterThan(1);
 	});
+});
+
+it('keeps the curated midnight file structurally valid without freezing its counts', () => {
+	const parsed = parseImport(
+		readFileSync('docs/movie_lists/midnight_movies.md', 'utf8'),
+		'multiple'
+	);
+	expect(parsed.sections.length).toBeGreaterThan(0);
+	expect(
+		validateImportSections(
+			parsed,
+			parsed.sections.map((section) => ({ ...section, selected: true })),
+			[]
+		)
+	).toEqual([]);
+	expect(parsed.sections.at(-1)?.name.toLowerCase()).toBe('midnight tv shows');
+});
+it('rejects commented headers without moving their titles into the preceding section', () => {
+	for (const prefix of ['', '## Previous\nOne\n']) {
+		const parsed = parseImport(
+			prefix + '## Movies // to sort\nTwo\n## Next\nThree // ignored\nFour',
+			'multiple'
+		);
+		const bad = parsed.sections.find((section) => section.name.includes('//'))!;
+		expect(bad.lines.map((line) => line.name)).toEqual(['Two']);
+		expect(parsed.errors).toEqual([
+			{
+				line: bad.line,
+				sectionId: bad.id,
+				message: `Line ${bad.line}: "## Movies // to sort" contains "//". Remove the comment from the header.`,
+			},
+		]);
+		expect(
+			validateImportSections(
+				parsed,
+				parsed.sections.map((section) => ({
+					...section,
+					selected: section !== bad,
+				})),
+				[]
+			)
+		).toEqual([]);
+		expect(parsed.sections.at(-1)?.lines.map((line) => line.name)).toEqual([
+			'Four',
+		]);
+	}
+});
+it('reports blank names and empty sections without blank duplicate or existing-name noise', () => {
+	const parsed = parseImport('##\n##', 'multiple');
+	const errors = validateImportSections(
+		parsed,
+		parsed.sections.map((section) => ({ ...section, selected: true })),
+		[{ name: ' ' }]
+	);
+	expect(errors.map((error) => error.message)).toEqual([
+		'Line 1: this section has no titles.',
+		'Line 1: list names must be 1–100 characters.',
+		'Line 2: this section has no titles.',
+		'Line 2: list names must be 1–100 characters.',
+	]);
 });

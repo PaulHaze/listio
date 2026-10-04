@@ -366,3 +366,125 @@ it('multiple completed review survives interruption, warns on leaving and saves 
 	]);
 	expect(warn()).toBe(false);
 });
+
+function multipleServer(second: 'collision' | 'empty' | 'delayed' | 'offline') {
+	const lists = new Map<string, CombinedList>();
+	const creates: string[] = [];
+	let matches = 0;
+	let release!: () => void;
+	vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+		if (url.endsWith('/match')) {
+			matches++;
+			if (matches === 2) {
+				if (second === 'offline') throw new Error('Offline');
+				if (second === 'empty')
+					return response([{ status: 'none', reason: 'No match' }]);
+				if (second === 'delayed')
+					await new Promise<void>((resolve) => {
+						release = resolve;
+					});
+			}
+			return response([
+				{ status: 'matched', title: title(1) },
+				...(matches === 1
+					? [
+							second === 'offline'
+								? { status: 'matched', title: title(2) }
+								: { status: 'ambiguous', candidates: [title(2)] },
+						]
+					: []),
+			]);
+		}
+		if (url.endsWith('/lookup')) return response(title(2));
+		if (url === '/api/lists' && init.method === 'GET')
+			return response([
+				...lists.values(),
+				...(second === 'collision' ? [{ name: 'B' }] : []),
+			]);
+		if (init.method === 'POST') {
+			const name = JSON.parse(init.body as string).name;
+			creates.push(name);
+			const list = { ...empty, id: name, name };
+			lists.set(name, list);
+			return response(list);
+		}
+		const id = url.split('/').at(-1)!;
+		if (init.method === 'GET') return response(lists.get(id));
+		const list = {
+			...lists.get(id)!,
+			...JSON.parse(init.body as string),
+			version: lists.get(id)!.version + 1,
+		};
+		lists.set(id, list);
+		return response(list);
+	});
+	return { lists, creates, release: () => release() };
+}
+async function startMultiple() {
+	await render(<ImportFromText initialLists={[]} />);
+	await click('Multiple lists');
+	await fill(
+		'#import-text',
+		'## A\nShared\nReview\n## B\nShared\n## C\nShared'
+	);
+	await click('Import');
+}
+it('renames only a rejected queue section, gates invalid edits and continues without replaying completed lists', async () => {
+	const { creates } = multipleServer('collision');
+	await startMultiple();
+	expect(host.textContent).toContain('already exists');
+	const inputs = [
+		...host.querySelectorAll<HTMLInputElement>('input[id^="name-section"]'),
+	];
+	expect(inputs.map((input) => input.disabled)).toEqual([true, false, true]);
+	await fill('#name-section-4', 'A');
+	expect(button('Continue import').disabled).toBe(true);
+	await fill('#name-section-4', 'Renamed');
+	expect(host.textContent).not.toContain('already exists');
+	expect(button('Continue import').disabled).toBe(false);
+	expect(inputs[1].parentElement?.textContent).toContain(
+		'Import “Renamed” (line 4)'
+	);
+	await click('Continue import');
+	expect(creates).toEqual(['A', 'Renamed', 'C']);
+	expect(host.textContent).toContain('Import complete.');
+});
+it('skips an empty section in the UI and retains completed review while continuing later sections', async () => {
+	const { creates } = multipleServer('empty');
+	await startMultiple();
+	const first = host.querySelector('[aria-label="Result: A"]')!;
+	expect(first.querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Skip this list');
+	expect(host.textContent).toContain('Skipped; no list created.');
+	await click('Continue import');
+	expect(creates).toEqual(['A', 'C']);
+	expect(first.querySelectorAll('.match-review')).toHaveLength(1);
+});
+it('saves a finished list review pick while a later section is still matching', async () => {
+	const { lists, release } = multipleServer('delayed');
+	await startMultiple();
+	const first = host.querySelector('[aria-label="Result: A"]')!;
+	expect(button('Add', first).disabled).toBe(false);
+	await click('Add', first);
+	expect(lists.get('A')?.titles.map((title) => title.imdbId)).toEqual([
+		'tt1',
+		'tt2',
+	]);
+	expect(lists.has('B')).toBe(false);
+	expect(first.querySelectorAll('.match-review')).toHaveLength(0);
+	await act(async () => release());
+	expect(lists.get('B')?.titles.map((title) => title.imdbId)).toEqual(['tt1']);
+	expect(host.textContent).toContain('Import complete.');
+});
+it('warns when a stopped queue has unfinished sections even without review or a pending save', async () => {
+	multipleServer('offline');
+	await startMultiple();
+	expect(host.querySelectorAll('.match-review')).toHaveLength(0);
+	expect(host.textContent).toContain('Offline');
+	expect(host.textContent).not.toContain('save pending');
+	expect(warn()).toBe(true);
+	await click('Skip this list');
+	await click('Continue import');
+	expect(host.textContent).toContain('Import complete.');
+	expect(warn()).toBe(false);
+});
