@@ -198,7 +198,7 @@ are cached and KV updates propagate across Cloudflare locations.
 ### Updates, backups and troubleshooting
 
 To update, pull the latest code, preserve your Worker name, KV ID and addon identifier,
-run `pnpm install --frozen-lockfile`, and run `pnpm deploy`. Cloudflare retains the
+run `pnpm install --frozen-lockfile`, and run `pnpm run deploy`. Cloudflare retains the
 Worker secrets and KV data. Do not replace your populated namespace with a new one.
 Back up the namespace through Cloudflare's dashboard or
 [KV API](https://developers.cloudflare.com/api/resources/kv/); Git contains no saved lists.
@@ -261,7 +261,7 @@ Neither writes production KV. Keep `.dev.vars.example` empty of actual credentia
 | `pnpm build`       | Type-check, then build the production site to `dist/`                                                                                 |
 | `pnpm preview`     | Preview the production build locally                                                                                                  |
 | `pnpm test`        | Run the Vitest suite                                                                                                                  |
-| `pnpm deploy`      | Build and deploy to Cloudflare Workers (using your configured namespace)                                                              |
+| `pnpm run deploy`  | Build and deploy to Cloudflare Workers (using your configured namespace)                                                              |
 | `pnpm lint`        | Format with Prettier and fix ESLint issues                                                                                            |
 | `pnpm lint:check`  | Check formatting and lint without changing files (used in CI)                                                                         |
 

@@ -1,5 +1,5 @@
 # Local development only. Copy to .dev.vars and fill every secret below.
-# Values here are deliberately empty; .dev.vars is ignored by Git.
+# Secrets here are deliberately empty; .dev.vars is ignored by Git.
 # Use plain ASCII values without embedded quotes/newlines (Node dev parser).
 # Generate each of ADDON_SECRET and ADMIN_PASSWORD with:
 # node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
@@ -13,4 +13,4 @@ TMDB_API_KEY=
 ADMIN_USER=
 ADMIN_PASSWORD=
 # Optional stable addon identifier; production value goes in wrangler.jsonc vars.
-ADDON_ID=org.listio.addon
+# ADDON_ID=org.listio.addon
