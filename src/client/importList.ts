@@ -21,7 +21,8 @@ export type ImportState = {
 		| 'stopped'
 		| 'rejected'
 		| 'empty'
-		| 'completed';
+		| 'completed'
+		| 'skipped';
 	progress: string;
 	error: string;
 	list: CombinedList | null;
@@ -65,10 +66,36 @@ export class ImportListRun {
 		this.creationId = crypto.randomUUID();
 		this.update({ error: '' });
 	}
+	get completed() {
+		return this.state.phase === 'completed';
+	}
+	get canSkip() {
+		return (
+			!this.active &&
+			!this.uncertainCreate &&
+			!this.state.list &&
+			['idle', 'stopped', 'rejected', 'empty'].includes(this.state.phase)
+		);
+	}
+	skip() {
+		if (!this.canSkip) return false;
+		this.update({
+			phase: 'skipped',
+			progress: 'Skipped; no list created.',
+			error: '',
+			review: [],
+		});
+		return true;
+	}
+	retryEmpty() {
+		if (this.state.phase === 'empty' && !this.active)
+			this.update({ phase: 'idle', matches: [], review: [], error: '' });
+	}
 	async continue(signal: AbortSignal): Promise<void> {
 		if (
 			this.active ||
 			this.state.phase === 'completed' ||
+			this.state.phase === 'skipped' ||
 			this.state.phase === 'empty'
 		)
 			return;
