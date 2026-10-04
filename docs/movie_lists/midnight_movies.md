@@ -186,7 +186,9 @@
 - Meshes of the Afternoon (1943)
 - Orpheus (1950)
 - Carnival of Souls (1962)
+- Equinox (1970)
 - The Elephant Man (1980)
+- Phantasm (1979)
 - Possession (1981)
 - Return to Oz (1985)
 - Dogra Magra (1988)
@@ -242,14 +244,8 @@
 - Infinity Pool (2023)
 - The Substance (2024)
 
-## Splatter, Gore & Grindhouse Horror
+## Cult Horror-Comedy
 
-- Equinox (1970)
-- Flesh for Frankenstein (1973)
-- The Exorcist (1973)
-- The Texas Chain Saw Massacre (1974)
-- Phantasm (1979)
-- Contamination (1980)
 - The Evil Dead (1981)
 - Basket Case (1982)
 - Angst (1983)
@@ -262,18 +258,8 @@
 - Killer Klowns from Outer Space (1988)
 - Army of Darkness (1992)
 - Braindead (1992)
-- House of 1000 Corpses (2003)
-- The Devil's Rejects (2005)
-- The Human Centipede (First Sequence) (2009)
-- Hobo with a Shotgun (2011)
-- The Human Centipede 2 (Full Sequence) (2011)
-- Wyrmwood: Road of the Dead (2014)
-- Terrifier (2016)
+- Wyrmwood: Road of the Dead
 - PG: Psycho Goreman (2020)
-- Censor (2021)
-- Terrifier 2 (2022)
-- Terrifier 3 (2024)
-- In a Violent Nature (2024)
 
 ## New Wave Cult Horror
 
@@ -293,6 +279,7 @@
 - Hereditary (2018)
 - Saint Maud (2019)
 - Malignant (2021)
+- Censor (2021)
 - Broadcast Signal Intrusion (2021)
 - We're All Going to the World's Fair (2021)
 - Barbarian (2022)
@@ -305,46 +292,25 @@
 
 ## Giallo & Euro-Horror
 
-- The Forbidden Photos of a Lady Above Suspicion (1970)
-- The Fifth Cord (1971)
-- Short Night of Glass Dolls (1971)
-- Who Saw Her Die? (1972)
 - Suspiria (1977)
-- The Pyjama Girl Case (1977)
-- The Bloodstained Shadow (1978)
-- A Blade in the Dark (1983)
 - Berberian Sound Studio (2012)
 - The Strange Color of Your Body's Tears (2013)
 - Let the Corpses Tan (2017)
 - Knife+Heart (2018)
 - Luz (2018)
 
-## Exploitation, Mondo & Shock
+## Camp, Sleaze & Cult Trash
 
 - Reefer Madness (1936)
-- Mondo Cane (1962)
-- Women of the World (1963)
-- Blood Feast (1963)
 - Faster, Pussycat! Kill! Kill! (1965)
-- Africa Addio (1966)
 - Mondo Trasho (1969)
 - Beyond the Valley of the Dolls (1970)
 - The Telephone Book (1971)
-- Goodbye Uncle Tom (1971)
-- The Last House on the Left (1972)
 - Please Don't Eat My Mother! (1973)
 - Flesh Gordon (1974)
-- Ilsa: She Wolf of the SS (1975)
 - Dolemite (1975)
-- I Spit on Your Grave (1978)
-- Cannibal Holocaust (1980)
-- Black Devil Doll from Hell (1984)
 - The Perils of Gwendoline in the Land of the Yik Yak (1984)
-- Nekromantik (1988)
 - Showgirls (1995)
-- The Godfathers of Mondo (2003)
-- A Serbian Film (2010)
-- Gone with the Pope (2010)
 
 ## Crime, Cult Action & Urban Decay
 
@@ -358,8 +324,6 @@
 - Cockfighter (1974)
 - Taxi Driver (1976)
 - The Warriors (1979)
-- The Exterminator (1980)
-- Maniac Cop (1988)
 - Man Bites Dog (1992)
 - Pulp Fiction (1994)
 - Fight Club (1999)
@@ -370,7 +334,6 @@
 - The Raid 2 (2014)
 - Green Room (2015)
 - Brawl in Cell Block 99 (2017)
-- The House That Jack Built (2018)
 - The Night Comes for Us (2018)
 - Bacurau (2019)
 
@@ -408,6 +371,7 @@
 - Repo Man (1984)
 - The Adventures of Buckaroo Banzai Across the 8th Dimension (1984)
 - Night of the Comet (1984)
+- Flash Gordon
 - The Brother from Another Planet (1984)
 - Nineteen Eighty-Four (1984)
 - Brazil (1985)
