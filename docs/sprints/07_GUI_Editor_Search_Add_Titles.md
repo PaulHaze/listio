@@ -71,7 +71,7 @@ Paste many titles at once, one per line, and have them found and added. For exam
 
 - Drag-to-reorder. Hand-built lists use the existing sorts. "Order added" gives the order you added Titles in
 - Cinemeta as a keyless search fallback
-- Making several lists from one file (one per `##` header). That's Sprint 11
+- Making several lists from one file (one per `##` header). That's [Sprint 13](./13_Import_Multiple_Lists_From_Text.md)
 
 ## Implementation and verification
 

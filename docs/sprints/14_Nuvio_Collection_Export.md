@@ -1,11 +1,11 @@
-# Sprint 12 — Nuvio collection export (optional)
+# Sprint 14 — Nuvio collection export (optional)
 
 **Status:** not started — blocked on the open questions below
 
 ## Goal
 
 Download a Nuvio collection JSON that puts chosen Combined Lists into one collection, one folder per
-list, so a set of lists (e.g. one imported in [Sprint 11](./11_Import_Multiple_Lists_From_Text.md))
+list, so a set of lists (e.g. one imported in [Sprint 13](./13_Import_Multiple_Lists_From_Text.md))
 can be added to Nuvio in one go instead of folder by folder.
 
 ## Nuvio collection format (from the public API docs)
@@ -76,19 +76,19 @@ collections blob**, so anything left out is deleted. A direct push would have to
 
 ## Open questions (owner to supply before starting)
 
-- [ ] **Sample Nuvio collection export.** Export an existing collection from Nuvio that has at least
+- [ ] **QUESTION — Sample Nuvio collection export.** Export an existing collection from Nuvio that has at least
       two folders, one holding a movie Catalog and one holding a series Catalog (or both in one
       folder). Save it as `docs/nuvio/collection-sample.json`. Remove anything private. Check whether
       the in-app file matches the API format above (one collection object or an array)
 - [x] **Addon reference.** By addon ID (`manifest.id`), not manifest URL, so the downloaded file
       doesn't hold the secret addon slug
-- [ ] **Required vs optional fields.** Partly answered: the API push example needs only `id`, `title`,
+- [ ] **QUESTION — Required vs optional fields.** Partly answered: the API push example needs only `id`, `title`,
       `viewMode` and `folders`, and images/emoji are optional. Confirm what in-app import needs, and
       pick defaults for `tileShape`/`hideTitle` (proposed: `POSTER`, `false`, no cover image)
-- [ ] **Import behaviour.** Does importing a collection with the same name create a duplicate or
+- [ ] **QUESTION — Import behaviour.** Does importing a collection with the same name create a duplicate or
       replace the old one? Are folders shown in file order? (Collections have an `id`, so a stable
       ID across exports may let a re-import replace rather than duplicate)
-- [ ] **Where it's imported.** The Nuvio screen and steps for importing the JSON, for the runbook
+- [ ] **QUESTION — Where it's imported.** The Nuvio screen and steps for importing the JSON, for the runbook
 
 ## Tasks
 
@@ -99,7 +99,7 @@ collections blob**, so anything left out is deleted. A direct push would have to
 - [ ] Home **Export collection** action: tick existing lists, set a collection name and the folder order, then
       download `{name}.json`. A list's Catalog types come from its saved Titles. Lists with 0 saved Titles
       can't be ticked
-- [ ] Sprint 11 import results: an **Export these as a Nuvio collection** shortcut that opens the export with
+- [ ] Sprints 12–13 import results: an **Export these as a Nuvio collection** shortcut that opens the export with
       the imported lists ticked, in file order, and the collection name blank
 - [ ] Runbook `docs/nuvio/import-collection.md`: how to import the JSON in Nuvio, and the refresh/reinstall
       needed when lists are new

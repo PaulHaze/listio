@@ -19,7 +19,7 @@ import {
 } from './draft.ts';
 import { addTitle } from '../../domain/merge.ts';
 import TitleDiscovery from './TitleDiscovery.tsx';
-import { api, ApiError } from './api.ts';
+import { api, ApiError } from '../../client/api.ts';
 import { enrichmentQueue } from './enrichment.ts';
 
 type SourceRow = {
