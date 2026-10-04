@@ -46,3 +46,5 @@ export async function lookupCandidate(
 
 export const hasIdentity = (candidate: Candidate) =>
 	identities.has(candidateKey(candidate));
+/** Test isolation only: forget every cached identity. */
+export const clearIdentities = () => identities.clear();

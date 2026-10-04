@@ -154,6 +154,7 @@ export function Candidates({
 	}, [unidentifiedKey]);
 	async function lookup(candidate: Candidate) {
 		const key = candidateKey(candidate);
+		// One addition at a time: the caller may be awaiting a save.
 		if (disabled || inFlight.current.size) return;
 		inFlight.current.add(key);
 		onPending?.(true);
@@ -240,7 +241,11 @@ export function Candidates({
 	);
 }
 
-/** The owner retains review state and any remembered line-to-IMDb choices. */
+/**
+ * The owner retains review state and any remembered line-to-IMDb choices.
+ * Rows are reported by object identity, so the owner should replace a resolved
+ * row rather than mutate it, and ignore a row no longer in its review.
+ */
 export function NeedALook({
 	rows,
 	onResolved,
@@ -251,8 +256,12 @@ export function NeedALook({
 	disabled: boolean;
 	add: AddTitle;
 	busy: (delta: number) => void;
-	onResolved: (index: number, status?: AddStatus, title?: Title) => void;
+	onResolved: (row: ReviewLine, status?: AddStatus, title?: Title) => void;
 }) {
+	// One addition at a time across rows: repeated lines can offer the same
+	// candidate, and an awaited save must not race another.
+	const [pendingRow, setPendingRow] = useState<ReviewLine | null>(null);
+	const blocking = pendingRow && rows.includes(pendingRow) ? pendingRow : null;
 	return (
 		<>
 			{rows.map((row, index) =>
@@ -261,7 +270,13 @@ export function NeedALook({
 						key={`${row.line}-${index}`}
 						row={row}
 						{...controls}
-						onResolved={(status, title) => onResolved(index, status, title)}
+						disabled={controls.disabled || (!!blocking && blocking !== row)}
+						onPending={(pending) =>
+							setPendingRow((current) =>
+								pending ? row : current === row ? null : current
+							)
+						}
+						onResolved={(status, title) => onResolved(row, status, title)}
 					/>
 				)
 			)}
@@ -271,6 +286,7 @@ export function NeedALook({
 function ReviewRow({
 	row,
 	onResolved,
+	onPending,
 	...controls
 }: {
 	row: ReviewLine;
@@ -279,8 +295,13 @@ function ReviewRow({
 	add: AddTitle;
 	busy: (delta: number) => void;
 	onResolved: (status?: AddStatus, title?: Title) => void;
+	onPending: (pending: boolean) => void;
 }) {
 	const [pending, setPending] = useState(false);
+	const pendingChanged = (value: boolean) => {
+		setPending(value);
+		onPending(value);
+	};
 	return (
 		<div className="match-review">
 			<h4>{row.line}</h4>
@@ -299,14 +320,14 @@ function ReviewRow({
 							initialQuery={row.name}
 							{...controls}
 							onAdded={onResolved}
-							onPending={setPending}
+							onPending={pendingChanged}
 						/>
 					) : (
 						<Candidates
 							candidates={row.result.candidates}
 							{...controls}
 							onAdded={onResolved}
-							onPending={setPending}
+							onPending={pendingChanged}
 						/>
 					)}
 				</>

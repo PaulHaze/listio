@@ -71,15 +71,24 @@ lookup and the match loop. `matchLines` receives parsed lines, an abort signal,
 and progress/result callbacks. It preserves batches of 20, continuation lookups,
 and a single retry pass for transient line failures. A `MatchStopped` error
 contains settled line/result pairs when a later request fails or is aborted.
+A line counts as settled only after its result callback succeeds, so a caller
+that saves inside the callback is never told a failed save completed.
 Lookup caches distinguish a missing IMDb ID from a retryable request failure.
 
 `src/components/titles/TitleControls.tsx` exports Search, Candidates and
 NeedALook. Callers supply active and Removed Titles, optional new-ID labels,
 and an addition callback returning either a status or a promise. Candidate Add
-awaits that callback before resolving review. While it runs, repeated candidate
-clicks, Skip and edits to its review search are blocked. A rejected addition
-shows an error and enables Add again. The editor also blocks starting a new
-paste while an addition is pending, preserving the current review rows.
+awaits that callback before resolving review. Each candidate grid runs one
+addition at a time. While it runs, the grid's other candidates, its search box
+and its row's Skip are blocked. This also applies to the editor's main Search
+panel, which previously blocked only the clicked candidate; the owner accepted
+the stricter lock after the Sprint 11 audit. Need a look also runs one addition
+at a time across its rows, so repeated lines offering the same candidate cannot
+add it twice concurrently. It reports rows by object identity, not position;
+owners replace a resolved row and ignore rows no longer in their review. A
+rejected addition shows an error and enables Add again. The editor also blocks
+starting a new paste while an addition is pending, preserving the current
+review rows.
 
 `TitleDiscovery` retains its Draft-specific summaries, reconciliation and
 instance-local line-to-IMDb choices. It imports the shared controls and loop;
@@ -115,7 +124,7 @@ The fixture route, component and temporary local authentication exemption were
 removed after these checks. These are mocked browser UI checks; live TMDB,
 real storage persistence, Workers and Nuvio acceptance were not exercised.
 
-Verification: `pnpm test` (149 tests) and `pnpm build` pass. The full
+Verification: `pnpm test` (151 tests) and `pnpm build` pass. The full
 `pnpm lint:check` is blocked by formatting in an independently modified
 `docs/movie_lists/midnight_movies.md`, which is preserved outside this sprint
 commit. Sprint-owned files pass Prettier and source ESLint.

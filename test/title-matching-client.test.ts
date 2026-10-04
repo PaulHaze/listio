@@ -4,6 +4,7 @@ import {
 	lookupCandidate,
 	titleFor,
 	hasIdentity,
+	clearIdentities,
 } from '../src/client/titleIdentity.ts';
 import { ApiError } from '../src/client/api.ts';
 import type { Title } from '../src/domain/types.ts';
@@ -33,7 +34,10 @@ const candidate = (id: number): Candidate => ({
 });
 const response = (body: unknown, status = 200) =>
 	new Response(JSON.stringify(body), { status });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+	vi.unstubAllGlobals();
+	clearIdentities();
+});
 describe('shared match loop', () => {
 	it('sends 20-line batches and associates all results and progress with their original lines', async () => {
 		const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
@@ -140,7 +144,27 @@ describe('shared match loop', () => {
 		expect(error).toBeInstanceOf(MatchStopped);
 		expect(error.message).toBe('Bad key');
 		expect(error.completed).toHaveLength(20);
+		expect(error.cause).toBeInstanceOf(Error);
 		expect(onResult).toHaveBeenCalledTimes(20);
+	});
+	it('does not count a line as completed when its result callback rejects', async () => {
+		vi.stubGlobal('fetch', async () =>
+			response(
+				lines(2).map((_, i) => ({ status: 'matched', title: title(11010 + i) }))
+			)
+		);
+		const onResult = vi
+			.fn()
+			.mockResolvedValueOnce(undefined)
+			.mockRejectedValueOnce(new Error('Save failed'));
+		const error = await matchLines(lines(2), new AbortController().signal, {
+			onResult,
+		}).catch((e) => e);
+		expect(error).toBeInstanceOf(MatchStopped);
+		expect(error.message).toBe('Save failed');
+		expect(
+			error.completed.map((c: { line: { line: string } }) => c.line.line)
+		).toEqual(['Line 0']);
 	});
 	it('aborts outstanding requests and retains additions from the completed batch', async () => {
 		const controller = new AbortController();

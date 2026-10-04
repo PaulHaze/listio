@@ -10,6 +10,7 @@ import {
 import TitleDiscovery from '../src/components/editor/TitleDiscovery.tsx';
 import { createDraft, removeTitles } from '../src/components/editor/draft.ts';
 import { addTitle } from '../src/domain/merge.ts';
+import { clearIdentities } from '../src/client/titleIdentity.ts';
 import type { CombinedList, Title } from '../src/domain/types.ts';
 import type { Candidate } from '../src/tmdb/search.ts';
 const candidate = (id: number): Candidate => ({
@@ -46,6 +47,7 @@ afterEach(async () => {
 	host.remove();
 	vi.useRealTimers();
 	vi.unstubAllGlobals();
+	clearIdentities();
 });
 const render = async (node: ReactNode) => act(async () => root.render(node));
 const button = (label: string, within: Element = host) => {
@@ -84,10 +86,11 @@ describe('shared title review controls', () => {
 			)
 			.mockResolvedValueOnce('added');
 		const onResolved = vi.fn(),
-			busy = vi.fn();
+			busy = vi.fn(),
+			rows = [row(21001)];
 		await render(
 			<NeedALook
-				rows={[row(21001)]}
+				rows={rows}
 				current={empty}
 				disabled={false}
 				add={add}
@@ -109,15 +112,42 @@ describe('shared title review controls', () => {
 		expect(onResolved).not.toHaveBeenCalled();
 		expect(button('Add').disabled).toBe(false);
 		await click('Add');
-		expect(onResolved).toHaveBeenCalledWith(0, 'added', title(21001));
+		expect(onResolved).toHaveBeenCalledWith(rows[0], 'added', title(21001));
 		expect(busy.mock.calls.flat()).toEqual([1, -1, 1, -1]);
+	});
+	it('serializes additions across review rows offering the same candidate', async () => {
+		vi.stubGlobal('fetch', async () => response(title(21008)));
+		let resolve!: (status: 'added') => void;
+		const add = vi.fn(() => new Promise<'added'>((done) => (resolve = done)));
+		const onResolved = vi.fn(),
+			rows = [row(21008), { ...row(21008), line: 'Line 21008 again' }];
+		await render(
+			<NeedALook
+				rows={rows}
+				current={empty}
+				disabled={false}
+				add={add}
+				busy={() => {}}
+				onResolved={onResolved}
+			/>
+		);
+		const [first, second] = host.querySelectorAll('.match-review');
+		await click('Add', first);
+		expect(button('Add', second).disabled).toBe(true);
+		expect(button('Skip', second).disabled).toBe(true);
+		await act(async () => button('Add', second).click());
+		expect(add).toHaveBeenCalledTimes(1);
+		await act(async () => resolve('added'));
+		expect(onResolved).toHaveBeenCalledWith(rows[0], 'added', title(21008));
+		expect(button('Add', second).disabled).toBe(false);
 	});
 	it('allows Skip without adding a Title', async () => {
 		const add = vi.fn(),
-			onResolved = vi.fn();
+			onResolved = vi.fn(),
+			rows = [row(21002)];
 		await render(
 			<NeedALook
-				rows={[row(21002)]}
+				rows={rows}
 				current={empty}
 				disabled={false}
 				add={add}
@@ -126,7 +156,7 @@ describe('shared title review controls', () => {
 			/>
 		);
 		await click('Skip');
-		expect(onResolved).toHaveBeenCalledWith(0, undefined, undefined);
+		expect(onResolved).toHaveBeenCalledWith(rows[0], undefined, undefined);
 		expect(add).not.toHaveBeenCalled();
 	});
 	it('prefills a no-match search and resolves only after its candidate addition', async () => {
@@ -137,16 +167,17 @@ describe('shared title review controls', () => {
 		);
 		vi.stubGlobal('fetch', fetcher);
 		const add = vi.fn(() => 'added' as const),
-			onResolved = vi.fn();
+			onResolved = vi.fn(),
+			rows: ReviewLine[] = [
+				{
+					...row(21003),
+					name: 'Missing name',
+					result: { status: 'none', reason: 'No match' },
+				},
+			];
 		await render(
 			<NeedALook
-				rows={[
-					{
-						...row(21003),
-						name: 'Missing name',
-						result: { status: 'none', reason: 'No match' },
-					},
-				]}
+				rows={rows}
 				current={empty}
 				disabled={false}
 				add={add}
@@ -158,7 +189,7 @@ describe('shared title review controls', () => {
 		await act(async () => vi.advanceTimersByTimeAsync(350));
 		expect(fetcher.mock.calls[0][0]).toBe('/api/search?q=Missing%20name');
 		await click('Add');
-		expect(onResolved).toHaveBeenCalledWith(0, 'added', title(21003));
+		expect(onResolved).toHaveBeenCalledWith(rows[0], 'added', title(21003));
 	});
 	it('recognizes IMDb-only active and Removed Titles and retains Add/Added/In list/Restore labels', async () => {
 		const active = { ...title(21004), tmdbId: null },
@@ -238,8 +269,16 @@ const list: CombinedList = {
 	sort: 'added',
 	updatedAt: '',
 };
-function DiscoveryOwner({ id = 'test' }: { id?: string }) {
-	const [draft, setDraft] = useState(() => createDraft({ ...list, id }));
+function DiscoveryOwner({
+	id = 'test',
+	titles = [],
+}: {
+	id?: string;
+	titles?: Title[];
+}) {
+	const [draft, setDraft] = useState(() =>
+		createDraft({ ...list, id, titles })
+	);
 	const ref = useRef(draft);
 	ref.current = draft;
 	return (
@@ -306,7 +345,11 @@ describe('editor reconciliation through shared controls', () => {
 		expect(host.querySelector('output')?.textContent).toBe(
 			'1 active, 0 removed'
 		);
-		await render(<DiscoveryOwner key="second" id="second" />);
+		// The second list already holds the chosen Title, so only a shared
+		// memory of the first list's choice could resolve this line.
+		await render(
+			<DiscoveryOwner key="second" id="second" titles={[title(22001)]} />
+		);
 		await fill(host.querySelector('textarea')!, 'Unknown line');
 		await click('Find titles');
 		expect(host.textContent).toContain(

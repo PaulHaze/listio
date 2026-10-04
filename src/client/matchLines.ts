@@ -9,13 +9,15 @@ export type MatchProgress = {
 	completed: number;
 	total: number;
 };
-/** Includes every settled line even when a later request fails or is aborted. */
+/** Lines whose onResult settled, even when a later request fails or is aborted. */
 export class MatchStopped extends Error {
 	constructor(
 		readonly completed: CompletedMatch[],
-		readonly cause: unknown
+		cause: unknown
 	) {
-		super(cause instanceof Error ? cause.message : 'Unable to match Titles.');
+		super(cause instanceof Error ? cause.message : 'Unable to match Titles.', {
+			cause,
+		});
 	}
 }
 
@@ -56,6 +58,7 @@ export async function matchLines(
 						};
 					} catch (error) {
 						signal.throwIfAborted();
+						// Preserve the candidate for review if lookup failed transiently.
 						result =
 							error instanceof ApiError && error.status === 422
 								? { status: 'none', reason: error.message }
@@ -71,12 +74,14 @@ export async function matchLines(
 				} else result = initial;
 				signal.throwIfAborted();
 				const line = batch[index];
+				// Lines that hit a transient TMDB error get one more try at the end.
 				if (result.status === 'none' && result.retry && phase === 'Matching') {
 					failed.push(line);
 					continue;
 				}
-				completed.push({ line, result });
+				// Settled only once the caller has accepted the result.
 				await callbacks.onResult?.(line, result);
+				completed.push({ line, result });
 			}
 			signal.throwIfAborted();
 			callbacks.onProgress?.({

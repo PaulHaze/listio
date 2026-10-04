@@ -77,7 +77,8 @@ one parsed title. Nothing is created from invalid input.
 4. Results show the list name linked to its editor, Titles saved, duplicates skipped and Need a look.
    Candidate picks and no-match searches use the shared controls; each addition is saved straight to
    this list. A failed save shows an error and leaves the line available to retry. Serialize additions
-   so two picks cannot overwrite each other's Titles. Dismiss/Skip resolves a line without saving a Title.
+   so two picks cannot overwrite each other's Titles. Sprint 11's Need a look already runs one addition
+   at a time across its rows and reports rows by object identity; replace resolved rows immutably. Dismiss/Skip resolves a line without saving a Title.
 5. **Copy unresolved lines** copies the remaining original title lines for pasting into the editor.
    Unresolved lines are held only on this page. Warn on `beforeunload` while any remain, then remove
    the warning when they are all resolved or dismissed.

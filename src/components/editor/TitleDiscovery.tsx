@@ -41,6 +41,8 @@ export default function TitleDiscovery({
 	const controller = useRef<AbortController | null>(null);
 	const draftRef = useRef(draft);
 	draftRef.current = draft;
+	const reviewRef = useRef(review);
+	reviewRef.current = review;
 	// Pasted line → IMDb ID chosen in Need a look, reused on a repeat paste.
 	const resolutions = useRef(new Map<string, string>());
 	useEffect(() => {
@@ -109,10 +111,11 @@ export default function TitleDiscovery({
 			}
 		}
 	}
-	function resolve(index: number, status?: AddStatus, title?: Title) {
-		if (title) resolutions.current.set(lineKey(review[index]), title.imdbId);
+	function resolve(row: ReviewLine, status?: AddStatus, title?: Title) {
+		if (!reviewRef.current.includes(row)) return;
+		if (title) resolutions.current.set(lineKey(row), title.imdbId);
 		setReview((rows) =>
-			rows.map((row, i) => (i === index ? { ...row, resolved: true } : row))
+			rows.map((r) => (r === row ? { ...r, resolved: true } : r))
 		);
 		if (status)
 			setSummary(
