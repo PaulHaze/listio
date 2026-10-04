@@ -15,7 +15,9 @@ export const MAX_NAME_LENGTH = 100;
 
 export const NAME_ERROR = `Enter a Combined List name of ${MAX_NAME_LENGTH} characters or fewer.`;
 
-export async function readName(request: Request): Promise<string | null> {
+export async function readName(
+	request: Pick<Request, 'json'>
+): Promise<string | null> {
 	try {
 		const body: unknown = await request.json();
 		if (!body || typeof body !== 'object' || !('name' in body)) return null;

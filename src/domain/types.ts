@@ -43,6 +43,8 @@ export type SourceRecord = {
 
 /** A saved, static collection of Titles assembled from Source snapshots. */
 export type CombinedList = {
+	/** Identifies an idempotent import creation; preserved across edits. */
+	creationId?: string;
 	id: string;
 	name: string;
 	sort: SortOrder;

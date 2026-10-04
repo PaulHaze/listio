@@ -22,7 +22,7 @@ const kv = {
 vi.mock('cloudflare:workers', () => ({
 	env: { LISTIO: kv, ADDON_SECRET: 'right' },
 }));
-const { POST } = await import('../src/pages/api/lists/index.ts');
+const { POST, GET: index } = await import('../src/pages/api/lists/index.ts');
 const { GET, PATCH, PUT, DELETE } =
 	await import('../src/pages/api/lists/[id].ts');
 const { GET: manifest } =
@@ -48,6 +48,13 @@ beforeEach(() => {
 });
 
 describe('Combined List API', () => {
+	it('returns the saved list index for import name checks and reconciliation', async () => {
+		expect(await (await call(index, 'GET')).json()).toEqual([]);
+		const list = await create();
+		expect(await (await call(index, 'GET')).json()).toEqual([
+			{ id: list.id, name: list.name, count: 0, types: [] },
+		]);
+	});
 	it('creates a persisted empty Combined List with newest sort and -2 duplicate id', async () => {
 		const list = await create('  Weekend favourites  ');
 		expect(list).toMatchObject({
