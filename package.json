@@ -2,6 +2,7 @@
 	"name": "listio",
 	"type": "module",
 	"version": "0.0.1",
+	"license": "MIT",
 	"engines": {
 		"node": "^22.22.3 || ^24.16.0 || >=26.3.0"
 	},
@@ -27,7 +28,6 @@
 	"dependencies": {
 		"@astrojs/check": "^0.9.10",
 		"@astrojs/react": "^7.0.0",
-		"@astrojs/sitemap": "^3.7.4",
 		"@iconify-json/lucide": "^1.2.136",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/react": "^19.3.0",

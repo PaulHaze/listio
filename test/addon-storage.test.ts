@@ -122,13 +122,18 @@ describe('KV repository', () => {
 });
 
 describe('addon protocol', () => {
+	it('uses a configured addon identity independently of its catalogs', () => {
+		expect(buildManifest([], 'org.listio.personal').id).toBe(
+			'org.listio.personal'
+		);
+	});
 	it('advertises only present types, stable IDs, pagination and required manifest metadata', () => {
 		const manifest = buildManifest([
 			{ id: 'mixed', name: 'Mixed', count: 2, types: ['movie', 'series'] },
 			{ id: 'empty', name: 'Empty', count: 0, types: [] },
 		]);
 		expect(manifest).toMatchObject({
-			id: 'com.paulhaze.listio',
+			id: 'org.listio.addon',
 			version: '0.0.1',
 			resources: ['catalog'],
 			types: ['movie', 'series'],

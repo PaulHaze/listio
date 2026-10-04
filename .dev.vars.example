@@ -1,6 +1,16 @@
+# Local development only. Copy to .dev.vars and fill every secret below.
+# Secrets here are deliberately empty; .dev.vars is ignored by Git.
+# Use plain ASCII values without embedded quotes/newlines (Node dev parser).
+# Generate each of ADDON_SECRET and ADMIN_PASSWORD with:
+# node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ADDON_SECRET=
+# Trakt app Client ID; not Client Secret. Used for public Sources only.
 TRAKT_CLIENT_ID=
 MDBLIST_API_KEY=
+# TMDB API Key (v3 auth), or API Read Access Token (v4 auth).
 TMDB_API_KEY=
+# Choose a username without a colon and a separate long random password.
 ADMIN_USER=
 ADMIN_PASSWORD=
+# Optional stable addon identifier; production value goes in wrangler.jsonc vars.
+# ADDON_ID=org.listio.addon

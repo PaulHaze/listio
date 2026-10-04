@@ -30,6 +30,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint:check
       - run: pnpm test
+      - run: cp wrangler.jsonc.example wrangler.jsonc
       - run: pnpm build
 
   # Merges Dependabot minor/patch PRs only after the ci job passes. Merging from

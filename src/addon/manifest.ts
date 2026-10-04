@@ -1,8 +1,11 @@
 import type { ListIndexEntry } from '../storage/lists.ts';
 
-export function buildManifest(index: readonly ListIndexEntry[]) {
+export function buildManifest(
+	index: readonly ListIndexEntry[],
+	addonId = 'org.listio.addon'
+) {
 	return {
-		id: 'com.paulhaze.listio',
+		id: addonId,
 		version: '0.0.1',
 		name: 'Listio',
 		description: 'Your curated Combined Lists.',
