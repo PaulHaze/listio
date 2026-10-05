@@ -49,6 +49,7 @@ const button = (label: string, within: Element = host) => {
 	if (!found) throw new Error(`Missing ${label}: ${host.textContent}`);
 	return found;
 };
+const sharedReview = () => host.querySelector('[aria-label="Need a look"]')!;
 const click = (label: string, within: Element = host) =>
 	act(async () => button(label, within).click());
 async function fill(selector: string, value: string) {
@@ -383,15 +384,18 @@ it('multiple completed review survives interruption, warns on leaving and saves 
 	expect(warn()).toBe(true);
 	const result = (name: string) =>
 		host.querySelector(`[aria-label="Result: ${name}"]`)!;
-	await click('Add', result('A'));
-	expect(result('A').textContent).toContain('Pick failed');
-	expect(result('A').querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Add', sharedReview());
+	expect(sharedReview().textContent).toContain('Pick failed');
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
+	expect(lists.get('A')!.titles.map((title) => title.imdbId)).toEqual(['tt1']);
 	await click('Continue import');
-	expect(result('A').querySelectorAll('.match-review')).toHaveLength(1);
-	expect(result('B').querySelectorAll('.match-review')).toHaveLength(1);
-	await click('Add', result('A'));
-	expect(result('B').querySelectorAll('.match-review')).toHaveLength(1);
-	await click('Add', result('B'));
+	expect(result('A').textContent).toContain('1 Need a look');
+	expect(result('B').textContent).toContain('1 Need a look');
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Add', sharedReview());
+	expect(host.querySelectorAll('.match-review')).toHaveLength(0);
+	expect(result('A').textContent).toContain('0 Need a look');
+	expect(result('B').textContent).toContain('0 Need a look');
 	expect(lists.get('A')!.titles.map((title) => title.imdbId)).toEqual([
 		'tt1',
 		'tt2',
@@ -496,8 +500,7 @@ it('renames only a rejected queue section, gates invalid edits and continues wit
 it('skips an empty section in the UI and retains completed review while continuing later sections', async () => {
 	const { creates } = multipleServer('empty');
 	await startMultiple();
-	const first = host.querySelector('[aria-label="Result: A"]')!;
-	expect(first.querySelectorAll('.match-review')).toHaveLength(1);
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
 	await click('Skip this list');
 	expect(host.textContent).toContain('Skipped; no list created.');
 	await click('Continue import');
@@ -509,25 +512,29 @@ it('skips an empty section in the UI and retains completed review while continui
 		'A',
 		'C',
 	]);
-	expect(first.querySelectorAll('.match-review')).toHaveLength(1);
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
 });
-it('saves a finished list review pick while a later section is still matching', async () => {
+it('retains shared review while a later section is matching and enables picks after the queue finishes', async () => {
 	const { lists, release } = multipleServer('delayed');
 	await startMultiple();
 	const exportLink = [...host.querySelectorAll('a')].find(
 		(link) => link.textContent === 'Export these as a Nuvio collection'
 	)!;
 	expect(new URL(exportLink.href).searchParams.getAll('list')).toEqual(['A']);
-	const first = host.querySelector('[aria-label="Result: A"]')!;
-	expect(button('Add', first).disabled).toBe(false);
-	await click('Add', first);
+	expect(button('Add', sharedReview()).disabled).toBe(true);
+	await click('Add', sharedReview());
+	expect(lists.get('A')?.titles.map((title) => title.imdbId)).toEqual(['tt1']);
+	expect(lists.has('B')).toBe(false);
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
+	await act(async () => release());
+	expect(host.textContent).toContain('Import complete.');
+	expect(button('Add', sharedReview()).disabled).toBe(false);
+	await click('Add', sharedReview());
 	expect(lists.get('A')?.titles.map((title) => title.imdbId)).toEqual([
 		'tt1',
 		'tt2',
 	]);
-	expect(lists.has('B')).toBe(false);
-	expect(first.querySelectorAll('.match-review')).toHaveLength(0);
-	await act(async () => release());
+	expect(host.querySelectorAll('.match-review')).toHaveLength(0);
 	expect(lists.get('B')?.titles.map((title) => title.imdbId)).toEqual(['tt1']);
 	expect(host.textContent).toContain('Import complete.');
 });
@@ -695,6 +702,10 @@ it('downloads completed collection runs in file order after the queue finishes, 
 	await click('Skip this list');
 	expect(dialog.open).toBe(false);
 	await click('Continue import');
+	expect(dialog.open).toBe(false);
+	expect(sharedReview().querySelectorAll('.match-review')).toHaveLength(1);
+	await click('Add', sharedReview());
+	expect(host.querySelectorAll('.match-review')).toHaveLength(0);
 	expect(dialog.open).toBe(true);
 	expect(document.activeElement).toBe(button('Close', dialog));
 	expect(dialog.textContent).toContain('2 folders');
@@ -711,7 +722,6 @@ it('downloads completed collection runs in file order after the queue finishes, 
 		)
 	);
 	expect(dialog.open).toBe(false);
-	await click('Add', host.querySelector('[aria-label="Result: Movies"]')!);
 	await fill('#collection-title', 'Current title');
 	await click('Download collection');
 	expect(dialog.open).toBe(true);
