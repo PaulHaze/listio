@@ -6,6 +6,7 @@ export type ListIndexEntry = {
 	name: string;
 	count: number;
 	types: TitleType[];
+	showOnHome?: boolean;
 };
 
 export type ListStore = Pick<KVNamespace, 'get' | 'put' | 'delete'>;
@@ -41,6 +42,7 @@ export function indexEntry(list: CombinedList): ListIndexEntry {
 		types: (['movie', 'series'] as const).filter((type) =>
 			list.titles.some((title) => title.type === type)
 		),
+		...(list.showOnHome ? { showOnHome: true } : {}),
 	};
 }
 

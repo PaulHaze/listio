@@ -129,7 +129,13 @@ describe('addon protocol', () => {
 	});
 	it('advertises only present types, stable IDs, pagination and required manifest metadata', () => {
 		const manifest = buildManifest([
-			{ id: 'mixed', name: 'Mixed', count: 2, types: ['movie', 'series'] },
+			{
+				id: 'mixed',
+				name: 'Mixed',
+				count: 2,
+				types: ['movie', 'series'],
+				showOnHome: true,
+			},
 			{ id: 'empty', name: 'Empty', count: 0, types: [] },
 			{ id: 'solo', name: 'Solo', count: 1, types: ['series'] },
 		]);
@@ -143,7 +149,16 @@ describe('addon protocol', () => {
 		expect(manifest.catalogs).toEqual([
 			{ type: 'movie', id: 'mixed', name: 'Mixed (Movies)', extra: skip },
 			{ type: 'series', id: 'mixed', name: 'Mixed (Shows)', extra: skip },
-			{ type: 'series', id: 'solo', name: 'Solo', extra: skip },
+			{
+				type: 'series',
+				id: 'solo',
+				name: 'Solo',
+				showInHome: false,
+				extra: [
+					{ name: 'genre', isRequired: true, options: ['All'] },
+					{ name: 'skip' },
+				],
+			},
 		]);
 	});
 	it('filters before paging, sorts, excludes Removed and preserves metadata without mutation', () => {
@@ -184,12 +199,22 @@ describe('addon protocol', () => {
 			id: 'test',
 			skip: 100,
 		});
+		expect(parseCatalogPath('test/genre=All.json')).toEqual({
+			id: 'test',
+			skip: 0,
+		});
+		expect(parseCatalogPath('test/genre=All&skip=100.json')).toEqual({
+			id: 'test',
+			skip: 100,
+		});
 		for (const path of [
 			'test/skip=-1.json',
 			'test/skip=abc.json',
 			'test/skip=1.5.json',
 			'test/skip=9007199254740992.json',
 			'test/extra.json',
+			'test/=All.json',
+			'test/genre=All&skip=x.json',
 			'test',
 		])
 			expect(parseCatalogPath(path)).toBeNull();

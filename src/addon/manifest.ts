@@ -1,5 +1,18 @@
 import type { ListIndexEntry } from '../storage/lists.ts';
 import { DEFAULT_ADDON_ID } from '../domain/addonId.ts';
+import { HIDDEN_GENRE } from '../domain/nuvioCollection.ts';
+
+/** Nuvio Mobile and Desktop leave a Catalog with a required extra off the home
+ * screen; NuvioTV and NuvioTVSmart read `showInHome`. Nuvio collections still
+ * accept a Catalog whose only required extra is `genre`.
+ */
+const hiddenFromHome = {
+	showInHome: false,
+	extra: [
+		{ name: 'genre', isRequired: true, options: [HIDDEN_GENRE] },
+		{ name: 'skip' },
+	],
+};
 
 export function buildManifest(
 	index: readonly ListIndexEntry[],
@@ -20,7 +33,7 @@ export function buildManifest(
 					list.types.length > 1
 						? `${list.name} (${type === 'movie' ? 'Movies' : 'Shows'})`
 						: list.name,
-				extra: [{ name: 'skip' }],
+				...(list.showOnHome ? { extra: [{ name: 'skip' }] } : hiddenFromHome),
 			}))
 		),
 	};

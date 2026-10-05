@@ -30,12 +30,27 @@ describe('Nuvio collection JSON', () => {
 			'Mixed',
 		]);
 		expect(collection.folders.map((folder) => folder.catalogSources)).toEqual([
-			[{ addonId: 'org.listio.custom', type: 'series', catalogId: 'shows' }],
-			[{ addonId: 'org.listio.custom', type: 'movie', catalogId: 'films' }],
+			[
+				{
+					addonId: 'org.listio.custom',
+					type: 'series',
+					catalogId: 'shows',
+					genre: 'All',
+				},
+			],
+			[
+				{
+					addonId: 'org.listio.custom',
+					type: 'movie',
+					catalogId: 'films',
+					genre: 'All',
+				},
+			],
 			['movie', 'series'].map((type) => ({
 				addonId: 'org.listio.custom',
 				type,
 				catalogId: 'mixed',
+				genre: 'All',
 			})),
 		]);
 		expect(

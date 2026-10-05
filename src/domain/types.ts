@@ -47,6 +47,8 @@ export type CombinedList = {
 	creationId?: string;
 	id: string;
 	name: string;
+	/** Shows the list's Catalogs on Nuvio's home screen. Absent means hidden. */
+	showOnHome?: boolean;
 	sort: SortOrder;
 	sources: SourceRecord[];
 	titles: Title[];

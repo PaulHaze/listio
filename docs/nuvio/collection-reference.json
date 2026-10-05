@@ -15,12 +15,14 @@
           {
             "addonId": "org.listio.addon",
             "type": "movie",
-            "catalogId": "mixed"
+            "catalogId": "mixed",
+            "genre": "All"
           },
           {
             "addonId": "org.listio.addon",
             "type": "series",
-            "catalogId": "mixed"
+            "catalogId": "mixed",
+            "genre": "All"
           }
         ]
       }

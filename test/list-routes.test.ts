@@ -117,7 +117,11 @@ describe('Combined List API', () => {
 				type: 'movie',
 				id: list.id,
 				name: 'New name',
-				extra: [{ name: 'skip' }],
+				showInHome: false,
+				extra: [
+					{ name: 'genre', isRequired: true, options: ['All'] },
+					{ name: 'skip' },
+				],
 			},
 		]);
 		expect((await call(DELETE, 'DELETE', list.id)).status).toBe(204);
@@ -126,6 +130,53 @@ describe('Combined List API', () => {
 			catalogs: [],
 		});
 		expect((await call(GET, 'GET', list.id)).status).toBe(404);
+	});
+
+	it('keeps lists off Nuvio home until shown, and a Draft save keeps the setting', async () => {
+		const list = await create();
+		list.titles.push({
+			imdbId: 'tt1',
+			type: 'movie',
+			name: 'A Title',
+			year: 2000,
+			poster: null,
+			blurb: null,
+			tmdbId: null,
+			addedSeq: 0,
+		});
+		list.nextSeq = 1;
+		values.set(`list:${list.id}`, JSON.stringify(list));
+		const catalogs = async () =>
+			((await (await call(manifest, 'GET')).json()) as { catalogs: unknown[] })
+				.catalogs;
+		for (const body of [{ showOnHome: 'yes' }, { showOnHome: null }])
+			expect((await call(PATCH, 'PATCH', list.id, body)).status).toBe(400);
+		const shown = await call(PATCH, 'PATCH', list.id, { showOnHome: true });
+		expect(await shown.json()).toMatchObject({
+			name: list.name,
+			showOnHome: true,
+			version: 2,
+		});
+		expect(await catalogs()).toEqual([
+			{
+				type: 'movie',
+				id: list.id,
+				name: list.name,
+				extra: [{ name: 'skip' }],
+			},
+		]);
+		const saved = await call(PUT, 'PUT', list.id, {
+			version: 2,
+			sort: 'az',
+			titles: list.titles,
+			removed: [],
+			sources: [],
+		});
+		expect(await saved.json()).toMatchObject({ showOnHome: true, sort: 'az' });
+		await call(PATCH, 'PATCH', list.id, { showOnHome: false });
+		expect(await catalogs()).toEqual([
+			expect.objectContaining({ id: list.id, showInHome: false }),
+		]);
 	});
 
 	it('saves a full Draft, updates catalogs, and rejects stale versions without losing data', async () => {

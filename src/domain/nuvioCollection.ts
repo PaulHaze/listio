@@ -7,6 +7,9 @@ export type CollectionList = {
 	types: readonly TitleType[];
 };
 
+/** The single genre option of a Catalog kept off Nuvio's home screen. */
+export const HIDDEN_GENRE = 'All';
+
 const idPart = (value: string) => encodeURIComponent(value);
 
 /** Legacy catalogSources remains supported by Nuvio's collection importer.
@@ -14,6 +17,8 @@ const idPart = (value: string) => encodeURIComponent(value);
  * and free of path/JSON punctuation. Changing order or list contents preserves
  * collection identity. A different collection name (ignoring case) or addon ID
  * creates a new identity. Folder IDs are scoped to their collection.
+ * Every source names HIDDEN_GENRE so a Catalog hidden from Nuvio's home (which
+ * requires a genre) loads; the addon ignores the genre otherwise.
  */
 export function buildNuvioCollection(
 	name: string,
@@ -51,6 +56,7 @@ export function buildNuvioCollection(
 						addonId,
 						type,
 						catalogId: list.listId,
+						genre: HIDDEN_GENRE,
 					})),
 				};
 			}),

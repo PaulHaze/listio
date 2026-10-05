@@ -81,6 +81,14 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 									{list.count} {list.count === 1 ? 'Title' : 'Titles'}
 								</p>
 							</div>
+							<label class="home-toggle">
+								<input
+									type="checkbox"
+									data-home={list.id}
+									checked={list.showOnHome === true}
+								/>
+								Show on Nuvio home
+							</label>
 							<div class="list-actions">
 								<details>
 									<summary>Rename</summary>
@@ -143,6 +151,16 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 					{ name }
 				);
 			});
+			this.addEventListener('change', (event) => {
+				const toggle = event.target;
+				if (!(toggle instanceof HTMLInputElement) || !toggle.dataset.home)
+					return;
+				void this.save(
+					`/api/lists/${encodeURIComponent(toggle.dataset.home)}`,
+					'PATCH',
+					{ showOnHome: toggle.checked }
+				);
+			});
 			this.addEventListener('click', (event) => {
 				const button =
 					event.target instanceof Element
@@ -168,7 +186,11 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 			error.hidden = false;
 		}
 
-		async save(url: string, method: string, body?: { name: string }) {
+		async save(
+			url: string,
+			method: string,
+			body?: { name: string } | { showOnHome: boolean }
+		) {
 			const controls = this.querySelectorAll<
 				HTMLInputElement | HTMLButtonElement
 			>('input, button');

@@ -1,7 +1,12 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { savedDraft } from '../../../api/validate.ts';
-import { apiError, json, NAME_ERROR, readName } from '../../../api/http.ts';
+import {
+	apiError,
+	json,
+	PATCH_ERROR,
+	readListPatch,
+} from '../../../api/http.ts';
 import {
 	deleteList,
 	getIndex,
@@ -15,13 +20,13 @@ export const GET: APIRoute = async ({ params }) => {
 };
 
 export const PATCH: APIRoute = async ({ request, params }) => {
-	const name = await readName(request);
-	if (!name) return json({ error: NAME_ERROR }, 400);
+	const patch = await readListPatch(request);
+	if (!patch) return json({ error: PATCH_ERROR }, 400);
 	try {
 		const list = params.id ? await getList(env.LISTIO, params.id) : null;
 		if (!list) return json({ error: 'Combined List not found.' }, 404);
 		// Keep the stable id and all editor data, regardless of other input fields.
-		return json(await putList(env.LISTIO, { ...list, name }));
+		return json(await putList(env.LISTIO, { ...list, ...patch }));
 	} catch (error) {
 		return apiError(error);
 	}

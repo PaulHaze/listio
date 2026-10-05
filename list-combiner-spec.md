@@ -115,6 +115,11 @@ One Stremio-protocol catalog addon, named **Listio**, installed once in Nuvio.
   addon refresh or reinstall in Nuvio.
 - In Nuvio, Catalogs can be installed as rows or added to collection folders (a folder can
   hold both the movie and series Catalog of one list).
+- **Show on Nuvio home** per Combined List, off by default. A hidden list's Catalogs carry
+  `showInHome: false` (NuvioTV) and a required `genre` extra with the single option `All`
+  (Nuvio Mobile/Desktop leave such Catalogs off the home screen). They still load in
+  collection folders; exported collection sources name `genre: "All"`. The addon ignores
+  every catalog extra except `skip`.
 
 ## 6. Access
 
