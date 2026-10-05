@@ -3,7 +3,6 @@
 - Night of the Living Dead (1968)
 - El Topo (1970)
 - Pink Flamingos (1972)
-- The Harder They Come (1972)
 - The Rocky Horror Picture Show (1975)
 - Eraserhead (1977)
 
