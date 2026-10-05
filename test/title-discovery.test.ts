@@ -159,6 +159,30 @@ describe('TMDB discovery', () => {
 			})
 		).toMatchObject({ status: 'matched', title: { imdbId: 'tt0120601' } });
 	});
+	it('takes the first name + year (±1) hit over obscure same-name releases', async () => {
+		const results = [
+			{ id: 1, title: 'Annihilation', release_date: '2018-02-22' },
+			{ id: 2, title: 'Arctic Annihilation', release_date: '2018-01-01' },
+			{ id: 3, title: 'Annihilation', release_date: '2018-06-23' },
+			{ id: 4, title: 'Annihilation', release_date: '2017-01-01' },
+		];
+		const lookups: string[] = [];
+		const fetcher = async (url: string | URL | Request) => {
+			if (String(url).includes('/search/')) return response({ results });
+			lookups.push(new URL(String(url)).pathname);
+			return response(fixture('lookup'));
+		};
+		for (const year of [2018, 2019]) {
+			lookups.length = 0;
+			expect(
+				await matchTitle('Annihilation', year, {
+					apiKey: 'key',
+					fetch: fetcher as typeof fetch,
+				})
+			).toMatchObject({ status: 'matched' });
+			expect(lookups[0]).toMatch(/\/movie\/1$/);
+		}
+	});
 	it('normalizes ampersands, "and" and leading articles', () => {
 		expect(normalizedName('Fear & Loathing in Las Vegas')).toBe(
 			normalizedName('Fear and Loathing in Las Vegas')

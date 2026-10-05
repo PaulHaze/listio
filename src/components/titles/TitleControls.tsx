@@ -248,12 +248,14 @@ export function Candidates({
 export function NeedALook({
 	rows,
 	onResolved,
+	add,
 	...controls
 }: {
 	rows: ReviewLine[];
 	current: CurrentTitles;
 	disabled: boolean;
-	add: AddTitle;
+	/** Receives the row too, so a shared review can add to the row's own list. */
+	add: (title: Title, row: ReviewLine) => AddStatus | Promise<AddStatus>;
 	busy: (delta: number) => void;
 	onResolved: (row: ReviewLine, status?: AddStatus, title?: Title) => void;
 }) {
@@ -269,6 +271,7 @@ export function NeedALook({
 						key={`${row.line}-${index}`}
 						row={row}
 						{...controls}
+						add={(title) => add(title, row)}
 						disabled={controls.disabled || (!!blocking && blocking !== row)}
 						onPending={(pending) =>
 							setPendingRow((current) =>

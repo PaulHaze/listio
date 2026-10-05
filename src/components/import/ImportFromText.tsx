@@ -10,13 +10,16 @@ import {
 } from '../../domain/pasteSections.ts';
 import { ImportListRun } from '../../client/importList.ts';
 import { ImportQueue } from '../../client/importQueue.ts';
-import { NeedALook } from '../titles/TitleControls.tsx';
+import { NeedALook, type AddStatus } from '../titles/TitleControls.tsx';
 import {
 	buildNuvioCollection,
 	collectionExportUrl,
 } from '../../domain/nuvioCollection.ts';
 import { downloadCollection } from '../../client/downloadCollection.ts';
 import CollectionDialog from './CollectionDialog.tsx';
+import type { ReviewLine } from '../../client/review.ts';
+import type { Title } from '../../domain/types.ts';
+import { normalizedName } from '../../tmdb/match.ts';
 
 export default function ImportFromText({
 	initialLists,
@@ -160,11 +163,12 @@ export default function ImportFromText({
 		!active &&
 		exportIds.length > 0;
 	useEffect(() => {
-		if (collectionReady && !offered.current) {
+		// Only prompt once every Title needing a look has been cleared.
+		if (collectionReady && !unresolved && !offered.current) {
 			offered.current = true;
 			setDialogOpen(true);
 		}
-	}, [collectionReady]);
+	}, [collectionReady, unresolved]);
 	function download() {
 		setDownloadError('');
 		setDownloadMessage('');
@@ -210,6 +214,55 @@ export default function ImportFromText({
 			document.removeEventListener('astro:before-preparation', fullLoad);
 		};
 	}, [unresolved, active, pendingSave, unfinishedQueue]);
+	// Multi-list imports share one Need a look: each name + year shows once,
+	// and resolving it settles that line in every finished list.
+	const lineKey = (row: ReviewLine) =>
+		`${normalizedName(row.name)}|${row.year ?? ''}`;
+	const owners = new Map<ReviewLine, ImportListRun>();
+	const shared = new Map<string, ReviewLine>();
+	if (queue.current)
+		for (const run of runs) {
+			if (!run.completed) continue;
+			for (const row of run.state.review) {
+				if (row.resolved || shared.has(lineKey(row))) continue;
+				shared.set(lineKey(row), row);
+				owners.set(row, run);
+			}
+		}
+	const sharedRows = [...shared.values()];
+	// The picked Title is added to the shown row's list first; NeedALook then
+	// reports the row resolved and the other lists follow.
+	const addShared = (title: Title, row: ReviewLine) => {
+		const run = owners.get(row);
+		if (!run) throw new Error('This line is no longer waiting.');
+		return run.add(title, controller.current.signal);
+	};
+	const [sharedBusy, setSharedBusy] = useState(0);
+	async function resolveShared(
+		row: ReviewLine,
+		status?: AddStatus,
+		title?: Title
+	) {
+		const from = owners.get(row);
+		from?.resolve(row, status === 'duplicate');
+		const key = lineKey(row);
+		for (const run of runs) {
+			if (!run.completed) continue;
+			for (const other of run.state.review) {
+				if (other === row || other.resolved || lineKey(other) !== key) continue;
+				if (!title) {
+					run.resolve(other);
+					continue;
+				}
+				try {
+					const added = await run.add(title, controller.current.signal);
+					run.resolve(other, added === 'duplicate');
+				} catch {
+					// Left unresolved; it shows again in the shared list to retry.
+				}
+			}
+		}
+	}
 	function replaceText(content: string) {
 		offered.current = false;
 		setDialogOpen(false);
@@ -546,6 +599,25 @@ export default function ImportFromText({
 			{collectionMode && !dialogOpen && downloadMessage && (
 				<p role="status">{downloadMessage}</p>
 			)}
+			{sharedRows.length > 0 && (
+				<section className="panel" aria-label="Need a look">
+					<h2>Need a look</h2>
+					<p>
+						{sharedRows.length} unresolved across all lists. Each line shows
+						once; resolving it updates every list that has it.
+					</p>
+					<NeedALook
+						rows={sharedRows}
+						current={{ titles: [], removed: [] }}
+						disabled={sharedBusy > 0 || active}
+						busy={(delta) => setSharedBusy((value) => value + delta)}
+						add={addShared}
+						onResolved={(row, status, title) =>
+							void resolveShared(row, status, title)
+						}
+					/>
+				</section>
+			)}
 			{runs.map((run, index) => (
 				<ImportResult
 					key={queue.current?.entries[index].sectionId ?? 'single'}
@@ -558,6 +630,7 @@ export default function ImportFromText({
 							: undefined
 					}
 					continueDisabled={!!nameError && rejected}
+					shared={!!queue.current}
 				/>
 			))}
 		</div>
@@ -570,12 +643,15 @@ function ImportResult({
 	active,
 	onContinue,
 	continueDisabled,
+	shared,
 }: {
 	run: ImportListRun;
 	signal: AbortSignal;
 	active: boolean;
 	onContinue?: () => void;
 	continueDisabled?: boolean;
+	/** Rows are resolved in the shared Need a look instead. */
+	shared: boolean;
 }) {
 	const [busy, setBusy] = useState(0);
 	const [copyMessage, setCopyMessage] = useState('');
@@ -637,16 +713,18 @@ function ImportResult({
 							<p role="status">{copyMessage}</p>
 						</>
 					)}
-					<NeedALook
-						rows={state.review}
-						current={state.list!}
-						disabled={busy > 0 || active}
-						busy={(delta) => setBusy((value) => value + delta)}
-						add={(title) => run.add(title, signal)}
-						onResolved={(row, status) =>
-							run.resolve(row, status === 'duplicate')
-						}
-					/>
+					{!shared && (
+						<NeedALook
+							rows={state.review}
+							current={state.list!}
+							disabled={busy > 0 || active}
+							busy={(delta) => setBusy((value) => value + delta)}
+							add={(title) => run.add(title, signal)}
+							onResolved={(row, status) =>
+								run.resolve(row, status === 'duplicate')
+							}
+						/>
+					)}
 				</>
 			)}
 		</section>

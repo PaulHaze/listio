@@ -62,11 +62,15 @@ export async function matchTitle(
 		candidates = [...tv, ...movie];
 	}
 	const near = candidates.filter(fits);
-	const sameYear = near.filter((c) => c.year === year);
-	const exact = sameYear.length ? sameYear : near;
-	if (exact.length === 1) {
-		if (!canLookup()) return { status: 'lookup', candidate: exact[0] };
-		const lookup = await lookupTitle(exact[0].tmdbId, exact[0].type, options);
+	const within = (years: number) =>
+		near.filter((c) => year !== undefined && Math.abs(c.year! - year) <= years);
+	// A name + year (±1) hit is trusted even when obscure same-name releases
+	// share it; TMDB's relevance order puts the well-known one first.
+	const best = within(0)[0] ?? within(1)[0];
+	const pick = best ?? (near.length === 1 ? near[0] : undefined);
+	if (pick) {
+		if (!canLookup()) return { status: 'lookup', candidate: pick };
+		const lookup = await lookupTitle(pick.tmdbId, pick.type, options);
 		return lookup.status === 'matched'
 			? lookup
 			: { status: 'none', reason: lookup.reason };
