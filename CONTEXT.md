@@ -12,6 +12,9 @@ _Avoid_: input list, list, feed
 A named, curated, static set of Titles, built by adding Sources, adding individual Titles found by search, and removing unwanted Titles. It may have no Sources at all (a hand-built list). It does not stay in sync with its Sources.
 _Avoid_: project, merged list, collection, manual list, custom list
 
+**Collection**:
+A Nuvio collection with one folder per Combined List, downloaded as JSON. Listio stores the lists individually and does not store the collection.
+
 **Title**:
 A single movie or show, identified by its IMDb ID.
 _Avoid_: item, entry, film

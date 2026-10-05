@@ -1,6 +1,6 @@
 # Sprint 15 — New collection from text
 
-**Status:** not started
+**Status:** implemented; acceptance pending
 
 ## Goal
 
@@ -89,37 +89,37 @@ only as the JSON downloaded from Sprint 14's builder. This sprint doesn't change
 
 ## Tasks
 
-- [ ] Home: **+ New collection** `<details>` beside **+ New list**, with a GET form to `/import`
+- [x] Home: **+ New collection** `<details>` beside **+ New list**, with a GET form to `/import`
       (`name="collection"`, `required`, `maxlength` 100, a pattern that rejects all-space input),
       both details sharing one `name`. The `<list-manager>` submit handler currently calls
       `preventDefault()` on every form inside it and treats any non-`create` form as a rename. Make
       it return early unless `data-action` is `create` or `rename`, so the new form navigates
       normally
-- [ ] `src/pages/import.astro`: read `collection` from the query and pass `initialCollection` and
+- [x] `src/pages/import.astro`: read `collection` from the query and pass `initialCollection` and
       `addonId={resolveAddonId(env.ADDON_ID)}` to `ImportFromText`. Switch the page title, heading and
       intro text in collection mode
-- [ ] `ImportFromText` collection mode: force `multiple`, hide the toggle, add the `#collection-title`
+- [x] `ImportFromText` collection mode: force `multiple`, hide the toggle, add the `#collection-title`
       field and its validation to the Import gate, and add the no-headers wording. Keep one parser.
       Give the existing no-headers error a stable marker (e.g. `code: 'no-headers'` on `ImportError`)
       so the component can swap the message without matching on its text
-- [ ] Extract the blob/anchor download from `ExportCollection` into a small shared client helper
+- [x] Extract the blob/anchor download from `ExportCollection` into a small shared client helper
       (e.g. `src/client/downloadCollection.ts`), and use it for both the export page and the import
       page's **Download collection**. Don't change the export page's behaviour
-- [ ] Export modal (accessible dialog: focus moves in, Escape and a close button dismiss it) that
+- [x] Export modal (accessible dialog: focus moves in, Escape and a close button dismiss it) that
       opens when the queue finishes, plus a **Download collection** button on the results to reopen
       it, as described in Behaviour 5
-- [ ] `collectionExportUrl(listIds, name?)` adds `name` when it's given. `/export` passes
+- [x] `collectionExportUrl(listIds, name?)` adds `name` when it's given. `/export` passes
       `initialName` from `?name=` to `ExportCollection`
-- [ ] Docs: a **Collection** entry in `CONTEXT.md` (a Nuvio collection: one folder per Combined List,
+- [x] Docs: a **Collection** entry in `CONTEXT.md` (a Nuvio collection: one folder per Combined List,
       downloaded as JSON, not stored by Listio). Add the New collection route to
       `docs/nuvio/import-collection.md` step 2 and to the README usage steps. Add row 15 to
       `docs/sprints/README.md`
-- [ ] Unit tests (`test/import-parser.test.ts`, `test/nuvio-collection.test.ts`): the no-headers error
+- [x] Unit tests (`test/import-parser.test.ts`, `test/nuvio-collection.test.ts`): the no-headers error
       carries its marker, and the existing message is unchanged. Duplicate headers (differing only in
       case or spacing) give the `duplicate-header` error naming both lines. A header matching an
       existing list gives `existing-list`. Outside collection mode both messages are unchanged. `collectionExportUrl` encodes a
       title with spaces, `&` and `'`, keeps list order, and leaves the URL unchanged without a name
-- [ ] UI tests (`// @vitest-environment happy-dom`, React `act`, stubbed `fetch`, following
+- [x] UI tests (`// @vitest-environment happy-dom`, React `act`, stubbed `fetch`, following
       `test/import-review.test.tsx`), in `test/import-review.test.tsx` or a new
       `test/new-collection.test.tsx`:
   - Collection mode prefills the title, hides the toggle and the List name field, and shows the
@@ -135,7 +135,7 @@ only as the JSON downloaded from Sprint 14's builder. This sprint doesn't change
   - A Need a look pick made before downloading changes the folder's Catalog types.
   - The export link carries `name`.
   - `ExportCollection` prefills `initialName`. Existing `/import` and `/export` tests pass unchanged.
-- [ ] Manual check on Home (Astro pages have no unit tests, as in Sprint 04): **+ New list** still
+- [x] Manual check on Home (Astro pages have no unit tests, as in Sprint 04): **+ New list** still
       creates and opens a list. The New collection form navigates and sends no `POST /api/lists`.
       All-space titles are refused. Opening one dropdown closes the other
 
@@ -150,6 +150,15 @@ only as the JSON downloaded from Sprint 14's builder. This sprint doesn't change
 - The downloaded file imports into Nuvio and shows one folder per list (live acceptance, as for
   Sprint 14)
 - `pnpm test`, `pnpm build` and `pnpm lint:check` pass
+
+## Verification
+
+- `pnpm test`: 212 tests passed across 22 files.
+- `pnpm build`: passed; type check reports zero errors and two existing `returnValue` deprecation hints.
+- `pnpm lint:check`: passed.
+- Browser Home check: opening either dropdown closes the other; all-space titles fail HTML validation; the collection form navigates with its encoded title and sends no create request. New list still sends its create request and opens the returned list (intercepted response; no local data was created).
+- Download tests reset the fetch mock after import completes and verify downloading does not fetch the KV index. The existing import save path still checks saved names before creating each list, as required by Sprint 13.
+- Live Nuvio device import and the full 25-section fixture with live TMDB matching remain owner acceptance checks.
 
 ## Open questions
 

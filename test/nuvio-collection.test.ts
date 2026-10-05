@@ -103,3 +103,17 @@ describe('Nuvio collection JSON', () => {
 		expect(url.searchParams.getAll('list')).toEqual(['second&first', 'one']);
 	});
 });
+
+it('encodes a collection title and preserves folder order and unnamed URLs', () => {
+	const name = "Weekend & 'Picks'";
+	const url = new URL(
+		collectionExportUrl(['second', 'first'], name),
+		'https://listio.example'
+	);
+	expect(url.searchParams.get('name')).toBe(name);
+	expect(url.searchParams.getAll('list')).toEqual(['second', 'first']);
+	expect(collectionExportUrl(['second', 'first'])).toBe(
+		'/export?list=second&list=first'
+	);
+	expect(collectionExportUrl([], '')).toBe('/export?name=');
+});

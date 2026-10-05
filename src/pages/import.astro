@@ -2,18 +2,31 @@
 import { env } from 'cloudflare:workers';
 import Layout from '@/layouts/Layout.astro';
 import { getIndex } from '@/storage/lists';
+import { resolveAddonId } from '@/domain/addonId';
 import ImportFromText from '@/components/import/ImportFromText';
 export const prerender = false;
 const lists = await getIndex(env.LISTIO);
+const initialCollection = Astro.url.searchParams.get('collection');
+const collectionMode = initialCollection !== null;
+const heading = collectionMode ? 'New collection' : 'Import from text';
 ---
 
-<Layout title="Import from text · Listio">
+<Layout title={`${heading} · Listio`}>
 	<main class="listio-main">
 		<a href="/">← Combined Lists</a>
 		<header class="page-heading">
-			<h1>Import from text</h1>
-			<p>Create one saved Combined List from movie and TV titles.</p>
+			<h1>{heading}</h1>
+			<p>
+				{collectionMode
+					? 'Paste sectioned lists to save one Combined List per header and download a Nuvio collection.'
+					: 'Create one saved Combined List from movie and TV titles.'}
+			</p>
 		</header>
-		<ImportFromText client:load initialLists={lists} />
+		<ImportFromText
+			client:load
+			initialLists={lists}
+			initialCollection={initialCollection}
+			addonId={resolveAddonId(env.ADDON_ID)}
+		/>
 	</main>
 </Layout>

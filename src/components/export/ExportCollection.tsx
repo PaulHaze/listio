@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import type { ListIndexEntry } from '../../storage/lists.ts';
-import {
-	buildNuvioCollection,
-	collectionFilename,
-} from '../../domain/nuvioCollection.ts';
+import { buildNuvioCollection } from '../../domain/nuvioCollection.ts';
+import { downloadCollection } from '../../client/downloadCollection.ts';
 
 export default function ExportCollection({
 	lists,
 	addonId,
 	initialSelected = [],
+	initialName = '',
 }: {
 	lists: ListIndexEntry[];
 	addonId: string;
 	initialSelected?: string[];
+	initialName?: string;
 }) {
-	const [name, setName] = useState('');
+	const [name, setName] = useState(initialName);
 	const [initial] = useState(() => {
 		const requested = [...new Set(initialSelected)];
 		const available = requested.filter((id) =>
@@ -52,18 +52,7 @@ export default function ExportCollection({
 						})),
 						addonId
 					);
-					const url = URL.createObjectURL(
-						new Blob([JSON.stringify(data, null, 2) + '\n'], {
-							type: 'application/json',
-						})
-					);
-					const link = document.createElement('a');
-					link.href = url;
-					link.download = collectionFilename(name);
-					document.body.appendChild(link);
-					link.click();
-					link.remove();
-					setTimeout(() => URL.revokeObjectURL(url), 1000);
+					downloadCollection(data, name);
 					setMessage('Collection downloaded. Import the JSON in Nuvio.');
 				} catch (failure) {
 					setError(

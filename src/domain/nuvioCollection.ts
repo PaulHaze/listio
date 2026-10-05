@@ -67,8 +67,9 @@ export function collectionFilename(name: string) {
 	}.json`;
 }
 
-export function collectionExportUrl(listIds: readonly string[]) {
+export function collectionExportUrl(listIds: readonly string[], name?: string) {
 	const query = new URLSearchParams();
 	for (const id of listIds) query.append('list', id);
+	if (name !== undefined) query.set('name', name);
 	return `/export?${query}`;
 }

@@ -30,22 +30,38 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 		</p>
 		<list-manager>
 			<p class="error" role="alert" hidden></p>
-			<details class="panel new-list">
-				<summary>+ New list</summary>
-				<form data-action="create">
-					<label for="new-name">Combined List name</label>
-					<div class="form-row">
+			<div class="form-row">
+				<details class="panel new-list" name="new-entry">
+					<summary>+ New list</summary>
+					<form data-action="create">
+						<label for="new-name">Combined List name</label>
+						<div class="form-row">
+							<input
+								id="new-name"
+								name="name"
+								required
+								maxlength={MAX_NAME_LENGTH}
+								placeholder="Weekend favourites"
+							/>
+							<button type="submit">Create list</button>
+						</div>
+					</form>
+				</details>
+				<details class="panel new-list" name="new-entry">
+					<summary>+ New collection</summary>
+					<form method="GET" action="/import">
+						<label for="new-collection">Collection title</label>
 						<input
-							id="new-name"
-							name="name"
+							id="new-collection"
+							name="collection"
 							required
-							maxlength={MAX_NAME_LENGTH}
-							placeholder="Weekend favourites"
+							maxlength={100}
+							pattern=".*\S.*"
 						/>
-						<button type="submit">Create list</button>
-					</div>
-				</form>
-			</details>
+						<button type="submit">Paste lists</button>
+					</form>
+				</details>
+			</div>
 			{lists.length === 0 ? (
 				<p class="empty-state">
 					No Combined Lists yet. Create your first list to get started.
@@ -111,6 +127,7 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 			this.addEventListener('submit', (event) => {
 				const form = event.target;
 				if (!(form instanceof HTMLFormElement)) return;
+				if (!['create', 'rename'].includes(form.dataset.action ?? '')) return;
 				event.preventDefault();
 				const name = new FormData(form).get('name');
 				if (typeof name !== 'string' || !name.trim()) {

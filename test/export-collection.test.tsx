@@ -172,3 +172,18 @@ it('keeps failed browser downloads retryable and shows an error', async () => {
 		host.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled
 	).toBe(false);
 });
+
+it('prefills the collection name supplied by the export route', async () => {
+	await act(async () =>
+		root.render(
+			<ExportCollection
+				lists={lists}
+				addonId="org.listio.custom"
+				initialName="Weekend & Picks"
+			/>
+		)
+	);
+	expect(host.querySelector<HTMLInputElement>('#collection-name')!.value).toBe(
+		'Weekend & Picks'
+	);
+});

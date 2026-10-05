@@ -255,3 +255,38 @@ it('reports blank names and empty sections without blank duplicate or existing-n
 		'Line 2: list names must be 1–100 characters.',
 	]);
 });
+
+it('marks collection-specific errors without changing multiple-list messages', () => {
+	const absent = parseImport('Title', 'multiple');
+	expect(absent.errors[0]).toMatchObject({
+		code: 'no-headers',
+		message:
+			'No "## " list headers found. Switch to Single list, or add headers.',
+	});
+	const parsed = parseImport(
+		'## Same  \nTitle\n##  sAmE\nTitle\n## Existing\nTitle',
+		'multiple'
+	);
+	const errors = validateImportSections(
+		parsed,
+		parsed.sections.map((section) => ({ ...section, selected: true })),
+		[{ name: ' existing ' }]
+	);
+	expect(errors).toEqual([
+		{
+			line: 3,
+			sectionId: 'section-3',
+			code: 'duplicate-header',
+			name: 'sAmE',
+			previousLine: 1,
+			message: 'Lines 1 and 3: two lists are named "sAmE".',
+		},
+		{
+			line: 5,
+			sectionId: 'section-5',
+			code: 'existing-list',
+			name: 'Existing',
+			message: 'Line 5: a list named "Existing" already exists.',
+		},
+	]);
+});

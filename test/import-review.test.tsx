@@ -37,6 +37,7 @@ beforeEach(() => {
 afterEach(async () => {
 	await act(async () => root.unmount());
 	host.remove();
+	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	clearIdentities();
 });
@@ -541,4 +542,160 @@ it('warns when a stopped queue has unfinished sections even without review or a 
 	await click('Continue import');
 	expect(host.textContent).toContain('Import complete.');
 	expect(warn()).toBe(false);
+});
+
+it('collection mode prefills its title, validates source headers live and retains the section preview', async () => {
+	await render(
+		<ImportFromText
+			initialLists={[
+				{ id: 'old', name: 'Existing', count: 1, types: ['movie'] },
+			]}
+			initialCollection="Weekend"
+		/>
+	);
+	expect(host.querySelector<HTMLInputElement>('#collection-title')!.value).toBe(
+		'Weekend'
+	);
+	expect(host.querySelector('[aria-label="Import mode"]')).toBeNull();
+	expect(host.querySelector('#import-name')).toBeNull();
+	await fill('#import-text', '## A\nTitle\n##  a \nTitle');
+	expect(host.querySelectorAll('input[type="checkbox"]')).toHaveLength(2);
+	expect(button('Import').disabled).toBe(true);
+	expect(host.textContent).toContain(
+		'Lines 1 and 3: the header "a" is used twice. Each header must be unique. Edit the text box'
+	);
+	await fill('#name-section-3', 'Renamed');
+	expect(button('Import').disabled).toBe(true);
+	await fill('#import-text', '## A\nTitle\n## B\nTitle');
+	expect(button('Import').disabled).toBe(false);
+	await fill('#collection-title', ' ');
+	expect(button('Import').disabled).toBe(true);
+	expect(host.textContent).toContain(
+		'Enter a collection title of 100 characters or fewer.'
+	);
+	await fill('#collection-title', 'x'.repeat(101));
+	expect(button('Import').disabled).toBe(true);
+	await fill('#collection-title', 'Good');
+	await fill('#import-text', 'Title');
+	expect(host.textContent).toContain(
+		'A collection needs a "## " header for each list.'
+	);
+	expect(host.textContent).not.toContain('Switch to Single list');
+	await fill('#import-text', '## existing\nTitle');
+	expect(host.textContent).toContain('Change the header in the text box.');
+	expect(button('Import').disabled).toBe(true);
+	await fill('#import-text', 'Title\n## A\nTitle');
+	expect(host.textContent).toContain('Line 1: "Title" is above the first');
+	expect(button('Import').disabled).toBe(true);
+});
+
+it('downloads completed collection runs in file order after the queue finishes, including review picks and series but excluding skipped lists', async () => {
+	const lists = new Map<string, CombinedList>();
+	let matches = 0;
+	const series = { ...title(2), type: 'series' as const };
+	const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+		if (url.endsWith('/match')) {
+			matches++;
+			if (matches === 2)
+				return response([{ status: 'none', reason: 'No match' }]);
+			return response(
+				matches === 1
+					? [
+							{ status: 'matched', title: title(1) },
+							{ status: 'ambiguous', candidates: [series] },
+						]
+					: [{ status: 'matched', title: series }]
+			);
+		}
+		if (url.endsWith('/lookup')) return response(series);
+		if (url === '/api/lists' && init.method === 'GET')
+			return response([...lists.values()]);
+		if (init.method === 'POST') {
+			const name = JSON.parse(init.body as string).name;
+			const list = { ...empty, id: name, name };
+			lists.set(name, list);
+			return response(list);
+		}
+		const id = url.split('/').at(-1)!;
+		if (init.method === 'GET') return response(lists.get(id));
+		const list = {
+			...lists.get(id)!,
+			...JSON.parse(init.body as string),
+			version: lists.get(id)!.version + 1,
+		};
+		lists.set(id, list);
+		return response(list);
+	});
+	vi.stubGlobal('fetch', fetcher);
+	let blob!: Blob;
+	vi.spyOn(URL, 'createObjectURL').mockImplementation((value) => {
+		blob = value as Blob;
+		return 'blob:collection';
+	});
+	vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+	let filename = '';
+	const download = vi
+		.spyOn(HTMLAnchorElement.prototype, 'click')
+		.mockImplementation(function (this: HTMLAnchorElement) {
+			filename = this.download;
+		});
+	await render(
+		<ImportFromText
+			initialLists={[]}
+			initialCollection="Weekend & 'Picks'"
+			addonId="org.listio.custom"
+		/>
+	);
+	await fill(
+		'#import-text',
+		'## Movies\nOne\nReview\n## Skip\nUnknown\n## Shows\nTwo'
+	);
+	await click('Import');
+	const dialog = host.querySelector('dialog')!;
+	expect(dialog.open).toBe(false);
+	await click('Skip this list');
+	expect(dialog.open).toBe(false);
+	await click('Continue import');
+	expect(dialog.open).toBe(true);
+	expect(document.activeElement).toBe(button('Close', dialog));
+	expect(dialog.textContent).toContain('2 folders');
+	expect(download).not.toHaveBeenCalled();
+	const shortcut = [...host.querySelectorAll('a')].find(
+		(link) => link.textContent === 'Export these as a Nuvio collection'
+	)!;
+	expect(new URL(shortcut.href).searchParams.get('name')).toBe(
+		"Weekend & 'Picks'"
+	);
+	await act(async () =>
+		dialog.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+		)
+	);
+	expect(dialog.open).toBe(false);
+	await click('Add', host.querySelector('[aria-label="Result: Movies"]')!);
+	await fill('#collection-title', 'Current title');
+	await click('Download collection');
+	expect(dialog.open).toBe(true);
+	fetcher.mockClear();
+	await click('Download collection', dialog);
+	expect(fetcher).not.toHaveBeenCalled();
+	expect(filename).toBe('Current title.json');
+	const [collection] = JSON.parse(await blob.text());
+	expect(collection.title).toBe('Current title');
+	expect(
+		collection.folders.map((folder: { title: string }) => folder.title)
+	).toEqual(['Movies', 'Shows']);
+	expect(
+		collection.folders.map((folder: { catalogSources: { type: string }[] }) =>
+			folder.catalogSources.map((source) => source.type)
+		)
+	).toEqual([['movie', 'series'], ['series']]);
+	expect(collection.folders[0].catalogSources[0].addonId).toBe(
+		'org.listio.custom'
+	);
+	expect(dialog.textContent).toContain(
+		'Collection downloaded with 2 folders. Import the JSON in Nuvio.'
+	);
+	await click('Close', dialog);
+	expect(dialog.open).toBe(false);
 });

@@ -230,6 +230,15 @@ html {
 	border-radius: 0.75rem;
 	background: var(--background-200);
 }
+.collection-dialog {
+	margin: auto;
+	width: min(32rem, calc(100vw - 2rem));
+	max-height: calc(100vh - 2rem);
+	color: var(--foreground);
+}
+.collection-dialog::backdrop {
+	background: rgb(0 0 0 / 45%);
+}
 .panel h2 {
 	font-size: 1.5rem;
 	font-weight: 600;

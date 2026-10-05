@@ -166,7 +166,10 @@ HTTPS. Browsers remember Basic Auth credentials and there is no in-app logout.
 1. Choose **New list**, enter a name, and create it.
 2. Add a public Trakt/MDBList/IMDb Source URL, or search for individual Titles.
 3. Review the posters, remove unwanted Titles, and choose **Save**.
-4. Reload the page to confirm the saved list persists. Local development storage
+4. To create several lists together, choose **+ New collection** on Home, enter a title,
+   and paste text with a `## ` header per list. Finish the import, then choose
+   **Download collection** in the results modal and import the JSON in Nuvio.
+5. Reload the page to confirm the saved list persists. Local development storage
    and deployed Cloudflare storage are separate; local lists are not deployed.
 
 ### 6. Install in Nuvio
@@ -277,7 +280,7 @@ Neither writes production KV. Keep `.dev.vars.example` empty of actual credentia
 
 - [Product spec](./list-combiner-spec.md): what Listio does and its core rules
 - [Implementation plan](./docs/implementation-plan.md): architecture, data model, addon endpoints
-- [Glossary](./CONTEXT.md): Source, Combined List, Title, Removed Title, Draft, Catalog
+- [Glossary](./CONTEXT.md): Source, Combined List, Title, Removed Title, Draft, Catalog, Collection
 - [ADRs](./docs/adr/): key decisions
 - [Sprints](./docs/sprints/README.md): work plan and progress
 - [Import a Nuvio collection](./docs/nuvio/import-collection.md): export selected Combined Lists as ordered folders and import the JSON

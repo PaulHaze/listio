@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ListIndexEntry } from '../../storage/lists.ts';
+import { indexEntry, type ListIndexEntry } from '../../storage/lists.ts';
 import {
 	parseImport,
+	nameLengthOk,
 	findExistingName,
 	validateImportName,
 	validateImportSections,
@@ -10,14 +11,38 @@ import {
 import { ImportListRun } from '../../client/importList.ts';
 import { ImportQueue } from '../../client/importQueue.ts';
 import { NeedALook } from '../titles/TitleControls.tsx';
-import { collectionExportUrl } from '../../domain/nuvioCollection.ts';
+import {
+	buildNuvioCollection,
+	collectionExportUrl,
+} from '../../domain/nuvioCollection.ts';
+import { downloadCollection } from '../../client/downloadCollection.ts';
+import CollectionDialog from './CollectionDialog.tsx';
 
 export default function ImportFromText({
 	initialLists,
+	initialCollection,
+	addonId,
 }: {
 	initialLists: ListIndexEntry[];
+	initialCollection?: string | null;
+	addonId?: string;
 }) {
-	const [mode, setMode] = useState<'single' | 'multiple'>('single');
+	const collectionMode =
+		initialCollection !== undefined && initialCollection !== null;
+	const [mode, setMode] = useState<'single' | 'multiple'>(
+		collectionMode ? 'multiple' : 'single'
+	);
+	const [collectionTitle, setCollectionTitle] = useState(
+		initialCollection ?? ''
+	);
+	const [collectionTouched, setCollectionTouched] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [downloadMessage, setDownloadMessage] = useState('');
+	const [downloadError, setDownloadError] = useState('');
+	const offered = useRef(false);
+	const collectionError = nameLengthOk(collectionTitle)
+		? ''
+		: 'Enter a collection title of 100 characters or fewer.';
 	const [name, setName] = useState('');
 	const [text, setText] = useState('');
 	const [preview, setPreview] = useState<SectionPreview[]>([]);
@@ -61,10 +86,56 @@ export default function ImportFromText({
 	const rejected = single.current?.state.phase === 'rejected';
 	const nameError = validateImportName(name, initialLists);
 	const existing = findExistingName(name, initialLists);
-	const errors =
+	const sectionErrors =
 		mode === 'single'
 			? parsed.errors
 			: validateImportSections(multiple, preview, initialLists);
+	// Header collisions must be fixed in the source text even if preview names or selections change.
+	const headerErrors = collectionMode
+		? validateImportSections(
+				multiple,
+				multiple.sections.map((section) => ({ ...section, selected: true })),
+				initialLists
+			).filter(
+				(error) =>
+					error.code === 'duplicate-header' || error.code === 'existing-list'
+			)
+		: [];
+	const errors = [...headerErrors, ...sectionErrors]
+		.filter(
+			(error, index, all) =>
+				all.findIndex(
+					(other) =>
+						other.code === error.code &&
+						other.line === error.line &&
+						other.message === error.message
+				) === index
+		)
+		.map((error) => {
+			if (!collectionMode) return error;
+			switch (error.code) {
+				case 'no-headers':
+					return {
+						...error,
+						message:
+							'No "## " list headers found. A collection needs a "## " header for each list.',
+					};
+				case 'duplicate-header':
+					return {
+						...error,
+						sectionId: undefined,
+						message: `Lines ${error.previousLine} and ${error.line}: the header "${error.name}" is used twice. Each header must be unique. Edit the text box to fix it.`,
+					};
+				case 'existing-list':
+					return {
+						...error,
+						sectionId: undefined,
+						message: `Line ${error.line}: a list named "${error.name}" already exists. Change the header in the text box.`,
+					};
+				default:
+					return error;
+			}
+		});
 	const nothing =
 		mode === 'single'
 			? !parsed.lines.length
@@ -78,6 +149,49 @@ export default function ImportFromText({
 		(run) => run.state.phase === 'stopped' && run.state.list
 	);
 	const unfinishedQueue = !!queue.current?.unfinished;
+	const collectionReady =
+		collectionMode &&
+		!!queue.current &&
+		!unfinishedQueue &&
+		!active &&
+		exportIds.length > 0;
+	useEffect(() => {
+		if (collectionReady && !offered.current) {
+			offered.current = true;
+			setDialogOpen(true);
+		}
+	}, [collectionReady]);
+	function download() {
+		setDownloadError('');
+		setDownloadMessage('');
+		try {
+			if (collectionError) throw new Error(collectionError);
+			const completed = runs
+				.filter((run) => run.completed && run.state.list!.titles.length > 0)
+				.map((run) => indexEntry(run.state.list!));
+			downloadCollection(
+				buildNuvioCollection(
+					collectionTitle,
+					completed.map((list) => ({
+						listId: list.id,
+						name: list.name,
+						types: list.types,
+					})),
+					addonId
+				),
+				collectionTitle
+			);
+			setDownloadMessage(
+				`Collection downloaded with ${completed.length} folders. Import the JSON in Nuvio.`
+			);
+		} catch (failure) {
+			setDownloadError(
+				failure instanceof Error
+					? failure.message
+					: 'Unable to download. Try again.'
+			);
+		}
+	}
 	useEffect(() => {
 		if (!unfinishedQueue && !unresolved && !active && !pendingSave) return;
 		const warn = (event: BeforeUnloadEvent) => {
@@ -93,6 +207,9 @@ export default function ImportFromText({
 		};
 	}, [unresolved, active, pendingSave, unfinishedQueue]);
 	function replaceText(content: string) {
+		offered.current = false;
+		setDialogOpen(false);
+		setDownloadMessage('');
 		setText(content);
 		setPreview(
 			parseImport(content, 'multiple').sections.map((section) => ({
@@ -128,7 +245,8 @@ export default function ImportFromText({
 		!!fileError ||
 		!!errors.length ||
 		nothing ||
-		(mode === 'single' && !!nameError);
+		(mode === 'single' && !!nameError) ||
+		(collectionMode && !!collectionError);
 	function start() {
 		setNameTouched(true);
 		setTextTouched(true);
@@ -151,24 +269,50 @@ export default function ImportFromText({
 	return (
 		<div className="discovery-panels">
 			<section className="panel">
-				<div role="group" aria-label="Import mode">
-					<button
-						type="button"
-						aria-pressed={mode === 'single'}
-						disabled={locked || reading}
-						onClick={() => setMode('single')}
-					>
-						Single list
-					</button>
-					<button
-						type="button"
-						aria-pressed={mode === 'multiple'}
-						disabled={locked || reading}
-						onClick={() => setMode('multiple')}
-					>
-						Multiple lists
-					</button>
-				</div>
+				{!collectionMode && (
+					<div role="group" aria-label="Import mode">
+						<button
+							type="button"
+							aria-pressed={mode === 'single'}
+							disabled={locked || reading}
+							onClick={() => setMode('single')}
+						>
+							Single list
+						</button>
+						<button
+							type="button"
+							aria-pressed={mode === 'multiple'}
+							disabled={locked || reading}
+							onClick={() => setMode('multiple')}
+						>
+							Multiple lists
+						</button>
+					</div>
+				)}
+				{collectionMode && (
+					<>
+						<label htmlFor="collection-title">Collection title</label>
+						<input
+							id="collection-title"
+							maxLength={100}
+							required
+							value={collectionTitle}
+							onChange={(event) => {
+								setCollectionTouched(true);
+								setCollectionTitle(event.target.value);
+							}}
+						/>
+						{collectionTouched && collectionError && (
+							<p className="error" role="alert">
+								{collectionError}
+							</p>
+						)}
+						<p>
+							Re-exporting the same name (ignoring capitals) uses the same
+							collection ID. Importing it can replace that collection in Nuvio.
+						</p>
+					</>
+				)}
 				{mode === 'single' && (
 					<>
 						<label htmlFor="import-name">List name</label>
@@ -217,6 +361,15 @@ export default function ImportFromText({
 						setFileError('');
 					}}
 				/>
+				{collectionMode &&
+					textTouched &&
+					errors
+						.filter((error) => !error.sectionId)
+						.map((error, index) => (
+							<p key={index} className="error" role="alert">
+								{error.message}
+							</p>
+						))}
 				<label htmlFor="import-upload">Upload .txt/.md</label>
 				<input
 					id="import-upload"
@@ -291,7 +444,10 @@ export default function ImportFromText({
 						</div>
 					))}
 				{errors
-					.filter((error) => mode === 'single' || !error.sectionId)
+					.filter(
+						(error) =>
+							!collectionMode && (mode === 'single' || !error.sectionId)
+					)
 					.filter(() => mode === 'single' || textTouched)
 					.map((error, index) => (
 						<p key={index} className="error" role="alert">
@@ -346,10 +502,35 @@ export default function ImportFromText({
 			)}
 			{exportIds.length > 0 && (
 				<p>
-					<a href={collectionExportUrl(exportIds)}>
+					<a
+						href={collectionExportUrl(
+							exportIds,
+							collectionMode ? collectionTitle : undefined
+						)}
+					>
 						Export these as a Nuvio collection
 					</a>
 				</p>
+			)}
+			{collectionReady && (
+				<button type="button" onClick={() => setDialogOpen(true)}>
+					Download collection
+				</button>
+			)}
+			{collectionMode && (
+				<CollectionDialog
+					open={dialogOpen}
+					onClose={() => setDialogOpen(false)}
+					title={collectionTitle}
+					folders={exportIds.length}
+					disabled={!!collectionError}
+					onDownload={download}
+					message={downloadMessage}
+					error={downloadError}
+				/>
+			)}
+			{collectionMode && downloadMessage && (
+				<p role="status">{downloadMessage}</p>
 			)}
 			{runs.map((run, index) => (
 				<ImportResult

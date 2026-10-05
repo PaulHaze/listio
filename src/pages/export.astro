@@ -23,6 +23,7 @@ const lists = await getIndex(env.LISTIO);
 			lists={lists}
 			addonId={resolveAddonId(env.ADDON_ID)}
 			initialSelected={Astro.url.searchParams.getAll('list')}
+			initialName={Astro.url.searchParams.get('name') ?? ''}
 		/>
 	</main>
 </Layout>

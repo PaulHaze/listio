@@ -1,6 +1,13 @@
 import { pasteLines, type PasteLine } from './pasteLines.ts';
 
-export type ImportError = { line: number; message: string; sectionId?: string };
+export type ImportError = {
+	line: number;
+	message: string;
+	sectionId?: string;
+	code?: 'no-headers' | 'duplicate-header' | 'existing-list';
+	name?: string;
+	previousLine?: number;
+};
 export type ImportSection = {
 	id: string;
 	line: number;
@@ -125,6 +132,7 @@ function parseMultiple(text: string): MultipleImport {
 	if (!sections.length)
 		errors.unshift({
 			line: 1,
+			code: 'no-headers',
 			message:
 				'No "## " list headers found. Switch to Single list, or add headers.',
 		});
@@ -162,6 +170,8 @@ export function validateImportSections(
 			errors.push({
 				line: section.line,
 				sectionId: section.id,
+				code: 'existing-list',
+				name,
 				message: `Line ${section.line}: a list named "${name}" already exists.`,
 			});
 		const previous = names.get(name.toLowerCase());
@@ -169,6 +179,9 @@ export function validateImportSections(
 			errors.push({
 				line: section.line,
 				sectionId: section.id,
+				code: 'duplicate-header',
+				name,
+				previousLine: previous.line,
 				message: `Lines ${previous.line} and ${section.line}: two lists are named "${name}".`,
 			});
 		else names.set(name.toLowerCase(), section);

@@ -4,7 +4,11 @@
 2. On Listio's home page, choose **Export collection**, tick the lists, enter a
    collection name, and use **Up** / **Down** to choose the folder order. The
    **Export these as a Nuvio collection** link on text import results starts with
-   the successfully saved lists ticked in file order and the name blank.
+   the successfully saved lists ticked in file order. For new lists, choose
+   **+ New collection** on Home, enter a title and paste a sectioned file on
+   `/import`. Once the queue finishes, download directly from the modal; its
+   folders follow file order and exclude skipped lists. The export link carries
+   the collection title and lets you reorder folders or export partial results.
 3. Download the JSON. It contains addon IDs and Catalog IDs, without the private
    addon URL. Install the Listio addon in Nuvio if necessary. For new lists or new
    movie/series Catalog types, refresh or reinstall it so the manifest is current.
