@@ -10,9 +10,21 @@ _Alt: The Originals / Where It All Began_
 
 - The Foundational Weird
 - Vintage Chills & Classic Oddities
-- Psychedelic Trips: The Classic Era
+
 - Drive-In Sci-Fi & Creature Features
 - Midnight Musicals & Rock Operas
+
+## 3. Fever Dreams & Head Trips
+
+_Alt: Altered States / Down the Rabbit Hole_
+
+- Psychedelic Trips: The Classic Era
+- Modern Head Trips
+- Surrealist & Dream-Logic Nightmares
+- Animated Head Trips
+- Experimental & Avant-Garde
+- Art-House After Dark
+- Kids' Movies Gone Weird
 
 ## 2. Spookies
 
@@ -25,17 +37,6 @@ _Alt: Things That Go Bump / After Dark Horror_
 - Cult Horror-Comedy
 - New Wave Cult Horror
 - Giallo & Euro-Horror
-
-## 3. Fever Dreams & Head Trips
-
-_Alt: Altered States / Down the Rabbit Hole_
-
-- Modern Head Trips
-- Surrealist & Dream-Logic Nightmares
-- Animated Head Trips
-- Experimental & Avant-Garde
-- Art-House After Dark
-- Kids' Movies Gone Weird
 
 ## 4. Sci-Fi & Dystopias
 

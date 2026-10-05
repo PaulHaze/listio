@@ -51,7 +51,7 @@
 - Head (1968)
 - Je t'aime, je t'aime (1968)
 - Psych-Out (1968)
-- Skidoo (1968)
+
 - Spirits of the Dead (1968)
 - Wonderwall (1968)
 - Yellow Submarine (1968)
@@ -103,7 +103,6 @@
 - Gothic (1986)
 - Alice (1988)
 - On the Silver Globe (1988)
-- Powaqqatsi (1988)
 - Santa Sangre (1989)
 - Tetsuo: The Iron Man (1989)
 
@@ -554,6 +553,7 @@
 ## Crime, Cult Action & Urban Decay
 
 - Machine-Gun Kelly (1958)
+- Skidoo (1968)
 - The Intruder (1962)
 - Django Kill... If You Live, Shoot! (1967)
 - Targets (1968)
