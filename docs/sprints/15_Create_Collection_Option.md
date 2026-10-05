@@ -67,7 +67,12 @@ only as the JSON downloaded from Sprint 14's builder. This sprint doesn't change
    matching on text. The user fixes it by editing the pasted text, and the preview updates live, so
    the error clears once the headers are unique. A header that matches a list that already exists is
    the same kind of error: show `Line {n}: a list named "{name}" already exists. Change the header in the text box.`
-   with a stable marker (e.g. `code: 'existing-list'`), and fix it by editing the text. Listio keeps no record of collection names, so a repeated collection title can't
+   with a stable marker (e.g. `code: 'existing-list'`), and fix it by editing the text. Unticking or
+   renaming a section in the preview doesn't clear these header errors: a partial collection under
+   the same title would replace the full one in Nuvio. To recover after a reload, the user removes
+   the already-created sections from the text, imports the rest, then builds the full collection in
+   `/export`. The existing-list message and the queue's recovery note say so in collection mode.
+   A clash made by renaming in the preview keeps Sprint 13's wording beside the renamed field. Listio keeps no record of collection names, so a repeated collection title can't
    be checked. Sprint 14 derives the Nuvio collection ID from the addon ID and the trimmed,
    case-insensitive title. Importing a file with a title already used in Nuvio **replaces** that
    collection. Show Sprint 14's existing note next to the title field.

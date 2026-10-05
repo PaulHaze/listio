@@ -91,51 +91,55 @@ export default function ImportFromText({
 			? parsed.errors
 			: validateImportSections(multiple, preview, initialLists);
 	// Header collisions must be fixed in the source text even if preview names or selections change.
+	// Unticking can't clear them: a partial collection under the same title would replace the full one in Nuvio.
 	const headerErrors = collectionMode
 		? validateImportSections(
 				multiple,
 				multiple.sections.map((section) => ({ ...section, selected: true })),
 				initialLists
-			).filter(
-				(error) =>
-					error.code === 'duplicate-header' || error.code === 'existing-list'
-			)
+			).flatMap((error) => {
+				switch (error.code) {
+					case 'duplicate-header':
+						return [
+							{
+								...error,
+								sectionId: undefined,
+								message: `Lines ${error.previousLine} and ${error.line}: the header "${error.name}" is used twice. Each header must be unique. Edit the text box to fix it.`,
+							},
+						];
+					case 'existing-list':
+						return [
+							{
+								...error,
+								sectionId: undefined,
+								message: `Line ${error.line}: a list named "${error.name}" already exists. Change the header in the text box. If an earlier import created it, remove its section and use Export collection afterwards.`,
+							},
+						];
+					default:
+						return [];
+				}
+			})
 		: [];
-	const errors = [...headerErrors, ...sectionErrors]
-		.filter(
-			(error, index, all) =>
-				all.findIndex(
-					(other) =>
-						other.code === error.code &&
-						other.line === error.line &&
-						other.message === error.message
-				) === index
-		)
-		.map((error) => {
-			if (!collectionMode) return error;
-			switch (error.code) {
-				case 'no-headers':
-					return {
-						...error,
-						message:
-							'No "## " list headers found. A collection needs a "## " header for each list.',
-					};
-				case 'duplicate-header':
-					return {
-						...error,
-						sectionId: undefined,
-						message: `Lines ${error.previousLine} and ${error.line}: the header "${error.name}" is used twice. Each header must be unique. Edit the text box to fix it.`,
-					};
-				case 'existing-list':
-					return {
-						...error,
-						sectionId: undefined,
-						message: `Line ${error.line}: a list named "${error.name}" already exists. Change the header in the text box.`,
-					};
-				default:
-					return error;
-			}
-		});
+	// Collisions made by renaming in the preview keep Sprint 13's wording beside the renamed field.
+	const errors = [
+		...headerErrors,
+		...sectionErrors
+			.filter(
+				(error) =>
+					!headerErrors.some(
+						(header) => header.code === error.code && header.line === error.line
+					)
+			)
+			.map((error) =>
+				collectionMode && error.code === 'no-headers'
+					? {
+							...error,
+							message:
+								'No "## " list headers found. A collection needs a "## " header for each list.',
+						}
+					: error
+			),
+	];
 	const nothing =
 		mode === 'single'
 			? !parsed.lines.length
@@ -302,7 +306,7 @@ export default function ImportFromText({
 								setCollectionTitle(event.target.value);
 							}}
 						/>
-						{collectionTouched && collectionError && (
+						{(collectionTouched || textTouched) && collectionError && (
 							<p className="error" role="alert">
 								{collectionError}
 							</p>
@@ -493,11 +497,21 @@ export default function ImportFromText({
 								pending.
 							</p>
 						))}
-					<p>
-						Keep this page open to continue. After closing or reloading,
-						re-paste the file and untick already-created lists. Use the editor
-						to finish a list awaiting its save.
-					</p>
+					{collectionMode ? (
+						<p>
+							Keep this page open to continue. Lists already created stay saved.
+							To finish after closing or reloading, remove their sections from
+							the text, import the rest, then use Export collection to build the
+							full collection. Use the editor to finish a list awaiting its
+							save.
+						</p>
+					) : (
+						<p>
+							Keep this page open to continue. After closing or reloading,
+							re-paste the file and untick already-created lists. Use the editor
+							to finish a list awaiting its save.
+						</p>
+					)}
 				</section>
 			)}
 			{exportIds.length > 0 && (
@@ -529,7 +543,7 @@ export default function ImportFromText({
 					error={downloadError}
 				/>
 			)}
-			{collectionMode && downloadMessage && (
+			{collectionMode && !dialogOpen && downloadMessage && (
 				<p role="status">{downloadMessage}</p>
 			)}
 			{runs.map((run, index) => (

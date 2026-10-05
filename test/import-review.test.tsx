@@ -589,6 +589,41 @@ it('collection mode prefills its title, validates source headers live and retain
 	expect(button('Import').disabled).toBe(true);
 });
 
+it('collection mode keeps header errors when unticked and gives preview renames Sprint 13 wording', async () => {
+	await render(
+		<ImportFromText
+			initialLists={[
+				{ id: 'old', name: 'Existing', count: 1, types: ['movie'] },
+			]}
+			initialCollection=""
+		/>
+	);
+	await fill('#import-text', '## Existing\nTitle\n## B\nTitle');
+	expect(host.textContent).toContain(
+		'Enter a collection title of 100 characters or fewer.'
+	);
+	await fill('#collection-title', 'Weekend');
+	expect(host.textContent).toContain(
+		'If an earlier import created it, remove its section and use Export collection afterwards.'
+	);
+	await act(async () =>
+		host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[0].click()
+	);
+	expect(button('Import').disabled).toBe(true);
+	expect(host.textContent).toContain('Change the header in the text box.');
+	await fill('#import-text', '## A\nTitle\n## B\nTitle');
+	expect(button('Import').disabled).toBe(false);
+	await fill('#name-section-3', 'a');
+	expect(button('Import').disabled).toBe(true);
+	expect(host.textContent).toContain('Lines 1 and 3: two lists are named "a".');
+	expect(host.textContent).not.toContain('Each header must be unique');
+	await fill('#name-section-3', 'Existing');
+	expect(host.textContent).toContain(
+		'Line 3: a list named "Existing" already exists.'
+	);
+	expect(host.textContent).not.toContain('Change the header in the text box.');
+});
+
 it('downloads completed collection runs in file order after the queue finishes, including review picks and series but excluding skipped lists', async () => {
 	const lists = new Map<string, CombinedList>();
 	let matches = 0;
@@ -651,6 +686,10 @@ it('downloads completed collection runs in file order after the queue finishes, 
 		'## Movies\nOne\nReview\n## Skip\nUnknown\n## Shows\nTwo'
 	);
 	await click('Import');
+	expect(host.textContent).toContain(
+		'use Export collection to build the full collection'
+	);
+	expect(host.textContent).not.toContain('untick already-created lists');
 	const dialog = host.querySelector('dialog')!;
 	expect(dialog.open).toBe(false);
 	await click('Skip this list');
@@ -693,9 +732,11 @@ it('downloads completed collection runs in file order after the queue finishes, 
 	expect(collection.folders[0].catalogSources[0].addonId).toBe(
 		'org.listio.custom'
 	);
-	expect(dialog.textContent).toContain(
-		'Collection downloaded with 2 folders. Import the JSON in Nuvio.'
-	);
+	const downloaded =
+		'Collection downloaded with 2 folders. Import the JSON in Nuvio.';
+	expect(dialog.textContent).toContain(downloaded);
+	expect(host.textContent!.split(downloaded)).toHaveLength(2);
 	await click('Close', dialog);
 	expect(dialog.open).toBe(false);
+	expect(host.textContent).toContain(downloaded);
 });

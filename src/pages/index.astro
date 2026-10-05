@@ -30,7 +30,7 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 		</p>
 		<list-manager>
 			<p class="error" role="alert" hidden></p>
-			<div class="form-row">
+			<div class="form-row new-entries">
 				<details class="panel new-list" name="new-entry">
 					<summary>+ New list</summary>
 					<form data-action="create">
@@ -55,7 +55,7 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 							id="new-collection"
 							name="collection"
 							required
-							maxlength={100}
+							maxlength={MAX_NAME_LENGTH}
 							pattern=".*\S.*"
 						/>
 						<button type="submit">Paste lists</button>
