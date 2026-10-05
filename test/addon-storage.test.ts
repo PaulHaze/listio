@@ -131,6 +131,7 @@ describe('addon protocol', () => {
 		const manifest = buildManifest([
 			{ id: 'mixed', name: 'Mixed', count: 2, types: ['movie', 'series'] },
 			{ id: 'empty', name: 'Empty', count: 0, types: [] },
+			{ id: 'solo', name: 'Solo', count: 1, types: ['series'] },
 		]);
 		expect(manifest).toMatchObject({
 			id: 'org.listio.addon',
@@ -138,14 +139,12 @@ describe('addon protocol', () => {
 			resources: ['catalog'],
 			types: ['movie', 'series'],
 		});
-		expect(manifest.catalogs).toEqual(
-			['movie', 'series'].map((type) => ({
-				type,
-				id: 'mixed',
-				name: 'Mixed',
-				extra: [{ name: 'skip' }],
-			}))
-		);
+		const skip = [{ name: 'skip' }];
+		expect(manifest.catalogs).toEqual([
+			{ type: 'movie', id: 'mixed', name: 'Mixed (Movies)', extra: skip },
+			{ type: 'series', id: 'mixed', name: 'Mixed (Shows)', extra: skip },
+			{ type: 'series', id: 'solo', name: 'Solo', extra: skip },
+		]);
 	});
 	it('filters before paging, sorts, excludes Removed and preserves metadata without mutation', () => {
 		const movies = Array.from({ length: 205 }, (_, seq) => title(seq));

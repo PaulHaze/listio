@@ -16,7 +16,10 @@ export function buildManifest(
 			list.types.map((type) => ({
 				type,
 				id: list.id,
-				name: list.name,
+				name:
+					list.types.length > 1
+						? `${list.name} (${type === 'movie' ? 'Movies' : 'Shows'})`
+						: list.name,
 				extra: [{ name: 'skip' }],
 			}))
 		),
