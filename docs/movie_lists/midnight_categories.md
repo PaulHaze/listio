@@ -83,6 +83,7 @@ _Alt: World Cinema / Passport to the Weird / Lost in Translation_
 
 _Alt: Crowd-Pleasers / Bring Your Mates / Laughs in the Dark_
 
+- Rock And Roll Baby!!
 - Cult Comedy & Absurdist
 - Stoner Crowd-Pleasers
 - So Bad It's Good (alt — or keep in Sleaze & Mayhem)
