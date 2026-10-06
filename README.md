@@ -17,6 +17,13 @@ Other people's lists are full of things you don't want. Listio is a **curate-onc
 
 Sources are fetched once, when added, and never re-fetched. A Combined List is a static snapshot ([ADR 0001](./docs/adr/0001-combined-lists-are-static-snapshots.md)).
 
+To replace a list’s contents, open the existing list and choose **Clear all titles**.
+This clears Movies, Series, Removed Titles and source history in your Draft while
+preserving the list name and ID, so existing Nuvio collections keep their links.
+Paste replacement titles (or add Sources again), review them, then **Save** to publish.
+Reload before saving to discard the clear. Saving an empty list leaves its existing
+collection sources empty until you add and save replacement titles.
+
 ## Deploy your own Listio
 
 Listio is a single-user, self-hosted app: each person deploys a separate copy with their

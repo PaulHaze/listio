@@ -12,6 +12,7 @@ import {
 	addSource,
 	applyEnrichment,
 	countChanges,
+	clearTitles,
 	createDraft,
 	removeTitles,
 	restoreTitles,
@@ -67,6 +68,7 @@ export default function Editor({
 	const [notice, setNotice] = useState(
 		created ? 'Refresh the Listio addon in Nuvio to see this change' : ''
 	);
+	const [discoveryKey, setDiscoveryKey] = useState(0);
 	// Lazy initialisers: these run once, not on every enrichment re-render.
 	const [requested] = useState(
 		() =>
@@ -368,14 +370,60 @@ export default function Editor({
 		setVisible(BATCH);
 		setSelection(new Set());
 	}
+	function clear() {
+		if (saving || pending || conflict) return;
+		if (
+			!window.confirm(
+				`Clear all Movies and Series from ${saved.name}, including Removed Titles and source history? The list name and ID stay the same, preserving existing Nuvio collection links. Save publishes this change; reload before saving to discard it.`
+			)
+		)
+			return;
+		update(clearTitles);
+		requested.clear();
+		setRows([{ id: rowId.current++, url: '', state: 'idle', message: '' }]);
+		setDiscoveryKey((key) => key + 1);
+		setSelection(new Set());
+		setView('all');
+		setVisible(BATCH);
+		setReview(true);
+		setError('');
+		setNotice(
+			'Titles cleared from your Draft. Paste replacement titles below, then Save. Existing Nuvio collection links are preserved.'
+		);
+	}
 	return (
 		<div className="editor">
+			<section className="panel" aria-labelledby="clear-heading">
+				<h2 id="clear-heading">Replace list contents</h2>
+				<p>
+					Clear all Movies and Series, Removed Titles and source history while
+					keeping this list’s name and existing Nuvio collection links. Paste
+					new titles below, then Save to publish the replacement.
+				</p>
+				<button
+					type="button"
+					className="danger"
+					disabled={
+						saving ||
+						pending > 0 ||
+						conflict ||
+						draft.titles.length +
+							draft.removed.length +
+							draft.sources.length ===
+							0
+					}
+					onClick={clear}
+				>
+					Clear all titles
+				</button>
+			</section>
 			{notice && (
 				<p className="notice" role="status">
 					{notice}
 				</p>
 			)}
 			<TitleDiscovery
+				key={discoveryKey}
 				draft={draft}
 				saving={saving}
 				busy={(delta) => setPending((n) => n + delta)}

@@ -3,6 +3,7 @@ import {
 	addSource,
 	applyEnrichment,
 	countChanges,
+	clearTitles,
 	createDraft,
 	removeTitles,
 	restoreTitles,
@@ -44,6 +45,42 @@ const source: SourceRecord = {
 };
 
 describe('editor Draft', () => {
+	it('clears all title history while retaining identity, settings and sequence, and accepts overlapping replacements', () => {
+		const original = { ...saved, sources: [source], showOnHome: true };
+		const draft = clearTitles(createDraft(original));
+		expect(draft).toEqual({
+			...original,
+			titles: [],
+			removed: [],
+			sources: [],
+			newIds: new Set(),
+		});
+		expect(countChanges(original, draft)).toBe(3);
+		expect(original.titles).toHaveLength(1);
+		expect(original.removed).toHaveLength(1);
+		const replacement = addSource(draft, source, [
+			title(1),
+			title(2),
+			title(3),
+		]);
+		expect(replacement.skipped).toBe(0);
+		expect(replacement.draft.titles.map((t) => t.imdbId)).toEqual([
+			'tt1',
+			'tt2',
+			'tt3',
+		]);
+		expect(replacement.draft.nextSeq).toBe(6);
+		expect(countChanges(original, replacement.draft)).toBe(3);
+		// Refilling with exactly the old active title must still enable Save.
+		const same = addSource(draft, source, [title(1)]);
+		expect(countChanges(original, same.draft)).toBe(2);
+		expect(
+			countChanges(
+				{ ...saved, titles: [], removed: [], sources: [source] },
+				draft
+			)
+		).toBe(1);
+	});
 	it('merges overlapping Sources and skips Removed Titles without changing saved state', () => {
 		const first = addSource(createDraft(saved), source, [
 			title(1),
