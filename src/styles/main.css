@@ -333,6 +333,14 @@ html {
 .new-entries {
 	align-items: flex-start;
 }
+.new-entries > a {
+	color: var(--primary);
+	font-weight: 600;
+	text-decoration: none;
+}
+.new-entries > a:hover {
+	background: var(--primary-muted);
+}
 .form-row input {
 	min-width: 0;
 	flex: 1 1 12rem;

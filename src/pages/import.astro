@@ -8,7 +8,12 @@ export const prerender = false;
 const lists = await getIndex(env.LISTIO);
 const initialCollection = Astro.url.searchParams.get('collection');
 const collectionMode = initialCollection !== null;
-const heading = collectionMode ? 'New collection' : 'Import from text';
+const multipleMode = Astro.url.searchParams.get('mode') === 'multiple';
+const heading = collectionMode
+	? 'New collection'
+	: multipleMode
+		? 'Multiple Lists'
+		: 'Import from text';
 ---
 
 <Layout title={`${heading} · Listio`}>
@@ -19,12 +24,15 @@ const heading = collectionMode ? 'New collection' : 'Import from text';
 			<p>
 				{collectionMode
 					? 'Paste sectioned lists to save one Combined List per header and download a Nuvio collection.'
-					: 'Create one saved Combined List from movie and TV titles.'}
+					: multipleMode
+						? 'Paste titles under ## headings. Each heading becomes a saved Combined List on the home page.'
+						: 'Create one saved Combined List from movie and TV titles.'}
 			</p>
 		</header>
 		<ImportFromText
 			client:load
 			initialLists={lists}
+			initialMode={multipleMode ? 'multiple' : 'single'}
 			initialCollection={initialCollection}
 			addonId={resolveAddonId(env.ADDON_ID)}
 		/>

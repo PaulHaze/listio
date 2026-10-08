@@ -23,17 +23,19 @@ import { normalizedName } from '../../tmdb/match.ts';
 
 export default function ImportFromText({
 	initialLists,
+	initialMode = 'single',
 	initialCollection,
 	addonId,
 }: {
 	initialLists: ListIndexEntry[];
+	initialMode?: 'single' | 'multiple';
 	initialCollection?: string | null;
 	addonId?: string;
 }) {
 	const collectionMode =
 		initialCollection !== undefined && initialCollection !== null;
 	const [mode, setMode] = useState<'single' | 'multiple'>(
-		collectionMode ? 'multiple' : 'single'
+		collectionMode ? 'multiple' : initialMode
 	);
 	const [collectionTitle, setCollectionTitle] = useState(
 		initialCollection ?? ''
@@ -579,6 +581,16 @@ export default function ImportFromText({
 					</a>
 				</p>
 			)}
+			{!collectionMode &&
+				queue.current &&
+				!unfinishedQueue &&
+				!active &&
+				exportIds.length > 0 && (
+					<p className="notice" role="status">
+						Your imported lists are saved on the home page.{' '}
+						<a href="/">View all lists</a>
+					</p>
+				)}
 			{collectionReady && (
 				<button type="button" onClick={() => setDialogOpen(true)}>
 					Download collection

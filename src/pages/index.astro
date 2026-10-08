@@ -47,20 +47,9 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 						</div>
 					</form>
 				</details>
-				<details class="panel new-list" name="new-entry">
-					<summary>+ New collection</summary>
-					<form method="GET" action="/import">
-						<label for="new-collection">Collection title</label>
-						<input
-							id="new-collection"
-							name="collection"
-							required
-							maxlength={MAX_NAME_LENGTH}
-							pattern=".*\S.*"
-						/>
-						<button type="submit">Paste lists</button>
-					</form>
-				</details>
+				<a class="panel new-list" href="/import?mode=multiple">
+					+ Multiple Lists
+				</a>
 			</div>
 			{lists.length === 0 ? (
 				<p class="empty-state">
