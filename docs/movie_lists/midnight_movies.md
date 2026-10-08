@@ -1,6 +1,4 @@
-//#region
-
-//#endregion
+<!-- #region The Originals -->
 
 ## The Foundational Weird
 
@@ -56,6 +54,10 @@
 - Galaxy of Terror (1981)
 - Forbidden World (1982)
 - Tremors (1990)
+
+<!-- #endregion -->
+
+<!-- #region Fever Dreams & Head Trips -->
 
 ## Psychedelic Trips: The Golden Era
 
@@ -326,6 +328,10 @@
 - Coraline (2009)
 - The Lego Movie (2014)
 
+<!-- #endregion -->
+
+<!-- #region New Cult -->
+
 ## Modern Weird & New Cult
 
 - Bad Boy Bubby (1993)
@@ -378,6 +384,10 @@
 - Kinds of Kindness (2024)
 - Sunlight (2024)
 - Bugonia (2025)
+
+<!-- #endregion -->
+
+<!-- #region Sleaze & Mayhem -->
 
 ## Camp, Sleaze & Cult Trash
 
@@ -485,6 +495,10 @@
 - The Surfer (2024)
 - Dace Decklan: Private Eye
 
+<!-- #endregion -->
+
+<!-- #region Mean Streets & City Beats -->
+
 ## Neon Noir & Night Crawlers
 
 - Sunset Boulevard (1950)
@@ -554,6 +568,10 @@
 - Brawl in Cell Block 99 (2017)
 - The Night Comes for Us (2018)
 - Bacurau (2019)
+
+<!-- #endregion -->
+
+<!-- #region We're Not In Kansas Anymore -->
 
 ## Cult Sci-Fi, Time Travel & Dystopias
 
@@ -788,6 +806,10 @@
 - Annihilation (2018)
 - Color Out of Space (2019)
 
+<!-- #endregion -->
+
+<!-- #region Spookies -->
+
 ## Folk Horror & Eerie Dread
 
 - Eye of the Devil (1966)
@@ -977,6 +999,9 @@
 - Knife+Heart (2018)
 - Luz (2018)
 
+<!-- #endregion -->
+<!-- #region World Of The Weird -->
+
 ## Asian Oddities
 
 - Jigoku (1960)
@@ -1068,6 +1093,9 @@
 - Medusa (2021)
 - Satanic Hispanics (2022)
 - When Evil Lurks (2023)
+
+<!-- #endregion -->
+<!-- #region Party Picks -->
 
 ## Rock And Roll Baby!
 
@@ -1232,6 +1260,9 @@
 - Smiley Face (2007)
 - The Beach Bum (2019)
 
+<!-- #endregion -->
+<!-- #region Bonus Features -->
+
 ## Cult Docs & Movies About Movies
 
 - Grey Gardens (1975)
@@ -1304,3 +1335,5 @@
 - Dark Matter (2024)
 - 3 Body Problem (2024)
 - Pluribus (2025)
+
+<!-- #endregion -->
