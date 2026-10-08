@@ -6,6 +6,10 @@ import {
 	validateImportSections,
 } from '../src/domain/pasteSections.ts';
 
+const SINGLE_FIXTURE = 'docs/movie_lists/test_movie_list.md';
+const MULTI_FIXTURE = 'docs/movie_lists/test_multi_list.md';
+const SINGLE_TITLE = 'Test Single List';
+
 describe('single import parsing', () => {
 	it('strips bullets, whitespace, numbers, blanks and deduplicates while retaining optional years', () => {
 		expect(
@@ -45,21 +49,26 @@ describe('single import parsing', () => {
 		});
 		expect(parseImport('\n// note', 'single').lines).toEqual([]);
 	});
-	it('accepts absurd and noir files and rejects the sectioned midnight file', () => {
-		for (const name of ['absurd_movies', 'noir_not_noir']) {
-			const parsed = parseImport(
-				readFileSync(`docs/movie_lists/${name}.md`, 'utf8'),
-				'single'
-			);
-			expect(parsed.errors).toEqual([]);
-			expect(parsed.lines.length).toBeGreaterThan(20);
-		}
+	it('accepts the static single-list fixture and rejects the sectioned multi-list fixture', () => {
+		const parsed = parseImport(readFileSync(SINGLE_FIXTURE, 'utf8'), 'single');
+		expect(parsed.errors).toEqual([]);
+		expect(parsed.lines).toHaveLength(13);
+		expect(parsed.lines[0]).toEqual({
+			line: 'Brick (2005)',
+			name: 'Brick',
+			year: 2005,
+		});
+		expect(parsed.lines.at(-1)).toEqual({
+			line: 'Cowboy Bebop (2001)',
+			name: 'Cowboy Bebop',
+			year: 2001,
+		});
 		expect(
-			parseImport(
-				readFileSync('docs/movie_lists/midnight_movies.md', 'utf8'),
-				'single'
-			).errors.length
-		).toBeGreaterThan(0);
+			parseImport(readFileSync(MULTI_FIXTURE, 'utf8'), 'single').errors.map(
+				(error) => error.line
+			)
+		).toEqual([1, 16]);
+		expect(validateImportName(SINGLE_TITLE, [])).toBeNull();
 	});
 });
 describe('independent list name validation', () => {
@@ -70,9 +79,9 @@ describe('independent list name validation', () => {
 			expect(validateImportName(name, [])).toContain('100 characters');
 	});
 	it('rejects existing names with case and surrounding whitespace ignored', () => {
-		expect(validateImportName(' noir ', [{ name: ' Noir ' }])).toBe(
-			'A list named "noir" already exists.'
-		);
+		expect(
+			validateImportName(' test single list ', [{ name: ` ${SINGLE_TITLE} ` }])
+		).toBe('A list named "test single list" already exists.');
 	});
 });
 
@@ -165,12 +174,9 @@ describe('multiple import parsing and preview validation', () => {
 			)
 		).toEqual([parsed.errors[0]]);
 	});
-	it('accepts all 25 midnight sections with fixed per-list counts and final TV Titles; rejects single-list fixtures', () => {
-		const parsed = parseImport(
-			readFileSync('test/fixtures/midnight_movies.md', 'utf8'),
-			'multiple'
-		);
-		expect(parsed.sections).toHaveLength(25);
+	it('accepts both sections of the static multi-list fixture; rejects the single-list fixture', () => {
+		const parsed = parseImport(readFileSync(MULTI_FIXTURE, 'utf8'), 'multiple');
+		expect(parsed.errors).toEqual([]);
 		expect(
 			validateImportSections(
 				parsed,
@@ -178,39 +184,28 @@ describe('multiple import parsing and preview validation', () => {
 				[]
 			)
 		).toEqual([]);
-		expect(parsed.sections.map((section) => section.lines.length)).toEqual([
-			6, 70, 78, 15, 19, 14, 23, 14, 26, 6, 10, 22, 108, 26, 11, 6, 9, 35, 21,
-			12, 18, 38, 15, 6, 58,
-		]);
-		expect(parsed.sections.at(-1)?.name).toBe('Midnight Tv Shows');
 		expect(
-			parsed.sections.at(-1)?.lines.some((line) => line.name === 'Twin Peaks')
-		).toBe(true);
-		for (const file of ['absurd_movies', 'noir_not_noir'])
-			expect(
-				parseImport(
-					readFileSync(`docs/movie_lists/${file}.md`, 'utf8'),
-					'multiple'
-				).errors.length
-			).toBeGreaterThan(1);
+			parsed.sections.map((section) => [
+				section.line,
+				section.name,
+				section.lines.length,
+			])
+		).toEqual([
+			[1, 'Quietly Contemplative', 12],
+			[16, 'Art-House After Dark', 5],
+		]);
+		expect(parsed.sections.at(-1)?.lines.at(-1)).toEqual({
+			line: '8½ (1963)',
+			name: '8½',
+			year: 1963,
+		});
+		expect(
+			parseImport(readFileSync(SINGLE_FIXTURE, 'utf8'), 'multiple').errors
+				.length
+		).toBeGreaterThan(0);
 	});
 });
 
-it('keeps the curated midnight file structurally valid without freezing its counts', () => {
-	const parsed = parseImport(
-		readFileSync('docs/movie_lists/midnight_movies.md', 'utf8'),
-		'multiple'
-	);
-	expect(parsed.sections.length).toBeGreaterThan(0);
-	expect(
-		validateImportSections(
-			parsed,
-			parsed.sections.map((section) => ({ ...section, selected: true })),
-			[]
-		)
-	).toEqual([]);
-	expect(parsed.sections.at(-1)?.name.toLowerCase()).toBe('midnight tv shows');
-});
 it('rejects commented headers without moving their titles into the preceding section', () => {
 	for (const prefix of ['', '## Previous\nOne\n']) {
 		const parsed = parseImport(

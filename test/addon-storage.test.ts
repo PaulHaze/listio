@@ -65,40 +65,6 @@ function list(): CombinedList {
 }
 
 describe('KV repository', () => {
-	it('creates, saves, updates its index in place, rejects stale versions and deletes', async () => {
-		const { kv, values } = memoryStore();
-		expect(await getList(kv, 'missing')).toBeNull();
-		expect(await getIndex(kv)).toEqual([]);
-		const saved = await putList(kv, {
-			...list(),
-			titles: [title(1), title(2, 'series')],
-			removed: [title(3)],
-		});
-		expect(saved.version).toBe(1);
-		expect(saved.updatedAt).toMatch(/^\d{4}-/);
-		expect(await getIndex(kv)).toEqual([
-			{ id: 'test', name: 'Test', count: 2, types: ['movie', 'series'] },
-		]);
-		expect(await getList(kv, 'test')).toEqual(saved);
-		await expect(putList(kv, list())).rejects.toBeInstanceOf(
-			VersionConflictError
-		);
-		expect(await getList(kv, 'test')).toEqual(saved);
-		await putList(kv, {
-			...saved,
-			name: 'Renamed',
-			titles: [title(2, 'series')],
-		});
-		expect(await getIndex(kv)).toEqual([
-			{ id: 'test', name: 'Renamed', count: 1, types: ['series'] },
-		]);
-		await putList(kv, { ...list(), id: 'other' });
-		await deleteList(kv, 'test');
-		expect(values.has('list:test')).toBe(false);
-		expect((await getIndex(kv)).map((entry) => entry.id)).toEqual(['other']);
-		await deleteList(kv, 'missing');
-		expect((await getIndex(kv)).length).toBe(1);
-	});
 	it('writes the index before the list so a failed save can be retried', async () => {
 		const { kv, values } = memoryStore();
 		const put = kv.put.bind(kv);

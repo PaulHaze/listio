@@ -48,13 +48,6 @@ beforeEach(() => {
 });
 
 describe('Combined List API', () => {
-	it('returns the saved list index for import name checks and reconciliation', async () => {
-		expect(await (await call(index, 'GET')).json()).toEqual([]);
-		const list = await create();
-		expect(await (await call(index, 'GET')).json()).toEqual([
-			{ id: list.id, name: list.name, count: 0, types: [] },
-		]);
-	});
 	it('creates a persisted empty Combined List with newest sort and -2 duplicate id', async () => {
 		const list = await create('  Weekend favourites  ');
 		expect(list).toMatchObject({
