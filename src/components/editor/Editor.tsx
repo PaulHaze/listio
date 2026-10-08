@@ -108,7 +108,6 @@ export default function Editor({
 		if ((!changes && !pending) || conflict) return;
 		const warn = (event: BeforeUnloadEvent) => {
 			event.preventDefault();
-			event.returnValue = '';
 		};
 		// <ClientRouter /> navigations (links, Back) skip beforeunload. Cancelling
 		// one makes Astro fall back to a full page load, which does trigger it.

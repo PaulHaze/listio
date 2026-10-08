@@ -205,7 +205,6 @@ export default function ImportFromText({
 		if (!unfinishedQueue && !unresolved && !active && !pendingSave) return;
 		const warn = (event: BeforeUnloadEvent) => {
 			event.preventDefault();
-			event.returnValue = '';
 		};
 		const fullLoad = (event: Event) => event.preventDefault();
 		window.addEventListener('beforeunload', warn);

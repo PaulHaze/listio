@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CombinedList, Title } from '../src/domain/types.ts';
 import {
-	deleteList,
 	getIndex,
-	getList,
 	putList,
 	VersionConflictError,
 	type ListStore,

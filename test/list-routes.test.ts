@@ -22,7 +22,7 @@ const kv = {
 vi.mock('cloudflare:workers', () => ({
 	env: { LISTIO: kv, ADDON_SECRET: 'right' },
 }));
-const { POST, GET: index } = await import('../src/pages/api/lists/index.ts');
+const { POST } = await import('../src/pages/api/lists/index.ts');
 const { GET, PATCH, PUT, DELETE } =
 	await import('../src/pages/api/lists/[id].ts');
 const { GET: manifest } =
