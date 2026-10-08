@@ -7,14 +7,18 @@ export class ImportQueue {
 	active = false;
 	constructor(
 		sections: readonly SectionPreview[],
-		private changed: () => void = () => {}
+		private changed: () => void = () => {},
+		targets: Readonly<Record<string, { id: string; overwrite: boolean }>> = {}
 	) {
 		this.entries = sections
 			.filter((section) => section.selected)
 			.map((section) => ({
 				sectionId: section.id,
-				run: new ImportListRun(section.name, section.lines, () =>
-					this.changed()
+				run: new ImportListRun(
+					section.name,
+					section.lines,
+					() => this.changed(),
+					targets[section.id]
 				),
 			}));
 	}

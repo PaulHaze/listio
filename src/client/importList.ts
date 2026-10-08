@@ -47,13 +47,18 @@ export class ImportListRun {
 	private uncertainCreate = false;
 	private creationId = crypto.randomUUID();
 	private adding = false;
+	private existingId?: string;
+	private overwrite = false;
 	constructor(
 		name: string,
 		lines: PasteLine[],
-		private changed: (state: ImportState) => void = () => {}
+		private changed: (state: ImportState) => void = () => {},
+		target?: { id: string; overwrite: boolean }
 	) {
 		this.name = name.trim();
 		this.lines = lines.map((line) => ({ ...line }));
+		this.existingId = target?.id;
+		this.overwrite = target?.overwrite ?? false;
 	}
 	private update(change: Partial<ImportState>) {
 		this.state = { ...this.state, ...change };
@@ -146,7 +151,15 @@ export class ImportListRun {
 					confident.length -
 					new Set(confident.map((title) => title.imdbId.toLowerCase())).size,
 			});
-			if (!this.state.list) {
+			if (!this.state.list && this.existingId) {
+				this.update({ phase: 'creating', progress: 'Loading saved list…' });
+				this.update({
+					list: await api<CombinedList>(
+						`/api/lists/${encodeURIComponent(this.existingId)}`,
+						signal
+					),
+				});
+			} else if (!this.state.list) {
 				this.update({ phase: 'creating', progress: 'Checking saved lists…' });
 				if (!this.uncertainCreate) {
 					const index = await api<ListIndexEntry[]>('/api/lists', signal);
@@ -193,6 +206,8 @@ export class ImportListRun {
 			}
 			this.update({ phase: 'saving', progress: 'Saving Titles…' });
 			let draft = createDraft(this.state.list!);
+			if (this.overwrite)
+				draft = { ...draft, titles: [], removed: [], sources: [], nextSeq: 0 };
 			for (const title of confident) draft = addTitle(draft, title).draft;
 			const saved = await this.save(draft, signal);
 			this.update({ list: saved, phase: 'completed', progress: '' });

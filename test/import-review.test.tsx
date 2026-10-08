@@ -52,6 +52,14 @@ const button = (label: string, within: Element = host) => {
 const sharedReview = () => host.querySelector('[aria-label="Need a look"]')!;
 const click = (label: string, within: Element = host) =>
 	act(async () => button(label, within).click());
+const chooseCollision = (sectionId: string, choice: 'merge' | 'overwrite') =>
+	act(async () =>
+		host
+			.querySelectorAll<HTMLInputElement>(
+				`input[type="radio"][name="collision-${sectionId}"]`
+			)
+			[choice === 'merge' ? 0 : 1].click()
+	);
 async function fill(selector: string, value: string) {
 	const element = host.querySelector<HTMLInputElement | HTMLTextAreaElement>(
 		selector
@@ -589,14 +597,18 @@ it('collection mode prefills its title, validates source headers live and retain
 	);
 	expect(host.textContent).not.toContain('Switch to Single list');
 	await fill('#import-text', '## existing\nTitle');
-	expect(host.textContent).toContain('Change the header in the text box.');
+	expect(host.textContent).toContain(
+		'“Existing” already exists. Choose what to do:'
+	);
 	expect(button('Import').disabled).toBe(true);
+	await chooseCollision('section-1', 'merge');
+	expect(button('Import').disabled).toBe(false);
 	await fill('#import-text', 'Title\n## A\nTitle');
 	expect(host.textContent).toContain('Line 1: "Title" is above the first');
 	expect(button('Import').disabled).toBe(true);
 });
 
-it('collection mode keeps header errors when unticked and gives preview renames Sprint 13 wording', async () => {
+it('collection mode permits unticking existing lists and requires a choice for preview name collisions', async () => {
 	await render(
 		<ImportFromText
 			initialLists={[
@@ -611,13 +623,14 @@ it('collection mode keeps header errors when unticked and gives preview renames 
 	);
 	await fill('#collection-title', 'Weekend');
 	expect(host.textContent).toContain(
-		'If an earlier import created it, remove its section and use Export collection afterwards.'
+		'“Existing” already exists. Choose what to do:'
 	);
+	expect(button('Import').disabled).toBe(true);
 	await act(async () =>
 		host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[0].click()
 	);
-	expect(button('Import').disabled).toBe(true);
-	expect(host.textContent).toContain('Change the header in the text box.');
+	expect(button('Import').disabled).toBe(false);
+	expect(host.querySelector('input[type="radio"]')).toBeNull();
 	await fill('#import-text', '## A\nTitle\n## B\nTitle');
 	expect(button('Import').disabled).toBe(false);
 	await fill('#name-section-3', 'a');
@@ -629,7 +642,82 @@ it('collection mode keeps header errors when unticked and gives preview renames 
 		'Line 3: a list named "Existing" already exists.'
 	);
 	expect(host.textContent).not.toContain('Change the header in the text box.');
+	expect(button('Import').disabled).toBe(true);
+	await chooseCollision('section-3', 'overwrite');
+	expect(button('Import').disabled).toBe(false);
 });
+
+it.each([
+	{ collection: false, choice: 'merge' as const },
+	{ collection: false, choice: 'overwrite' as const },
+	{ collection: true, choice: 'merge' as const },
+	{ collection: true, choice: 'overwrite' as const },
+])(
+	'$choice imports a case-insensitive exact header match into the existing list (collection: $collection)',
+	async ({ collection, choice }) => {
+		let saved: CombinedList = {
+			...empty,
+			id: 'old',
+			name: 'Existing',
+			titles: [
+				{ ...title(1), addedSeq: 0 },
+				{ ...title(2), addedSeq: 1 },
+			],
+			nextSeq: 2,
+		};
+		const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+			if (url.endsWith('/match'))
+				return response([
+					{ status: 'matched', title: title(2) },
+					{ status: 'matched', title: title(3) },
+					{ status: 'matched', title: title(3) },
+				]);
+			if (url === '/api/lists/old' && init.method === 'GET')
+				return response(saved);
+			if (url === '/api/lists/old' && init.method === 'PUT') {
+				saved = {
+					...saved,
+					...JSON.parse(init.body as string),
+					version: saved.version + 1,
+				};
+				return response(saved);
+			}
+			throw new Error(`Unexpected request: ${init.method} ${url}`);
+		});
+		vi.stubGlobal('fetch', fetcher);
+		await render(
+			<ImportFromText
+				initialLists={[
+					{ id: 'old', name: 'Existing', count: 2, types: ['movie'] },
+				]}
+				initialMode="multiple"
+				initialCollection={collection ? 'Weekend' : undefined}
+			/>
+		);
+		await fill('#import-text', '## Existing favorites\nTwo\nThree\nAlias');
+		expect(host.querySelector('input[type="radio"]')).toBeNull();
+		expect(button('Import').disabled).toBe(false);
+		await fill('#import-text', '## eXiStInG\nTwo\nThree\nAlias');
+		expect(button('Import').disabled).toBe(true);
+		expect(fetcher).not.toHaveBeenCalled();
+		await chooseCollision('section-1', choice);
+		expect(button('Import').disabled).toBe(false);
+		await click('Import');
+		expect(host.textContent).toContain('Import complete.');
+		expect(saved.id).toBe('old');
+		expect(saved.name).toBe('Existing');
+		expect(saved.titles.map((title) => title.imdbId)).toEqual(
+			choice === 'merge' ? ['tt1', 'tt2', 'tt3'] : ['tt2', 'tt3']
+		);
+		expect(
+			fetcher.mock.calls.map(([url, init]) => `${init.method} ${url}`)
+		).toEqual([
+			'POST /api/titles/match',
+			'GET /api/lists/old',
+			'PUT /api/lists/old',
+		]);
+	}
+);
 
 it('downloads completed collection runs in file order after the queue finishes, including review picks and series but excluding skipped lists', async () => {
 	const lists = new Map<string, CombinedList>();

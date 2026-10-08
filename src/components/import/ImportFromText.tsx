@@ -51,6 +51,9 @@ export default function ImportFromText({
 	const [name, setName] = useState('');
 	const [text, setText] = useState('');
 	const [preview, setPreview] = useState<SectionPreview[]>([]);
+	const [collisionChoices, setCollisionChoices] = useState<
+		Record<string, 'merge' | 'overwrite'>
+	>({});
 	const [nameTouched, setNameTouched] = useState(false);
 	const [textTouched, setTextTouched] = useState(false);
 	const [fileError, setFileError] = useState('');
@@ -94,7 +97,11 @@ export default function ImportFromText({
 	const sectionErrors =
 		mode === 'single'
 			? parsed.errors
-			: validateImportSections(multiple, preview, initialLists);
+			: validateImportSections(multiple, preview, initialLists).filter(
+					(error) =>
+						error.code !== 'existing-list' ||
+						!collisionChoices[error.sectionId ?? '']
+				);
 	// Header collisions must be fixed in the source text even if preview names or selections change.
 	// Unticking can't clear them: a partial collection under the same title would replace the full one in Nuvio.
 	const headerErrors = collectionMode
@@ -110,14 +117,6 @@ export default function ImportFromText({
 								...error,
 								sectionId: undefined,
 								message: `Lines ${error.previousLine} and ${error.line}: the header "${error.name}" is used twice. Each header must be unique. Edit the text box to fix it.`,
-							},
-						];
-					case 'existing-list':
-						return [
-							{
-								...error,
-								sectionId: undefined,
-								message: `Line ${error.line}: a list named "${error.name}" already exists. Change the header in the text box. If an earlier import created it, remove its section and use Export collection afterwards.`,
 							},
 						];
 					default:
@@ -276,6 +275,7 @@ export default function ImportFromText({
 				selected: true,
 			}))
 		);
+		setCollisionChoices({});
 		single.current = null;
 		queue.current = null;
 		changed();
@@ -318,7 +318,17 @@ export default function ImportFromText({
 		)
 			return;
 		if (mode === 'multiple') {
-			queue.current = new ImportQueue(preview, changed);
+			const targets: Record<string, { id: string; overwrite: boolean }> = {};
+			for (const section of preview) {
+				if (!section.selected) continue;
+				const existing = findExistingName(section.name, initialLists);
+				if (existing && collisionChoices[section.id])
+					targets[section.id] = {
+						id: existing.id,
+						overwrite: collisionChoices[section.id] === 'overwrite',
+					};
+			}
+			queue.current = new ImportQueue(preview, changed, targets);
 			void queue.current.continue(controller.current.signal);
 		} else {
 			single.current = new ImportListRun(name, parsed.lines, changed);
@@ -493,6 +503,43 @@ export default function ImportFromText({
 								}}
 							/>
 							<p>{section.lines.length} Titles parsed</p>
+							{findExistingName(section.name, initialLists) &&
+								section.selected && (
+									<fieldset>
+										<legend>
+											“{findExistingName(section.name, initialLists)!.name}”
+											already exists. Choose what to do:
+										</legend>
+										<label>
+											<input
+												type="radio"
+												name={`collision-${section.id}`}
+												checked={collisionChoices[section.id] === 'merge'}
+												onChange={() =>
+													setCollisionChoices((choices) => ({
+														...choices,
+														[section.id]: 'merge',
+													}))
+												}
+											/>{' '}
+											Merge into existing list (ignore duplicate movies)
+										</label>
+										<label>
+											<input
+												type="radio"
+												name={`collision-${section.id}`}
+												checked={collisionChoices[section.id] === 'overwrite'}
+												onChange={() =>
+													setCollisionChoices((choices) => ({
+														...choices,
+														[section.id]: 'overwrite',
+													}))
+												}
+											/>{' '}
+											Overwrite existing list with these titles
+										</label>
+									</fieldset>
+								)}
 							{errors
 								.filter((error) => error.sectionId === section.id)
 								.map((error, index) => (
