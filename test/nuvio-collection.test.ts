@@ -35,7 +35,6 @@ describe('Nuvio collection JSON', () => {
 					addonId: 'org.listio.custom',
 					type: 'series',
 					catalogId: 'shows',
-					genre: 'All',
 				},
 			],
 			[
@@ -43,14 +42,12 @@ describe('Nuvio collection JSON', () => {
 					addonId: 'org.listio.custom',
 					type: 'movie',
 					catalogId: 'films',
-					genre: 'All',
 				},
 			],
 			['movie', 'series'].map((type) => ({
 				addonId: 'org.listio.custom',
 				type,
 				catalogId: 'mixed',
-				genre: 'All',
 			})),
 		]);
 		expect(

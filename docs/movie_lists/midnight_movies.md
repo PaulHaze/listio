@@ -53,31 +53,6 @@
 - Forbidden World (1982)
 - Tremors (1990)
 
-## Midnight Musicals & Rock Operas
-
-- The 5,000 Fingers of Dr. T. (1953)
-- Head (1968)
-- Phantom of the Paradise (1974)
-- The Rocky Horror Picture Show (1975)
-- Tommy (1975)
-- The Wiz (1978)
-- Rock 'n' Roll High School (1979)
-- Forbidden Zone (1980)
-- Popeye (1980)
-- The Apple (1980)
-- Shock Treatment (1981)
-- Pink Floyd: The Wall (1982)
-- The Legend of the Stardust Brothers (1985)
-- Little Shop of Horrors (1986)
-- Creating Rem Lezar (1989)
-- The Adventures of Priscilla, Queen of the Desert (1994)
-- Hedwig and the Angry Inch (2001)
-- The Happiness of the Katakuris (2001)
-- Repo! The Genetic Opera (2008)
-- The Lure (2015)
-- Anna and the Apocalypse (2017)
-- Annette (2021)
-
 ## Psychedelic Trips: The Golden Era
 
 - Inauguration of the Pleasure Dome (1954)
@@ -1104,6 +1079,31 @@
 - Deathgasm (2015)
 - Lords of Chaos (2018)
 - Moonage Daydream (2022)
+
+## Midnight Musicals & Rock Operas
+
+- The 5,000 Fingers of Dr. T. (1953)
+- Head (1968)
+- Phantom of the Paradise (1974)
+- The Rocky Horror Picture Show (1975)
+- Tommy (1975)
+- The Wiz (1978)
+- Rock 'n' Roll High School (1979)
+- Forbidden Zone (1980)
+- Popeye (1980)
+- The Apple (1980)
+- Shock Treatment (1981)
+- Pink Floyd: The Wall (1982)
+- The Legend of the Stardust Brothers (1985)
+- Little Shop of Horrors (1986)
+- Creating Rem Lezar (1989)
+- The Adventures of Priscilla, Queen of the Desert (1994)
+- Hedwig and the Angry Inch (2001)
+- The Happiness of the Katakuris (2001)
+- Repo! The Genetic Opera (2008)
+- The Lure (2015)
+- Anna and the Apocalypse (2017)
+- Annette (2021)
 
 ## Cult Comedy & Absurdist
 

@@ -106,7 +106,6 @@ it('preselects imported lists in order, excludes unknown/empty IDs, reorders and
 			addonId: 'org.listio.custom',
 			type,
 			catalogId: 'mixed',
-			genre: 'All',
 		}))
 	);
 	expect(host.textContent).toContain('Collection downloaded');

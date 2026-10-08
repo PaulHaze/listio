@@ -11,7 +11,6 @@ _Alt: The Originals / Where It All Began_
 - The Foundational Weird
 - Vintage Chills & Classic Oddities
 - Drive-In Sci-Fi & Creature Features
-- Midnight Musicals & Rock Operas
 
 ## 2. Fever Dreams & Head Trips
 
@@ -84,6 +83,7 @@ _Alt: World Cinema / Passport to the Weird / Lost in Translation_
 _Alt: Crowd-Pleasers / Bring Your Mates / Laughs in the Dark_
 
 - Rock And Roll Baby!!
+- Midnight Musicals & Rock Operas
 - Cult Comedy & Absurdist
 - Stoner Crowd-Pleasers
 - So Bad It's Good (alt — or keep in Sleaze & Mayhem)

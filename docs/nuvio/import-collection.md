@@ -22,6 +22,10 @@
    to confirm its movie and/or series Catalogs. Saved Title changes may take a
    minute to appear because addon responses are cached and KV propagates.
 
+Listio leaves `genre` out of collection sources so Nuvio does not append the
+redundant `All` label. Re-export and re-import an existing Listio collection to
+update its sources; use the same collection name to replace the existing one.
+
 Listio uses stable collection IDs derived from the configured addon ID and the
 trimmed collection name (ignoring case). The verified TV importer replaces an existing
 collection with the same ID and appends a different ID; it does not match by

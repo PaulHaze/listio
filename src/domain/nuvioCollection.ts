@@ -17,8 +17,8 @@ const idPart = (value: string) => encodeURIComponent(value);
  * and free of path/JSON punctuation. Changing order or list contents preserves
  * collection identity. A different collection name (ignoring case) or addon ID
  * creates a new identity. Folder IDs are scoped to their collection.
- * Every source names HIDDEN_GENRE so a Catalog hidden from Nuvio's home (which
- * requires a genre) loads; the addon ignores the genre otherwise.
+ * Collection sources omit genre so Nuvio does not display a redundant `All`
+ * suffix. The addon accepts requests without genre and ignores it if supplied.
  */
 export function buildNuvioCollection(
 	name: string,
@@ -56,7 +56,6 @@ export function buildNuvioCollection(
 						addonId,
 						type,
 						catalogId: list.listId,
-						genre: HIDDEN_GENRE,
 					})),
 				};
 			}),
