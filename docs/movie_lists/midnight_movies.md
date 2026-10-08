@@ -1,3 +1,7 @@
+//#region
+
+//#endregion
+
 ## The Foundational Weird
 
 - Night of the Living Dead (1968)
@@ -723,6 +727,67 @@
 - Alienoid (2022)
 - Three Thousand Years of Longing (2022)
 
+## Post-Apocalyptic Wasteland
+
+- The Last Man on Earth (1964)
+- Planet of the Apes (1968)
+- The Omega Man (1971)
+- Zardoz (1974)
+- A Boy and His Dog (1975)
+- Mad Max (1979)
+- Escape from New York (1981)
+- Mad Max 2: The Road Warrior (1981)
+- 1990: The Bronx Warriors (1982)
+- Exterminators of the Year 3000 (1983)
+- Le Dernier Combat (1983)
+- The New Barbarians (1983)
+- Night of the Comet (1984)
+- Threads (1984)
+- Def-Con 4 (1985)
+- Mad Max Beyond Thunderdome (1985)
+- Radioactive Dreams (1985)
+- The Quiet Earth (1985)
+- Fist of the North Star (1986)
+- When the Wind Blows (1986)
+- Cherry 2000 (1987)
+- Steel Dawn (1987)
+- Akira (1988)
+- The Blood of Heroes (1989)
+- Cyborg (1989)
+- Hardware (1990)
+- Delicatessen (1991)
+- Tank Girl (1995)
+- Six-String Samurai (1998)
+- Children of Men (2006)
+- Doomsday (2008)
+- The Road (2009)
+- Stake Land (2010)
+- The Divide (2011)
+- Snowpiercer (2013)
+- The Rover (2014)
+- Wyrmwood: Road of the Dead (2014)
+- Mad Max: Fury Road (2015)
+- The Survivalist (2015)
+- Turbo Kid (2015)
+- The Bad Batch (2016)
+- It Comes at Night (2017)
+- Furiosa: A Mad Max Saga (2024)
+
+- ## Cosmic Horror & Lovecraftiana
+
+- Equinox (1970)
+- The Thing (1982)
+- From Beyond (1986)
+- In the Mouth of Madness (1994)
+- Event Horizon (1997)
+- Dagon (2001)
+- Resolution (2012)
+- Banshee Chapter (2013)
+- The Void (2016)
+- The Endless (2017)
+- Annihilation (2018)
+- Color Out of Space (2019)
+
 ## Folk Horror & Eerie Dread
 
 - Eye of the Devil (1966)
@@ -745,21 +810,6 @@
 - Enys Men (2022)
 - Men (2022)
 - Bramayugam (2024)
-
-## Cosmic Horror & Lovecraftiana
-
-- Equinox (1970)
-- The Thing (1982)
-- From Beyond (1986)
-- In the Mouth of Madness (1994)
-- Event Horizon (1997)
-- Dagon (2001)
-- Resolution (2012)
-- Banshee Chapter (2013)
-- The Void (2016)
-- The Endless (2017)
-- Annihilation (2018)
-- Color Out of Space (2019)
 
 ## Body Horror & Freaky Sci-Fi
 

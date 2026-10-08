@@ -67,57 +67,77 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 					No Combined Lists yet. Create your first list to get started.
 				</p>
 			) : (
-				<ul class="list-grid">
-					{lists.map((list) => (
-						<li class="panel">
-							<div class="list-heading">
-								<a
-									class="list-name"
-									href={`/lists/${encodeURIComponent(list.id)}`}
-								>
-									{list.name}
-								</a>
-								<p>
-									{list.count} {list.count === 1 ? 'Title' : 'Titles'}
-								</p>
-							</div>
-							<label class="home-toggle">
-								<input
-									type="checkbox"
-									data-home={list.id}
-									checked={list.showOnHome === true}
-								/>
-								Show on Nuvio home
-							</label>
-							<div class="list-actions">
-								<details>
-									<summary>Rename</summary>
-									<form data-action="rename" data-id={list.id}>
-										<label for={`name-${list.id}`}>Combined List name</label>
-										<div class="form-row">
-											<input
-												id={`name-${list.id}`}
-												name="name"
-												value={list.name}
-												required
-												maxlength={MAX_NAME_LENGTH}
-											/>
-											<button type="submit">Save name</button>
-										</div>
-									</form>
-								</details>
-								<button
-									type="button"
-									class="danger"
-									data-delete={list.id}
-									data-name={list.name}
-								>
-									Delete
-								</button>
-							</div>
-						</li>
-					))}
-				</ul>
+				<>
+					<div class="list-sort-control">
+						<label for="list-sort">Sort lists</label>
+						<select id="list-sort" data-list-sort>
+							<option value="added">Recently added</option>
+							<option value="edited">Recently edited</option>
+							<option value="oldest">Oldest</option>
+							<option value="newest">Newest</option>
+							<option value="alphabetical">Alphabetical</option>
+							<option value="titles">Most titles</option>
+						</select>
+					</div>
+					<ul class="list-grid">
+						{lists.map((list, index) => (
+							<li
+								class="panel"
+								data-list-card
+								data-position={index}
+								data-created={list.createdAt ?? ''}
+								data-updated={list.updatedAt ?? ''}
+								data-titles={list.count}
+							>
+								<div class="list-heading">
+									<a
+										class="list-name"
+										href={`/lists/${encodeURIComponent(list.id)}`}
+									>
+										{list.name}
+									</a>
+									<p>
+										{list.count} {list.count === 1 ? 'Title' : 'Titles'}
+									</p>
+								</div>
+								<label class="home-toggle">
+									<input
+										type="checkbox"
+										data-home={list.id}
+										checked={list.showOnHome === true}
+									/>
+									Show on Nuvio home
+								</label>
+								<div class="list-actions">
+									<details>
+										<summary>Rename</summary>
+										<form data-action="rename" data-id={list.id}>
+											<label for={`name-${list.id}`}>Combined List name</label>
+											<div class="form-row">
+												<input
+													id={`name-${list.id}`}
+													name="name"
+													value={list.name}
+													required
+													maxlength={MAX_NAME_LENGTH}
+												/>
+												<button type="submit">Save name</button>
+											</div>
+										</form>
+									</details>
+									<button
+										type="button"
+										class="danger"
+										data-delete={list.id}
+										data-name={list.name}
+									>
+										Delete
+									</button>
+								</div>
+							</li>
+						))}
+					</ul>
+				</>
 			)}
 		</list-manager>
 	</main>
@@ -126,6 +146,68 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 <script>
 	class ListManager extends HTMLElement {
 		connectedCallback() {
+			const sort = this.querySelector<HTMLInputElement>('[data-list-sort]');
+			const grid = this.querySelector<HTMLUListElement>('.list-grid');
+			if (sort && grid) {
+				const cards = [
+					...grid.querySelectorAll<HTMLElement>('[data-list-card]'),
+				];
+				const storageKey = 'listio-home-sort';
+				const savedSort = localStorage.getItem(storageKey);
+				if (
+					savedSort &&
+					[...sort.querySelectorAll('option')].some(
+						(option) => option.getAttribute('value') === savedSort
+					)
+				)
+					sort.value = savedSort;
+				const sortCards = () => {
+					const timestamp = (card: HTMLElement, key: 'created' | 'updated') =>
+						Date.parse(card.dataset[key] ?? '') || 0;
+					const position = (card: HTMLElement) =>
+						Number(card.dataset.position ?? 0);
+					cards.sort((a, b) => {
+						switch (sort.value) {
+							case 'edited':
+								return (
+									timestamp(b, 'updated') - timestamp(a, 'updated') ||
+									position(b) - position(a)
+								);
+							case 'oldest':
+								return (
+									timestamp(a, 'created') - timestamp(b, 'created') ||
+									position(a) - position(b)
+								);
+							case 'newest':
+								return (
+									timestamp(b, 'created') - timestamp(a, 'created') ||
+									position(b) - position(a)
+								);
+							case 'alphabetical':
+								return (
+									a.querySelector('.list-name')?.textContent ?? ''
+								).localeCompare(
+									b.querySelector('.list-name')?.textContent ?? '',
+									undefined,
+									{ sensitivity: 'base' }
+								);
+							case 'titles':
+								return (
+									Number(b.dataset.titles) - Number(a.dataset.titles) ||
+									position(b) - position(a)
+								);
+							default:
+								return position(b) - position(a);
+						}
+					});
+					cards.forEach((card) =>
+						grid.insertAdjacentElement('beforeend', card)
+					);
+					localStorage.setItem(storageKey, sort.value);
+				};
+				sort.addEventListener('change', sortCards);
+				sortCards();
+			}
 			// Show the refresh notice once, not again on reload or from a bookmark.
 			const url = new URL(window.location.href);
 			if (url.searchParams.has('changed')) {

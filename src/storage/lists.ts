@@ -7,6 +7,8 @@ export type ListIndexEntry = {
 	count: number;
 	types: TitleType[];
 	showOnHome?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
 };
 
 export type ListStore = Pick<KVNamespace, 'get' | 'put' | 'delete'>;
@@ -30,15 +32,31 @@ export async function getList(
 }
 
 export async function getIndex(kv: ListStore): Promise<ListIndexEntry[]> {
-	return (await kv.get<ListIndexEntry[]>('index', 'json')) ?? [];
+	const index = (await kv.get<ListIndexEntry[]>('index', 'json')) ?? [];
+	return Promise.all(
+		index.map(async (entry) => {
+			if (entry.updatedAt) return entry;
+			const list =
+				(await kv.get<CombinedList>(`list:${entry.id}`, 'json')) ??
+				(await kv.get<CombinedList>(`initial:${entry.id}`, 'json'));
+			const timestamp = list?.updatedAt || undefined;
+			return {
+				...entry,
+				updatedAt: entry.updatedAt ?? timestamp,
+			};
+		})
+	);
 }
 
 export function indexEntry(list: CombinedList): ListIndexEntry {
+	const timestamp = list.updatedAt || new Date().toISOString();
 	return {
 		...(list.creationId ? { creationId: list.creationId } : {}),
 		id: list.id,
 		name: list.name,
 		count: list.titles.length,
+		createdAt: timestamp,
+		updatedAt: timestamp,
 		types: (['movie', 'series'] as const).filter((type) =>
 			list.titles.some((title) => title.type === type)
 		),
@@ -66,8 +84,12 @@ export async function putList(
 		updatedAt: new Date().toISOString(),
 	};
 	const index = await getIndex(kv);
-	const entry = indexEntry(saved);
 	const position = index.findIndex((item) => item.id === saved.id);
+	const entry = indexEntry(saved);
+	if (position !== -1) {
+		entry.createdAt = index[position].createdAt;
+	}
+	entry.updatedAt = saved.updatedAt;
 	if (position === -1) index.push(entry);
 	else index[position] = entry;
 	await kv.put('index', JSON.stringify(index));

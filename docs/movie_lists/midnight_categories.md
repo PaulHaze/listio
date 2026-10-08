@@ -21,6 +21,7 @@ _Alt: Altered States / Down the Rabbit Hole_
 - Surrealist & Dream-Logic Nightmares
 - Animated Head Trips
 - Experimental & Avant-Garde
+- Quietly Contemplative
 - Art-House After Dark
 - Kids' Movies Gone Weird
 
@@ -48,13 +49,14 @@ _Alt: Night Crawlers / Neon & Concrete_
 - Neon Noir & Night Crawlers
 - Crime, Cult Action & Urban Decay
 
-## 6. Sci-Fi & Dystopias
+## 6. We're Not In Kansas Anymore
 
 _Alt: Other Worlds / Strange Futures & Dark Realms_
 
 - Cult Sci-Fi, Time Travel & Dystopias
 - Swords, Sorcery & Dark Fantasy
-- Drive-In Sci-Fi & Creature Features (alt — or keep in The Classics)
+- Post-Apocalyptic Wastelands
+- Cosmic Horror & Lovecraftiana
 
 ## 7. Spookies
 
