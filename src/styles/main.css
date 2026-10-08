@@ -269,15 +269,30 @@ html {
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
 }
-.list-sort-control {
+.list-controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	width: 100%;
+	margin-top: 1.5rem;
+}
+.list-sort-control,
+.list-filter-control {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 0.75rem;
-	margin-top: 1.5rem;
 }
-.list-sort-control label {
+.list-filter-control {
+	flex: 1 1 20rem;
+	justify-content: flex-end;
+}
+.list-sort-control label,
+.list-filter-control label {
 	font-weight: 600;
+	margin: 0;
 }
 .list-sort-control select {
 	min-width: 12rem;
@@ -286,6 +301,19 @@ html {
 	padding: 0.55rem 0.75rem;
 	background: var(--background);
 	color: var(--foreground);
+}
+.list-filter-control input {
+	flex: 1 1 12rem;
+	width: min(20rem, 100%);
+	min-width: 0;
+	border: 1px solid var(--foreground);
+	border-radius: 0.4rem;
+	padding: 0.55rem 0.75rem;
+	background: var(--background);
+	color: var(--foreground);
+}
+.list-filter-empty {
+	margin-top: 1rem;
 }
 .list-name {
 	color: var(--primary);

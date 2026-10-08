@@ -57,16 +57,28 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 				</p>
 			) : (
 				<>
-					<div class="list-sort-control">
-						<label for="list-sort">Sort lists</label>
-						<select id="list-sort" data-list-sort>
-							<option value="added">Recently added</option>
-							<option value="edited">Recently edited</option>
-							<option value="oldest">Oldest</option>
-							<option value="newest">Newest</option>
-							<option value="alphabetical">Alphabetical</option>
-							<option value="titles">Most titles</option>
-						</select>
+					<div class="list-controls">
+						<div class="list-sort-control">
+							<label for="list-sort">Sort lists</label>
+							<select id="list-sort" data-list-sort>
+								<option value="added">Recently added</option>
+								<option value="edited">Recently edited</option>
+								<option value="oldest">Oldest</option>
+								<option value="newest">Newest</option>
+								<option value="alphabetical">Alphabetical</option>
+								<option value="titles">Most titles</option>
+							</select>
+						</div>
+						<div class="list-filter-control">
+							<label for="list-filter">Filter by title</label>
+							<input
+								id="list-filter"
+								type="search"
+								data-list-filter
+								placeholder="Filter lists…"
+								autocomplete="off"
+							/>
+						</div>
 					</div>
 					<ul class="list-grid">
 						{lists.map((list, index) => (
@@ -126,6 +138,14 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 							</li>
 						))}
 					</ul>
+					<p
+						class="list-filter-empty"
+						data-list-filter-empty
+						role="status"
+						hidden
+					>
+						No lists match that title.
+					</p>
 				</>
 			)}
 		</list-manager>
@@ -136,6 +156,7 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 	class ListManager extends HTMLElement {
 		connectedCallback() {
 			const sort = this.querySelector<HTMLInputElement>('[data-list-sort]');
+			const filter = this.querySelector<HTMLInputElement>('[data-list-filter]');
 			const grid = this.querySelector<HTMLUListElement>('.list-grid');
 			if (sort && grid) {
 				const cards = [
@@ -150,7 +171,7 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 					)
 				)
 					sort.value = savedSort;
-				const sortCards = () => {
+				const updateCards = () => {
 					const timestamp = (card: HTMLElement, key: 'created' | 'updated') =>
 						Date.parse(card.dataset[key] ?? '') || 0;
 					const position = (card: HTMLElement) =>
@@ -192,10 +213,25 @@ const changed = Astro.url.searchParams.get('changed') === '1';
 					cards.forEach((card) =>
 						grid.insertAdjacentElement('beforeend', card)
 					);
+					const query = filter?.value.trim().toLocaleLowerCase() ?? '';
+					let visibleCount = 0;
+					cards.forEach((card) => {
+						const title =
+							card
+								.querySelector('.list-name')
+								?.textContent?.toLocaleLowerCase() ?? '';
+						card.hidden = !title.includes(query);
+						if (!card.hidden) visibleCount++;
+					});
+					const empty = this.querySelector<HTMLElement>(
+						'[data-list-filter-empty]'
+					);
+					if (empty) empty.hidden = visibleCount > 0;
 					localStorage.setItem(storageKey, sort.value);
 				};
-				sort.addEventListener('change', sortCards);
-				sortCards();
+				sort.addEventListener('change', updateCards);
+				filter?.addEventListener('input', updateCards);
+				updateCards();
 			}
 			// Show the refresh notice once, not again on reload or from a bookmark.
 			const url = new URL(window.location.href);
