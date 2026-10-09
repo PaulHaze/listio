@@ -330,7 +330,7 @@
 
 <!-- #endregion -->
 
-<!-- #region New Cult -->
+<!-- #region Alt.Cult And The New Wierd -->
 
 ## Modern Weird & New Cult
 
@@ -387,7 +387,7 @@
 
 <!-- #endregion -->
 
-<!-- #region Sleaze & Mayhem -->
+<!-- #region Nightcap At The Trash Palace -->
 
 ## Camp, Sleaze & Cult Trash
 
@@ -573,42 +573,22 @@
 
 <!-- #region We're Not In Kansas Anymore -->
 
-## Cult Sci-Fi, Time Travel & Dystopias
+## Cult And Classic Sci-Fi
 
-- Metropolis (1927)
-- La Jetée (1962)
-- Alphaville (1965)
 - Seconds (1966)
-- Fahrenheit 451 (1966)
 - 2001: A Space Odyssey (1968)
 - Barbarella (1968)
-- Je t'aime, je t'aime (1968)
-- A Clockwork Orange (1971)
-- The Omega Man (1971)
-- THX 1138 (1971)
 - Silent Running (1972)
 - Solaris (1972)
 - The Final Programme (1973)
-- Soylent Green (1973)
 - Westworld (1973)
 - World on a Wire (1973)
 - Dark Star (1974)
-- Zardoz (1974)
 - Phase IV (1974)
-- Death Race 2000 (1975)
-- Rollerball (1975)
-- A Boy and His Dog (1975)
 - The Man Who Fell to Earth (1976)
-- Logan's Run (1976)
-- Mad Max (1979)
 - Quintet (1979)
 - The Shape of Things to Come (1979)
-- Time After Time (1979)
 - Flash Gordon (1980)
-- Time Bandits (1981)
-- Escape from New York (1981)
-- Mad Max 2 (1981)
-- Blade Runner (1982)
 - Tron (1982)
 - Spacehunter: Adventures in the Forbidden Zone (1983)
 - Brainstorm (1983)
@@ -616,104 +596,130 @@
 - The Adventures of Buckaroo Banzai Across the 8th Dimension (1984)
 - Night of the Comet (1984)
 - The Brother from Another Planet (1984)
-- Nineteen Eighty-Four (1984)
-- The Terminator (1984)
 - 2010: The Year We Make Contact (1984)
 - Dune (1984)
 - The Ice Pirates (1984)
-- Sexmission (1984)
-- Brazil (1985)
 - The Quiet Earth (1985)
-- Dead End Drive-In (1986)
-- RoboCop (1987)
 - Alien from L.A. (1988)
-- They Live (1988)
 - Miracle Mile (1988)
 - The Navigator: A Medieval Odyssey (1988)
 - On the Silver Globe (1988)
-- Bill & Ted's Excellent Adventure (1989)
-- Hardware (1990)
 - Total Recall (1990)
-- Delicatessen (1991)
 - The Lawnmower Man (1992)
-- Strange Days (1995)
-- 12 Monkeys (1995)
 - The City of Lost Children (1995)
 - The Island of Dr. Moreau (1996)
 - Cube (1997)
 - Event Horizon (1997)
-- Gattaca (1997)
 - The Fifth Element (1997)
 - Dark City (1998)
 - Pi (1998)
-- Run Lola Run (1998)
 - The Thirteenth Floor (1999)
 - Possible Worlds (2000)
-- Donnie Darko (2001)
 - Vanilla Sky (2001)
 - Cypher (2002)
-- Equilibrium (2002)
 - Nothing (2003)
-- Primer (2004)
-- The Butterfly Effect (2004)
 - Immortel (2004)
-- Southland Tales (2006)
-- Children of Men (2006)
-- Idiocracy (2006)
-- Timecrimes (2007)
 - The Man from Earth (2007)
 - Sunshine (2007)
-- Triangle (2009)
 - Moon (2009)
-- Mr. Nobody (2009)
 - Ink (2009)
 - The Box (2009)
 - Monsters (2010)
 - Inception (2010)
 - Attack the Block (2011)
-- Source Code (2011)
 - Another Earth (2011)
 - Sound of My Voice (2011)
 - The Adjustment Bureau (2011)
 - Iron Sky (2012)
-- Dredd (2012)
-- Looper (2012)
-- Safety Not Guaranteed (2012)
 - Prometheus (2012)
 - Cloud Atlas (2012)
-- The Zero Theorem (2013)
 - Coherence (2013)
 - +1 (2013)
-- Snowpiercer (2013)
 - Hard to Be a God (2013)
 - Riddick (2013)
 - These Final Hours (2013)
-- Predestination (2014)
-- Time Lapse (2014)
-- The Infinite Man (2014)
 - The One I Love (2014)
 - Ex Machina (2014)
 - Turbo Kid (2015)
 - Circle (2015)
 - Tomorrowland (2015)
 - ARQ (2016)
-- Time Trap (2017)
 - Alien: Covenant (2017)
 - High Life (2018)
-- Upgrade (2018)
 - Prospect (2018)
 - Annihilation (2018)
-- Synchronic (2019)
 - The Vast of Night (2019)
-- The Platform (2019)
 - Vivarium (2019)
 - I Am Mother (2019)
+- Something in the Dirt (2022)
+- Divinity (2023)
+
+## Future's Not Bright
+
+- Metropolis (1927)
+- Alphaville (1965)
+- Fahrenheit 451 (1966)
+- A Clockwork Orange (1971)
+- The Omega Man (1971)
+- THX 1138 (1971)
+- Soylent Green (1973)
+- Zardoz (1974)
+- Death Race 2000 (1975)
+- Rollerball (1975)
+- A Boy and His Dog (1975)
+- Logan's Run (1976)
+- Mad Max (1979)
+- Escape from New York (1981)
+- Mad Max 2 (1981)
+- Blade Runner (1982)
+- Nineteen Eighty-Four (1984)
+- Sexmission (1984)
+- Brazil (1985)
+- Dead End Drive-In (1986)
+- RoboCop (1987)
+- They Live (1988)
+- Hardware (1990)
+- Delicatessen (1991)
+- Strange Days (1995)
+- Gattaca (1997)
+- Equilibrium (2002)
+- Southland Tales (2006)
+- Children of Men (2006)
+- Idiocracy (2006)
+- Dredd (2012)
+- The Zero Theorem (2013)
+- Snowpiercer (2013)
+- Upgrade (2018)
+- The Platform (2019)
+
+## Again and Again and Again and Again...
+
+- La Jetée (1962)
+- Je t'aime, je t'aime (1968)
+- Time After Time (1979)
+- Time Bandits (1981)
+- The Terminator (1984)
+- Bill & Ted's Excellent Adventure (1989)
+- 12 Monkeys (1995)
+- Run Lola Run (1998)
+- Donnie Darko (2001)
+- Primer (2004)
+- The Butterfly Effect (2004)
+- Timecrimes (2007)
+- Triangle (2009)
+- Mr. Nobody (2009)
+- Source Code (2011)
+- Looper (2012)
+- Safety Not Guaranteed (2012)
+- Predestination (2014)
+- Time Lapse (2014)
+- The Infinite Man (2014)
+- Time Trap (2017)
+- Synchronic (2019)
 - Palm Springs (2020)
 - Beyond the Infinite Two Minutes (2020)
 - Tenet (2020)
-- Something in the Dirt (2022)
 - Alienoid (2022)
-- Divinity (2023)
 
 ## Swords, Sorcery & Dark Fantasy
 
@@ -791,7 +797,7 @@
 - It Comes at Night (2017)
 - Furiosa: A Mad Max Saga (2024)
 
-- ## Cosmic Horror & Lovecraftiana
+## Cosmic Horror & Lovecraftiana
 
 - Equinox (1970)
 - The Thing (1982)
@@ -808,7 +814,7 @@
 
 <!-- #endregion -->
 
-<!-- #region Spookies -->
+<!-- #region Things That Go Bump In The Night -->
 
 ## Folk Horror & Eerie Dread
 
@@ -982,7 +988,7 @@
 - Weapons (2025)
 - Backrooms (2026)
 
-## Giallo & Euro-Horror
+## Euro-Horror
 
 - Torture Chamber of Dr. Sadism / The Blood Demon (1967)
 - Spirits of the Dead (1968)
@@ -1000,6 +1006,7 @@
 - Luz (2018)
 
 <!-- #endregion -->
+
 <!-- #region World Of The Weird -->
 
 ## Asian Oddities
@@ -1095,11 +1102,11 @@
 - When Evil Lurks (2023)
 
 <!-- #endregion -->
+
 <!-- #region Party Picks -->
 
 ## Rock And Roll Baby!
 
-- A Hard Day's Night (1964)
 - Magical Mystery Tour (1967)
 - Privilege (1967)
 - Head (1968)
@@ -1115,33 +1122,20 @@
 - Lisztomania (1975)
 - Tommy (1975)
 - Jubilee (1978)
-- Rock 'n' Roll High School (1979)
 - Quadrophenia (1979)
-- The Blues Brothers (1980)
-- Times Square (1980)
 - Liquid Sky (1982)
 - Pink Floyd: The Wall (1982)
-- Ladies and Gentlemen, The Fabulous Stains (1982)
 - Rock & Rule (1983)
-- Get Crazy (1983)
-- Suburbia (1983)
 - Streets of Fire (1984)
 - This Is Spinal Tap (1984)
 - Stop Making Sense (1984)
 - The Legend of the Stardust Brothers (1985)
 - Vicious Lips (1986)
 - Dogs in Space (1986)
-- Sid and Nancy (1986)
-- Trick or Treat (1986)
 - Rock 'n' Roll Nightmare (1987)
-- Young Einstein (1988)
-- Cry-Baby (1990)
 - The Doors (1991)
-- Wayne's World (1992)
-- Hard Core Logo (1996)
 - Velvet Goldmine (1998)
 - Wild Zero (1999)
-- Detroit Rock City (1999)
 - Human Traffic (1999)
 - Hedwig and the Angry Inch (2001)
 - 24 Hour Party People (2002)
@@ -1149,13 +1143,8 @@
 - Party Monster (2003)
 - Tenacious D in The Pick of Destiny (2006)
 - Electroma (2006)
-- Scott Pilgrim vs. the World (2010)
 - Tokyo Tribe (2014)
 - Frank (2014)
-- Green Room (2015)
-- The Devil's Candy (2015)
-- Deathgasm (2015)
-- Lords of Chaos (2018)
 - Moonage Daydream (2022)
 
 ## Midnight Musicals & Rock Operas
@@ -1261,6 +1250,7 @@
 - The Beach Bum (2019)
 
 <!-- #endregion -->
+
 <!-- #region Bonus Features -->
 
 ## Cult Docs & Movies About Movies

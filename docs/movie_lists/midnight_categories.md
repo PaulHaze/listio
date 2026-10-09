@@ -2,7 +2,7 @@
 
 Proposed top-level groups for the Nuvio collections page. Catalogs and titles stay as-is in `midnight_movies.md`; these groups only organise catalogs inside Nuvio.
 
-Alternative names are listed after each group heading. "(alt)" marks a catalog that could live in more than one group.
+Alternative names are listed after each group heading. "(alt)" marks a catalog that could live in more than one group.****
 
 ## 1. The Classics
 
@@ -53,9 +53,11 @@ _Alt: Night Crawlers / Neon & Concrete_
 
 _Alt: Other Worlds / Strange Futures & Dark Realms_
 
-- Cult Sci-Fi, Time Travel & Dystopias
+- Cult And Classic Sci-Fi
+- Future's Not Bright
 - Swords, Sorcery & Dark Fantasy
 - Post-Apocalyptic Wastelands
+- Again and Again and Again and Again...
 - Cosmic Horror & Lovecraftiana
 
 ## 7. Spookies
@@ -89,7 +91,6 @@ _Alt: Crowd-Pleasers / Bring Your Mates / Laughs in the Dark_
 - Cult Comedy & Absurdist
 - Stoner Crowd-Pleasers
 - So Bad It's Good (alt — or keep in Sleaze & Mayhem)
-- Midnight Musicals & Rock Operas (alt — or keep in The Classics)
 - Cult Horror-Comedy (alt — or keep in Spookies)
 
 ## 10. Bonus Features
@@ -99,7 +100,7 @@ _Alt: Extras / The Back Room_
 - Cult Docs & Movies About Movies
 - Midnight TV Shows
 
----
+---do
 
 OTHER RANDOM CATS:
 My top picks
